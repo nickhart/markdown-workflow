@@ -135,5 +135,5 @@ workflow:
 
   # Collection ID generation pattern
   collection_id:
-    pattern: "{{title | lower | replace(' ', '_') | replace('[^a-z0-9_]', '') | truncate(30)}}_{{date | format('MMDDYYYY')}}"
+    pattern: "{{title}}_{{date}}"
     max_length: 40

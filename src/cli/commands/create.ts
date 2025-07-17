@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
+import Mustache from 'mustache';
 import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
 import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
@@ -181,18 +182,35 @@ async function processTemplate(
   try {
     const templateContent = fs.readFileSync(templatePath, 'utf8');
     
-    // Simple variable substitution (TODO: implement proper template engine)
-    let processedContent = templateContent;
+    // Load user configuration for template variables
+    const projectRoot = ConfigDiscovery.findProjectRoot();
+    let userConfig = null;
     
-    // Replace basic variables
-    processedContent = processedContent.replace(/\{\{company\}\}/g, variables.company || '');
-    processedContent = processedContent.replace(/\{\{role\}\}/g, variables.role || '');
-    processedContent = processedContent.replace(/\{\{url\}\}/g, variables.url || '');
-    processedContent = processedContent.replace(/\{\{date\}\}/g, new Date().toISOString().slice(0, 10));
+    if (projectRoot) {
+      const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
+      if (fs.existsSync(projectPaths.configFile)) {
+        const config = await ConfigDiscovery.loadProjectConfig(projectPaths.configFile);
+        userConfig = config?.user;
+      }
+    }
     
-    // Generate output filename (simplified)
-    let outputFile = template.output;
-    outputFile = outputFile.replace(/\{\{user\.preferred_name.*?\}\}/g, 'john_doe'); // TODO: Get from config
+    // Prepare template variables for Mustache
+    const userConfigForTemplate = userConfig || getDefaultUserConfig();
+    const templateVariables = {
+      ...variables,
+      date: new Date().toISOString().slice(0, 10),
+      user: {
+        ...userConfigForTemplate,
+        // Add sanitized version of preferred_name for filenames
+        preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name)
+      }
+    };
+    
+    // Process template with Mustache
+    const processedContent = Mustache.render(templateContent, templateVariables);
+    
+    // Generate output filename with Mustache
+    const outputFile = Mustache.render(template.output, templateVariables);
     
     const outputPath = path.join(collectionPath, outputFile);
     fs.writeFileSync(outputPath, processedContent);
@@ -201,6 +219,38 @@ async function processTemplate(
   } catch (error) {
     console.error(`Error processing template ${template.name}:`, error);
   }
+}
+
+
+/**
+ * Sanitize string for use in filenames
+ */
+function sanitizeForFilename(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '') // Remove special chars
+    .replace(/\s+/g, '_') // Replace spaces with underscores
+    .replace(/_+/g, '_') // Remove duplicate underscores
+    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+}
+
+/**
+ * Get default user configuration for fallback
+ */
+function getDefaultUserConfig() {
+  return {
+    name: 'Your Name',
+    preferred_name: 'john_doe',
+    email: 'your.email@example.com',
+    phone: '(555) 123-4567',
+    address: '123 Main St',
+    city: 'Your City',
+    state: 'ST',
+    zip: '12345',
+    linkedin: 'linkedin.com/in/yourname',
+    github: 'github.com/yourusername',
+    website: 'yourwebsite.com'
+  };
 }
 
 /**

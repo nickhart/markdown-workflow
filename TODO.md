@@ -38,17 +38,17 @@
 ## 🔧 Technical Implementation (Medium Priority)
 
 ### Core System Improvements
-- [ ] **YAML Configuration**
-  - [ ] Implement proper YAML parsing for config files
-  - [ ] Support for YAML workflow definitions
-  - [ ] Configuration validation and error handling
-  - [ ] Migration from JSON to YAML
+- [x] **YAML Configuration**
+  - [x] Implement proper YAML parsing for config files
+  - [x] Support for YAML workflow definitions
+  - [x] Configuration validation and error handling (with Zod)
+  - [x] Migration from JSON to YAML
 
-- [ ] **Template Engine**
-  - [ ] Implement TemplateProcessor.ts
-  - [ ] Advanced template variable substitution
-  - [ ] Conditional template rendering
-  - [ ] Template inheritance and composition
+- [x] **Template Engine**
+  - [x] Implement TemplateProcessor.ts (integrated into create.ts)
+  - [x] Advanced template variable substitution (with Mustache)
+  - [x] Conditional template rendering
+  - [x] Template inheritance and composition
 
 - [ ] **Workflow Engine**
   - [ ] Implement WorkflowEngine.ts
@@ -57,8 +57,8 @@
   - [ ] Action and converter system
 
 ### CLI Commands
-- [ ] **Collection Management**
-  - [ ] `wf-create` - Create new collection
+- [x] **Collection Management**
+  - [x] `wf-create` - Create new collection
   - [ ] `wf-status` - Update collection status
   - [ ] `wf-list` - List collections
   - [ ] `wf-format` - Format collection documents

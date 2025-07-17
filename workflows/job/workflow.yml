@@ -52,12 +52,12 @@ workflow:
   templates:
     - name: "resume"
       file: "templates/resume/default.md"
-      output: "resume_{{user.preferred_name | lower | replace(' ', '_')}}.md"
+      output: "resume_{{user.preferred_name}}.md"
       description: "Resume tailored for this application"
       
     - name: "cover_letter"
       file: "templates/cover_letter/default.md"
-      output: "cover_letter_{{user.preferred_name | lower | replace(' ', '_')}}.md"
+      output: "cover_letter_{{user.preferred_name}}.md"
       description: "Cover letter for this application"
     
     - name: "interview_notes"
