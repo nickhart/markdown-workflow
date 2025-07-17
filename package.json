@@ -2,13 +2,17 @@
   "name": "markdown-workflow",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "bin": {
+    "wf": "dist/cli/index.js"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "cli": "ts-node src/cli/index.ts",
-    "cli:build": "tsc src/cli/index.ts --outDir dist/cli",
+    "cli": "tsx src/cli/index.ts",
+    "cli:build": "tsc --project tsconfig.cli.json",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -37,6 +41,7 @@
     "jest": "^30.0.4",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.0",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   },
   "jest": {

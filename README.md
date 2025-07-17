@@ -1,36 +1,159 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Markdown Workflow
 
-## Getting Started
+A generalized markdown-based workflow system built with Node.js and TypeScript. It provides a template-driven workflow engine for creating documents, managing content, and tracking collections through different stages.
 
-First, run the development server:
+## Features
+
+- 📝 **Template-driven workflows** - Create documents from customizable templates
+- 🔄 **Status management** - Track items through workflow stages
+- 🌐 **Dual interface** - CLI for local use, REST API for web integration
+- 🎨 **Customizable** - Override templates and workflows per project
+- 📦 **Repository-agnostic** - Works from any directory like git
+
+## Quick Start
+
+### 1. Setup
+
+Run the setup script to build and install the CLI:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+./setup.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This will:
+- Install dependencies
+- Build the CLI
+- Make `wf` command available globally
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Initialize a Project
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Navigate to your writing project directory and initialize:
 
-## Learn More
+```bash
+cd ~/my-writing-project
+wf init
+```
 
-To learn more about Next.js, take a look at the following resources:
+This creates a `.markdown-workflow/` directory with:
+- `config.yml` - Your personal configuration
+- `workflows/` - Custom workflow overrides
+- `collections/` - Generated collections
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 3. Configure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Edit `.markdown-workflow/config.yml` with your information:
 
-## Deploy on Vercel
+```yaml
+user:
+  name: "Your Name"
+  email: "your.email@example.com"
+  # ... other details
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Create Collections
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+# Job applications
+wf create job "Google" "Software Engineer"
+
+# Blog posts  
+wf create blog "TypeScript Tips"
+
+# List all collections
+wf list
+```
+
+## Available Workflows
+
+### Job Applications
+- **Stages**: active → submitted → interview → offered → accepted/rejected
+- **Templates**: resume, cover letter, interview notes
+- **Actions**: create, format, notes, scrape
+
+### Blog Posts
+- **Stages**: draft → review → published → archived
+- **Templates**: post content, CSS styles  
+- **Actions**: create, format, preview, publish
+
+## CLI Commands
+
+```bash
+wf init                    # Initialize project
+wf init --workflows job    # Initialize specific workflows
+wf create <workflow> <args> # Create new collection
+wf list [status]           # List collections
+wf status <id> <status>    # Update collection status
+wf format <id>             # Format documents
+wf --help                  # Show help
+```
+
+## Development
+
+### Web Interface
+
+```bash
+pnpm dev                   # Start Next.js dev server
+pnpm build                 # Build for production
+```
+
+### CLI Development
+
+```bash
+pnpm run cli <command>     # Run CLI in development
+pnpm run cli:build         # Build CLI
+pnpm test                  # Run tests
+```
+
+### API Development
+
+```bash
+pnpm run api              # Start API server
+```
+
+## Architecture
+
+- **src/core/** - Workflow engine and shared logic
+- **src/cli/** - Command-line interface
+- **src/api/** - REST API endpoints
+- **workflows/** - Default workflow definitions
+- **tests/** - Unit and integration tests
+
+## Configuration Discovery
+
+Like git, the system discovers configuration by walking up directories to find `.markdown-workflow/`:
+
+```
+~/my-writing-project/
+├── .markdown-workflow/
+│   ├── config.yml
+│   ├── workflows/         # Custom overrides
+│   └── collections/       # Generated content
+└── [your files...]
+```
+
+## Template System
+
+Templates support variable substitution:
+
+```markdown
+# {{user.name}}'s Resume
+
+Email: {{user.email}}
+Phone: {{user.phone}}
+```
+
+Templates are resolved in order:
+1. User project templates (highest priority)
+2. System templates (fallback)
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details.
