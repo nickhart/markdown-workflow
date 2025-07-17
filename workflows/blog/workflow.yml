@@ -1,0 +1,139 @@
+# Blog Posts Workflow
+# Manages blog posts through the writing and publishing process
+
+workflow:
+  name: "blog"
+  description: "Track blog posts through writing and publishing process"
+  version: "1.0.0"
+
+  # Define the stages a blog post can go through
+  stages:
+    - name: "draft"
+      description: "Initial draft in progress"
+      color: "blue"
+      next: ["review", "published", "archived"]
+
+    - name: "review"
+      description: "Under review/editing"
+      color: "yellow"
+      next: ["draft", "published", "archived"]
+
+    - name: "published"
+      description: "Published and live"
+      color: "green"
+      next: ["archived", "updated"]
+
+    - name: "updated"
+      description: "Published with updates"
+      color: "green"
+      next: ["archived"]
+
+    - name: "archived"
+      description: "Archived/retired"
+      color: "gray"
+      terminal: true
+
+  # Define templates
+  templates:
+    - name: "post"
+      file: "templates/post/default.md"
+      output: "content.md"
+      description: "Main blog post content"
+
+  # define static files
+  statics:
+    - name: "styles"
+      file: "templates/static/styles.css"
+      description: "CSS styling for HTML output"
+
+  # Define actions that can be performed on collections
+  actions:
+    - name: "create"
+      description: "Create new blog post"
+      templates: ["post"]
+      metadata_file: "collection.yml"
+      parameters:
+        - name: "title"
+          type: "string"
+          required: true
+          description: "Blog post title"
+        - name: "template_variant"
+          type: "enum"
+          options: ["default", "technical", "tutorial"]
+          default: "default"
+          description: "Blog post template variant"
+        - name: "category"
+          type: "string"
+          required: false
+          description: "Blog post category"
+        - name: "tags"
+          type: "array"
+          required: false
+          description: "Blog post tags"
+
+    - name: "format"
+      description: "Convert blog post to HTML"
+      converter: "markdown"
+      formats: ["html"]
+      parameters:
+        - name: "include_toc"
+          type: "boolean"
+          default: true
+          description: "Include table of contents"
+        - name: "syntax_highlighting"
+          type: "boolean"
+          default: true
+          description: "Enable syntax highlighting for code blocks"
+
+    - name: "preview"
+      description: "Generate preview/summary"
+      parameters:
+        - name: "length"
+          type: "number"
+          default: 300
+          description: "Preview length in characters"
+        - name: "output_file"
+          type: "string"
+          default: "preview.txt"
+          description: "Preview output filename"
+
+    - name: "publish"
+      description: "Publish blog post"
+      parameters:
+        - name: "platform"
+          type: "enum"
+          options: ["local", "github", "medium", "dev.to"]
+          default: "local"
+          description: "Publishing platform"
+        - name: "schedule_date"
+          type: "date"
+          required: false
+          description: "Schedule publication date"
+
+  # Collection metadata schema
+  metadata:
+    required_fields:
+      - title
+      - date_created
+      - status
+
+    optional_fields:
+      - category
+      - tags
+      - estimated_reading_time
+      - difficulty_level
+      - author_notes
+      - seo_description
+      - featured_image
+
+    auto_generated:
+      - collection_id
+      - date_created
+      - date_modified
+      - status_history
+      - word_count
+
+  # Collection ID generation pattern
+  collection_id:
+    pattern: "{{title | lower | replace(' ', '_') | replace('[^a-z0-9_]', '') | truncate(30)}}_{{date | format('MMDDYYYY')}}"
+    max_length: 40

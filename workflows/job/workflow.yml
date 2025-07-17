@@ -1,0 +1,165 @@
+# Job Applications Workflow
+# Manages job applications through the hiring process
+
+workflow:
+  name: "job"
+  description: "Track job applications through hiring process"
+  version: "1.0.0"
+  
+  # Define the stages a job application can go through
+  stages:
+    - name: "active"
+      description: "New applications in progress"
+      color: "blue"
+      next: ["submitted", "rejected", "withdrawn"]
+    
+    - name: "submitted"
+      description: "Applications submitted to company"
+      color: "yellow"
+      next: ["interview", "rejected"]
+    
+    - name: "interview"
+      description: "Interview process started"
+      color: "orange"
+      next: ["offered", "rejected"]
+    
+    - name: "offered"
+      description: "Job offer received"
+      color: "green"
+      next: ["accepted", "declined"]
+    
+    - name: "accepted"
+      description: "Job offer accepted"
+      color: "green"
+      terminal: true
+    
+    - name: "declined"
+      description: "Job offer declined"
+      color: "gray"
+      terminal: true
+    
+    - name: "rejected"
+      description: "Application rejected"
+      color: "red"
+      terminal: true
+    
+    - name: "withdrawn"
+      description: "Application withdrawn"
+      color: "gray"
+      terminal: true
+
+  # Define templates (files with variable substitution)
+  templates:
+    - name: "resume"
+      file: "templates/resume/default.md"
+      output: "resume_{{user.preferred_name | lower | replace(' ', '_')}}.md"
+      description: "Resume tailored for this application"
+      
+    - name: "cover_letter"
+      file: "templates/cover_letter/default.md"
+      output: "cover_letter_{{user.preferred_name | lower | replace(' ', '_')}}.md"
+      description: "Cover letter for this application"
+    
+    - name: "interview_notes"
+      file: "templates/notes/default.md"
+      output: "{{note_type}}_notes.md"
+      description: "Interview notes template"
+
+  # Define static files (no variable substitution)
+  statics:
+    - name: "resume_reference"
+      file: "templates/static/resume_reference.docx"
+      description: "DOCX formatting reference for resume"
+    
+    - name: "cover_letter_reference"
+      file: "templates/static/cover_letter_reference.docx"
+      description: "DOCX formatting reference for cover letter"
+
+  # Define actions that can be performed on collections
+  actions:
+    - name: "create"
+      description: "Create new job application"
+      templates: ["resume", "cover_letter"]
+      metadata_file: "collection.yml"
+      parameters:
+        - name: "company"
+          type: "string"
+          required: true
+          description: "Company name"
+        - name: "role"
+          type: "string"
+          required: true
+          description: "Job role/position"
+        - name: "url"
+          type: "string"
+          required: false
+          description: "Job posting URL"
+        - name: "template_variant"
+          type: "enum"
+          options: ["default", "mobile", "frontend"]
+          default: "default"
+          description: "Resume template variant to use"
+    
+    - name: "format"
+      description: "Convert documents to various formats"
+      converter: "pandoc"
+      formats: ["docx", "html", "pdf"]
+      parameters:
+        - name: "format"
+          type: "enum"
+          options: ["docx", "html", "pdf", "all"]
+          default: "docx"
+          description: "Output format"
+    
+    - name: "notes"
+      description: "Create interview notes"
+      templates: ["interview_notes"]
+      parameters:
+        - name: "note_type"
+          type: "enum"
+          options: ["recruiter", "phone", "technical", "panel", "final"]
+          required: true
+          description: "Type of interview notes"
+        - name: "interviewer"
+          type: "string"
+          required: false
+          description: "Interviewer name"
+    
+    - name: "scrape"
+      description: "Archive job description from URL"
+      parameters:
+        - name: "url"
+          type: "string"
+          required: true
+          description: "Job posting URL"
+        - name: "output_file"
+          type: "string"
+          default: "job_description.html"
+          description: "Output filename for scraped content"
+
+  # Collection metadata schema
+  metadata:
+    required_fields:
+      - company
+      - role
+      - date_created
+      - status
+    
+    optional_fields:
+      - url
+      - salary_range
+      - remote_preference
+      - application_deadline
+      - contact_person
+      - notes
+    
+    auto_generated:
+      - collection_id
+      - date_created
+      - date_modified
+      - status_history
+
+  # Collection ID generation pattern
+  collection_id:
+    pattern: "{{company | lower | replace(' ', '_')}}_{{role | lower | replace(' ', '_')}}_{{date | format('YYYYMMDD')}}"
+    max_length: 50
