@@ -3,6 +3,7 @@
 ## 🚀 Core Features (High Priority)
 
 ### Workflow Distribution System
+
 - [ ] **Workflow Creation Commands**
   - [ ] `wf create-workflow <name>` - Create a new workflow from scratch
   - [ ] `wf pack-workflow <name>` - Package a workflow for distribution
@@ -23,6 +24,7 @@
   - [ ] Version management and updates
 
 ### Workflow Management
+
 - [ ] **Local Workflow Operations**
   - [ ] `wf list-workflows` - List available workflows
   - [ ] `wf update-workflow <name>` - Update workflow from repository
@@ -38,6 +40,7 @@
 ## 🔧 Technical Implementation (Medium Priority)
 
 ### Core System Improvements
+
 - [x] **YAML Configuration**
   - [x] Implement proper YAML parsing for config files
   - [x] Support for YAML workflow definitions
@@ -50,13 +53,14 @@
   - [x] Conditional template rendering
   - [x] Template inheritance and composition
 
-- [ ] **Workflow Engine**
-  - [ ] Implement WorkflowEngine.ts
-  - [ ] Collection state management
-  - [ ] Workflow execution engine
-  - [ ] Action and converter system
+- [x] **Workflow Engine**
+  - [x] Implement WorkflowEngine.ts
+  - [x] Collection state management
+  - [x] Workflow execution engine
+  - [x] Action and converter system
 
 ### CLI Commands
+
 - [x] **Collection Management**
   - [x] `wf-create` - Create new collection
   - [ ] `wf-status` - Update collection status
@@ -72,6 +76,7 @@
 ## 📦 Repository Structure (Low Priority)
 
 ### Workflow Package Format
+
 - [ ] **Package Definition**
   - [ ] Workflow manifest format
   - [ ] Template organization standards
@@ -85,6 +90,7 @@
   - [ ] Cross-platform compatibility
 
 ### Repository Infrastructure
+
 - [ ] **Backend Services**
   - [ ] Workflow repository API
   - [ ] User authentication and authorization
@@ -100,6 +106,7 @@
 ## 🧪 Testing & Quality (Ongoing)
 
 ### Test Coverage
+
 - [ ] **Unit Tests**
   - [ ] Complete TemplateProcessor tests
   - [ ] Complete WorkflowEngine tests
@@ -113,6 +120,7 @@
   - [ ] Performance benchmarks
 
 ### Documentation
+
 - [ ] **User Documentation**
   - [ ] Complete user guide
   - [ ] Workflow creation tutorial
@@ -128,6 +136,7 @@
 ## 🎯 Future Enhancements (Ideas)
 
 ### Advanced Features
+
 - [ ] **Plugin System**
   - [ ] Custom converters (pandoc alternatives)
   - [ ] Custom actions and workflows
@@ -147,6 +156,7 @@
   - [ ] Intelligent template matching
 
 ### Platform Expansion
+
 - [ ] **Web Interface**
   - [ ] Browser-based workflow editor
   - [ ] Online collection management
@@ -162,18 +172,21 @@
 ## 📝 Implementation Notes
 
 ### Development Phases
+
 1. **Phase 1**: Core workflow distribution (create, pack, import)
 2. **Phase 2**: Public repository infrastructure
 3. **Phase 3**: Advanced features and UI
 4. **Phase 4**: Community and collaboration features
 
 ### Technical Decisions
+
 - Use semantic versioning for workflows
 - Support both local and remote workflow repositories
 - Ensure backward compatibility during updates
 - Implement proper error handling and recovery
 
 ### Community Considerations
+
 - Open source workflow repository
 - Clear licensing for community workflows
 - Moderation and quality control
@@ -181,4 +194,4 @@
 
 ---
 
-*This TODO list represents the future vision for the markdown-workflow project. Items are prioritized based on user value and technical feasibility.*
+_This TODO list represents the future vision for the markdown-workflow project. Items are prioritized based on user value and technical feasibility._

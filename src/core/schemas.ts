@@ -109,13 +109,20 @@ export const WorkflowCustomFieldSchema = z.object({
   description: z.string(),
 });
 
-export const WorkflowOverrideSchema = z.object({
-  templates: z.record(z.string(), z.object({
-    default_template: z.string(),
-    available_templates: z.array(z.string()),
-  })).optional(),
-  custom_fields: z.array(WorkflowCustomFieldSchema).optional(),
-}).passthrough(); // Allow additional properties
+export const WorkflowOverrideSchema = z
+  .object({
+    templates: z
+      .record(
+        z.string(),
+        z.object({
+          default_template: z.string(),
+          available_templates: z.array(z.string()),
+        }),
+      )
+      .optional(),
+    custom_fields: z.array(WorkflowCustomFieldSchema).optional(),
+  })
+  .passthrough(); // Allow additional properties
 
 export const ProjectConfigSchema = z.object({
   user: UserConfigSchema,
@@ -124,17 +131,21 @@ export const ProjectConfigSchema = z.object({
 });
 
 // Collection schemas
-export const CollectionMetadataSchema = z.object({
-  collection_id: z.string(),
-  workflow: z.string(),
-  status: z.string(),
-  date_created: z.string(),
-  date_modified: z.string(),
-  status_history: z.array(z.object({
+export const CollectionMetadataSchema = z
+  .object({
+    collection_id: z.string(),
+    workflow: z.string(),
     status: z.string(),
-    date: z.string(),
-  })),
-}).passthrough(); // Allow additional properties for custom fields
+    date_created: z.string(),
+    date_modified: z.string(),
+    status_history: z.array(
+      z.object({
+        status: z.string(),
+        date: z.string(),
+      }),
+    ),
+  })
+  .passthrough(); // Allow additional properties for custom fields
 
 // Type exports derived from schemas
 export type WorkflowStage = z.infer<typeof WorkflowStageSchema>;

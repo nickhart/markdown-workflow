@@ -14,7 +14,20 @@ A generalized markdown-based workflow system built with Node.js and TypeScript. 
 
 ### 1. Setup
 
-Run the setup script to build and install the CLI:
+**Option A: Development Setup**
+
+```bash
+# Install dependencies
+pnpm install
+
+# Build the CLI
+pnpm run cli:build
+
+# The CLI is now available at dist/cli/index.js
+# You can run it with: node dist/cli/index.js <command>
+```
+
+**Option B: Global Installation (if setup.sh exists)**
 
 ```bash
 ./setup.sh
@@ -32,6 +45,11 @@ Navigate to your writing project directory and initialize:
 
 ```bash
 cd ~/my-writing-project
+
+# If using development setup:
+node /path/to/markdown-workflow/dist/cli/index.js init
+
+# If using global installation:
 wf init
 ```
 
@@ -48,21 +66,30 @@ Edit `.markdown-workflow/config.yml` with your information:
 ```yaml
 user:
   name: 'Your Name'
+  preferred_name: 'Your Name'
   email: 'your.email@example.com'
-  # ... other details
+  phone: '(555) 123-4567'
+  address: '123 Main St'
+  city: 'Your City'
+  state: 'ST'
+  zip: '12345'
+  linkedin: 'linkedin.com/in/yourname'
+  github: 'github.com/yourusername'
+  website: 'yourwebsite.com'
 ```
 
 ### 4. Create Collections
 
 ```bash
-# Job applications
-wf create job "Google" "Software Engineer"
+# Job applications (currently implemented)
+node dist/cli/index.js create job "Google" "Software Engineer"
+node dist/cli/index.js create job "Meta" "Product Manager" --url "https://job-url"
 
-# Blog posts
-wf create blog "TypeScript Tips"
+# Blog posts (template exists, but CLI needs workflow-specific parameters)
+# Coming soon: wf create blog "TypeScript Tips"
 
-# List all collections
-wf list
+# List collections (coming soon)
+# wf list
 ```
 
 ## Available Workflows
@@ -81,14 +108,31 @@ wf list
 
 ## CLI Commands
 
+### Currently Implemented
+
 ```bash
-wf init                    # Initialize project
-wf init --workflows job    # Initialize specific workflows
-wf create <workflow> <args> # Create new collection
-wf list [status]           # List collections
-wf status <id> <status>    # Update collection status
-wf format <id>             # Format documents
-wf --help                  # Show help
+# Initialize a new markdown-workflow project
+wf init                              # Initialize with default workflows (job, blog)
+wf init --workflows job              # Initialize with specific workflows
+wf init --force                      # Force initialization even if project exists
+
+# Create new collections
+wf create job "Company Name" "Role"           # Create job application
+wf create job "Google" "Software Engineer"   # Example job application
+wf create job "Meta" "Product Manager" --url "https://job-url" --template-variant mobile
+
+# Get help
+wf --help                            # Show available commands
+wf create --help                     # Show create command options
+```
+
+### Coming Soon (WorkflowEngine implemented, CLI integration pending)
+
+```bash
+wf list [workflow] [status]          # List collections
+wf status <workflow> <id> <status>   # Update collection status
+wf format <workflow> <id>            # Format documents to DOCX/HTML/PDF
+wf notes <workflow> <id> <type>      # Create interview notes
 ```
 
 ## Development
@@ -135,15 +179,47 @@ Like git, the system discovers configuration by walking up directories to find `
 └── [your files...]
 ```
 
+## Testing the Current Implementation
+
+To test the current features:
+
+```bash
+# 1. Clone and setup
+git clone <repository-url>
+cd markdown-workflow
+pnpm install
+pnpm run cli:build
+
+# 2. Create a test project
+mkdir ~/test-markdown-workflow
+cd ~/test-markdown-workflow
+
+# 3. Initialize the project
+node /path/to/markdown-workflow/dist/cli/index.js init
+
+# 4. Edit your config (optional)
+# Edit .markdown-workflow/config.yml with your information
+
+# 5. Create a job application
+node /path/to/markdown-workflow/dist/cli/index.js create job "Microsoft" "Senior Software Engineer"
+
+# 6. Check the generated files
+ls -la .markdown-workflow/collections/
+cat .markdown-workflow/collections/microsoft_senior_software_engineer_*/resume_*.md
+```
+
 ## Template System
 
-Templates support variable substitution:
+Templates use **Mustache syntax** for variable substitution:
 
 ```markdown
 # {{user.name}}'s Resume
 
-Email: {{user.email}}
-Phone: {{user.phone}}
+**{{user.email}}** | **{{user.phone}}** | **{{user.city}}, {{user.state}}**
+
+## Professional Summary
+
+Seeking to contribute to {{company}}'s mission as a {{role}}.
 ```
 
 Templates are resolved in order:

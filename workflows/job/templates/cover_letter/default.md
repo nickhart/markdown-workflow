@@ -3,7 +3,7 @@
 **{{user.name}}**  
 {{user.address}}  
 {{user.city}}, {{user.state}} {{user.zip}}  
-{{user.email}} | {{user.phone}}  
+{{user.email}} | {{user.phone}}
 
 ---
 
@@ -12,7 +12,7 @@
 **Hiring Manager**  
 {{company}}  
 {{company}} Address  
-City, State ZIP  
+City, State ZIP
 
 ---
 
@@ -53,12 +53,12 @@ Thank you for considering my application. I am excited about the possibility of 
 
 ---
 
-**Sincerely,**  
+**Sincerely,**
 
 **{{user.name}}**
 
 ---
 
-*Attachments: Resume, Portfolio*  
-*Contact: {{user.email}} | {{user.phone}}*  
-*LinkedIn: {{user.linkedin}} | GitHub: {{user.github}}*
+_Attachments: Resume, Portfolio_  
+_Contact: {{user.email}} | {{user.phone}}_  
+_LinkedIn: {{user.linkedin}} | GitHub: {{user.github}}_

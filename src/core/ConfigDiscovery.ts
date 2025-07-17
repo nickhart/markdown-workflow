@@ -94,14 +94,14 @@ export class ConfigDiscovery {
 
       const configContent = fs.readFileSync(configPath, 'utf8');
       const parsedYaml = YAML.parse(configContent);
-      
+
       // Validate using Zod schema
       const validationResult = ProjectConfigSchema.safeParse(parsedYaml);
-      
+
       if (!validationResult.success) {
         throw new Error(`Invalid configuration format: ${validationResult.error.message}`);
       }
-      
+
       return validationResult.data;
     } catch (error) {
       console.error(`Error loading project config from ${configPath}:`, error);

@@ -19,44 +19,44 @@ export async function createCommand(
   workflowName: string,
   company: string,
   role: string,
-  options: CreateOptions = {}
+  options: CreateOptions = {},
 ): Promise<void> {
   const cwd = options.cwd || process.cwd();
-  
+
   // Ensure we're in a project
   const projectRoot = ConfigDiscovery.requireProjectRoot(cwd);
   const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
-  
+
   // Get system configuration
   const systemConfig = await ConfigDiscovery.resolveConfiguration(cwd);
-  
+
   // Validate workflow exists
   if (!systemConfig.availableWorkflows.includes(workflowName)) {
     throw new Error(
-      `Unknown workflow: ${workflowName}. Available: ${systemConfig.availableWorkflows.join(', ')}`
+      `Unknown workflow: ${workflowName}. Available: ${systemConfig.availableWorkflows.join(', ')}`,
     );
   }
-  
+
   // Load workflow definition
   const workflowDefinition = await loadWorkflowDefinition(
     systemConfig.paths.systemRoot,
-    workflowName
+    workflowName,
   );
-  
+
   // Generate collection ID
   const collectionId = generateCollectionId(company, role);
-  
+
   // Create collection directory
   const collectionPath = path.join(projectPaths.collectionsDir, collectionId);
   if (fs.existsSync(collectionPath)) {
     throw new Error(`Collection already exists: ${collectionId}`);
   }
-  
+
   fs.mkdirSync(collectionPath, { recursive: true });
-  
+
   console.log(`Creating collection: ${collectionId}`);
   console.log(`Location: ${collectionPath}`);
-  
+
   // Create collection metadata
   const metadata: CollectionMetadata = {
     collection_id: collectionId,
@@ -64,43 +64,43 @@ export async function createCommand(
     status: workflowDefinition.workflow.stages[0].name, // First stage
     date_created: new Date().toISOString(),
     date_modified: new Date().toISOString(),
-    status_history: [{
-      status: workflowDefinition.workflow.stages[0].name,
-      date: new Date().toISOString()
-    }],
+    status_history: [
+      {
+        status: workflowDefinition.workflow.stages[0].name,
+        date: new Date().toISOString(),
+      },
+    ],
     company,
     role,
-    ...(options.url && { url: options.url })
+    ...(options.url && { url: options.url }),
   };
-  
+
   // Write metadata file
   const metadataPath = path.join(collectionPath, 'collection.yml');
   const metadataContent = generateMetadataYaml(metadata);
   fs.writeFileSync(metadataPath, metadataContent);
-  
+
   // Process templates for the create action
   const createAction = workflowDefinition.workflow.actions.find(
-    action => action.name === 'create'
+    (action) => action.name === 'create',
   );
-  
+
   if (createAction && createAction.templates) {
     for (const templateName of createAction.templates) {
-      const template = workflowDefinition.workflow.templates.find(
-        t => t.name === templateName
-      );
-      
+      const template = workflowDefinition.workflow.templates.find((t) => t.name === templateName);
+
       if (template) {
         await processTemplate(
           template,
           collectionPath,
           systemConfig.paths.systemRoot,
           workflowName,
-          { company, role, ...options }
+          { company, role, ...options },
         );
       }
     }
   }
-  
+
   console.log('✅ Collection created successfully!');
   console.log('');
   console.log('Next steps:');
@@ -114,25 +114,25 @@ export async function createCommand(
  */
 async function loadWorkflowDefinition(
   systemRoot: string,
-  workflowName: string
+  workflowName: string,
 ): Promise<WorkflowFile> {
   const workflowPath = path.join(systemRoot, 'workflows', workflowName, 'workflow.yml');
-  
+
   if (!fs.existsSync(workflowPath)) {
     throw new Error(`Workflow definition not found: ${workflowPath}`);
   }
-  
+
   try {
     const workflowContent = fs.readFileSync(workflowPath, 'utf8');
     const parsedYaml = YAML.parse(workflowContent);
-    
+
     // Validate using Zod schema
     const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
-    
+
     if (!validationResult.success) {
       throw new Error(`Invalid workflow format: ${validationResult.error.message}`);
     }
-    
+
     return validationResult.data;
   } catch (error) {
     throw new Error(`Failed to load workflow definition: ${error}`);
@@ -151,13 +151,13 @@ function generateCollectionId(company: string, role: string): string {
       .replace(/_+/g, '_') // Remove duplicate underscores
       .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
   };
-  
+
   const sanitizedCompany = sanitize(company);
   const sanitizedRole = sanitize(role);
   const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  
+
   const collectionId = `${sanitizedCompany}_${sanitizedRole}_${dateStr}`;
-  
+
   // Truncate if too long
   return collectionId.length > 50 ? collectionId.slice(0, 50) : collectionId;
 }
@@ -170,22 +170,22 @@ async function processTemplate(
   collectionPath: string,
   systemRoot: string,
   workflowName: string,
-  variables: Record<string, string>
+  variables: Record<string, string>,
 ): Promise<void> {
   const templatePath = path.join(systemRoot, 'workflows', workflowName, template.file);
-  
+
   if (!fs.existsSync(templatePath)) {
     console.warn(`Template not found: ${templatePath}`);
     return;
   }
-  
+
   try {
     const templateContent = fs.readFileSync(templatePath, 'utf8');
-    
+
     // Load user configuration for template variables
     const projectRoot = ConfigDiscovery.findProjectRoot();
     let userConfig = null;
-    
+
     if (projectRoot) {
       const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
       if (fs.existsSync(projectPaths.configFile)) {
@@ -193,7 +193,7 @@ async function processTemplate(
         userConfig = config?.user;
       }
     }
-    
+
     // Prepare template variables for Mustache
     const userConfigForTemplate = userConfig || getDefaultUserConfig();
     const templateVariables = {
@@ -202,25 +202,24 @@ async function processTemplate(
       user: {
         ...userConfigForTemplate,
         // Add sanitized version of preferred_name for filenames
-        preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name)
-      }
+        preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name),
+      },
     };
-    
+
     // Process template with Mustache
     const processedContent = Mustache.render(templateContent, templateVariables);
-    
+
     // Generate output filename with Mustache
     const outputFile = Mustache.render(template.output, templateVariables);
-    
+
     const outputPath = path.join(collectionPath, outputFile);
     fs.writeFileSync(outputPath, processedContent);
-    
+
     console.log(`Created: ${outputFile}`);
   } catch (error) {
     console.error(`Error processing template ${template.name}:`, error);
   }
 }
-
 
 /**
  * Sanitize string for use in filenames
@@ -249,7 +248,7 @@ function getDefaultUserConfig() {
     zip: '12345',
     linkedin: 'linkedin.com/in/yourname',
     github: 'github.com/yourusername',
-    website: 'yourwebsite.com'
+    website: 'yourwebsite.com',
   };
 }
 

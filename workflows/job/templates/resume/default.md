@@ -25,7 +25,8 @@ Experienced software engineer with a passion for building scalable applications 
 ## Professional Experience
 
 ### Senior Software Engineer | Tech Company Inc.
-*January 2021 - Present*
+
+_January 2021 - Present_
 
 - Led development of microservices architecture serving 1M+ users
 - Mentored junior developers and established code review processes
@@ -33,7 +34,8 @@ Experienced software engineer with a passion for building scalable applications 
 - Collaborated with product managers to define technical requirements
 
 ### Software Engineer | Startup Solutions LLC
-*June 2019 - December 2020*
+
+_June 2019 - December 2020_
 
 - Built responsive web applications using React and Node.js
 - Implemented automated testing resulting in 40% reduction in bugs
@@ -41,7 +43,8 @@ Experienced software engineer with a passion for building scalable applications 
 - Participated in agile development process and sprint planning
 
 ### Junior Developer | Digital Agency Co.
-*August 2018 - May 2019*
+
+_August 2018 - May 2019_
 
 - Developed client websites using modern web technologies
 - Collaborated with designers to implement pixel-perfect UIs
@@ -53,7 +56,9 @@ Experienced software engineer with a passion for building scalable applications 
 ## Education
 
 ### Bachelor of Science in Computer Science
-**University of Technology** | *2014 - 2018*
+
+**University of Technology** | _2014 - 2018_
+
 - Relevant Coursework: Data Structures, Algorithms, Software Engineering, Database Systems
 - GPA: 3.7/4.0
 
@@ -62,11 +67,13 @@ Experienced software engineer with a passion for building scalable applications 
 ## Projects
 
 ### Project Management Dashboard
+
 - Built a full-stack web application for team collaboration
 - Technologies: React, Node.js, PostgreSQL, AWS
 - Features: Real-time updates, user authentication, data visualization
 
 ### Open Source Contributions
+
 - Contributed to multiple open-source projects on GitHub
 - Maintained personal projects with 100+ stars
 - Active in developer community and code reviews
@@ -90,4 +97,4 @@ Experienced software engineer with a passion for building scalable applications 
 
 ---
 
-*References available upon request*
+_References available upon request_
