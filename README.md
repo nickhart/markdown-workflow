@@ -21,6 +21,7 @@ Run the setup script to build and install the CLI:
 ```
 
 This will:
+
 - Install dependencies
 - Build the CLI
 - Make `wf` command available globally
@@ -35,6 +36,7 @@ wf init
 ```
 
 This creates a `.markdown-workflow/` directory with:
+
 - `config.yml` - Your personal configuration
 - `workflows/` - Custom workflow overrides
 - `collections/` - Generated collections
@@ -45,8 +47,8 @@ Edit `.markdown-workflow/config.yml` with your information:
 
 ```yaml
 user:
-  name: "Your Name"
-  email: "your.email@example.com"
+  name: 'Your Name'
+  email: 'your.email@example.com'
   # ... other details
 ```
 
@@ -56,7 +58,7 @@ user:
 # Job applications
 wf create job "Google" "Software Engineer"
 
-# Blog posts  
+# Blog posts
 wf create blog "TypeScript Tips"
 
 # List all collections
@@ -66,13 +68,15 @@ wf list
 ## Available Workflows
 
 ### Job Applications
+
 - **Stages**: active → submitted → interview → offered → accepted/rejected
 - **Templates**: resume, cover letter, interview notes
 - **Actions**: create, format, notes, scrape
 
 ### Blog Posts
+
 - **Stages**: draft → review → published → archived
-- **Templates**: post content, CSS styles  
+- **Templates**: post content, CSS styles
 - **Actions**: create, format, preview, publish
 
 ## CLI Commands
@@ -143,6 +147,7 @@ Phone: {{user.phone}}
 ```
 
 Templates are resolved in order:
+
 1. User project templates (highest priority)
 2. System templates (fallback)
 

@@ -15,12 +15,10 @@ interface InitOptions {
 export async function initCommand(options: InitOptions = {}): Promise<void> {
   const cwd = options.cwd || process.cwd();
   const force = options.force || false;
-  
+
   // Check if already in a project
   if (ConfigDiscovery.isInProject(cwd) && !force) {
-    throw new Error(
-      'Already in a markdown-workflow project. Use --force to reinitialize.'
-    );
+    throw new Error('Already in a markdown-workflow project. Use --force to reinitialize.');
   }
 
   // Get system configuration
@@ -29,13 +27,13 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 
   // Determine which workflows to initialize
   const workflowsToInit = options.workflows || availableWorkflows;
-  
+
   // Validate requested workflows
-  const invalidWorkflows = workflowsToInit.filter(w => !availableWorkflows.includes(w));
+  const invalidWorkflows = workflowsToInit.filter((w) => !availableWorkflows.includes(w));
   if (invalidWorkflows.length > 0) {
     throw new Error(
       `Unknown workflows: ${invalidWorkflows.join(', ')}. ` +
-      `Available: ${availableWorkflows.join(', ')}`
+        `Available: ${availableWorkflows.join(', ')}`,
     );
   }
 
@@ -44,7 +42,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   console.log(`Workflows: ${workflowsToInit.join(', ')}`);
 
   // Create project structure
-  await createProjectStructure(cwd, workflowsToInit, systemConfig.paths.systemRoot);
+  await createProjectStructure(cwd, workflowsToInit);
 
   console.log('✅ Project initialized successfully!');
   console.log('');
@@ -57,11 +55,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 /**
  * Create the project directory structure
  */
-async function createProjectStructure(
-  projectRoot: string,
-  workflows: string[],
-  systemRoot: string
-): Promise<void> {
+async function createProjectStructure(projectRoot: string, workflows: string[]): Promise<void> {
   const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
 
   // Create main project directory
@@ -78,11 +72,11 @@ async function createProjectStructure(
   for (const workflow of workflows) {
     const workflowDir = path.join(projectPaths.workflowsDir, workflow);
     fs.mkdirSync(workflowDir, { recursive: true });
-    
+
     // Create templates directory structure
     const templatesDir = path.join(workflowDir, 'templates');
     fs.mkdirSync(templatesDir, { recursive: true });
-    
+
     // Create a placeholder file explaining customization
     const readmePath = path.join(workflowDir, 'README.md');
     const readmeContent = `# ${workflow.charAt(0).toUpperCase() + workflow.slice(1)} Workflow Customization
@@ -103,7 +97,7 @@ Templates are resolved in this order:
 2. Modify them to suit your needs
 3. System will automatically use your customizations
 `;
-    
+
     fs.writeFileSync(readmePath, readmeContent);
   }
 
@@ -116,68 +110,68 @@ Templates are resolved in this order:
 async function createDefaultConfig(configPath: string): Promise<void> {
   const defaultConfig: ProjectConfig = {
     user: {
-      name: "Your Name",
-      preferred_name: "Your Name",
-      email: "your.email@example.com",
-      phone: "(555) 123-4567",
-      address: "123 Main Street",
-      city: "Your City",
-      state: "ST",
-      zip: "12345",
-      linkedin: "linkedin.com/in/yourname",
-      github: "github.com/yourusername",
-      website: "yourwebsite.com"
+      name: 'Your Name',
+      preferred_name: 'Your Name',
+      email: 'your.email@example.com',
+      phone: '(555) 123-4567',
+      address: '123 Main Street',
+      city: 'Your City',
+      state: 'ST',
+      zip: '12345',
+      linkedin: 'linkedin.com/in/yourname',
+      github: 'github.com/yourusername',
+      website: 'yourwebsite.com',
     },
     system: {
-      scraper: "wget",
+      scraper: 'wget',
       web_download: {
         timeout: 30,
         add_utf8_bom: true,
-        html_cleanup: "scripts"
+        html_cleanup: 'scripts',
       },
-      output_formats: ["docx", "html", "pdf"],
+      output_formats: ['docx', 'html', 'pdf'],
       git: {
         auto_commit: true,
-        commit_message_template: "Add {{workflow}} collection: {{collection_id}}"
+        commit_message_template: 'Add {{workflow}} collection: {{collection_id}}',
       },
       collection_id: {
-        date_format: "YYYYMMDD",
-        sanitize_spaces: "_",
-        max_length: 50
-      }
+        date_format: 'YYYYMMDD',
+        sanitize_spaces: '_',
+        max_length: 50,
+      },
     },
     workflows: {
       job: {
         templates: {
           resume: {
-            default_template: "default",
-            available_templates: ["default", "mobile", "frontend"]
-          }
+            default_template: 'default',
+            available_templates: ['default', 'mobile', 'frontend'],
+          },
         },
         custom_fields: [
           {
-            name: "salary_range",
-            type: "string",
-            description: "Expected salary range"
+            name: 'salary_range',
+            type: 'string',
+            description: 'Expected salary range',
           },
           {
-            name: "remote_preference",
-            type: "enum",
-            options: ["remote", "hybrid", "onsite"],
-            description: "Work location preference"
-          }
-        ]
+            name: 'remote_preference',
+            type: 'enum',
+            options: ['remote', 'hybrid', 'onsite'],
+            description: 'Work location preference',
+          },
+        ],
       },
       blog: {
         custom_fields: [
           {
-            name: "estimated_reading_time",
-            type: "number",
-            description: "Estimated reading time in minutes"
-          }
-        ]
-      }
-    }
+            name: 'estimated_reading_time',
+            type: 'number',
+            description: 'Estimated reading time in minutes',
+          },
+        ],
+      },
+    },
   };
 
   // For now, write as JSON. We'll implement YAML serialization later
@@ -205,16 +199,16 @@ system:
     timeout: 30
     add_utf8_bom: true
     html_cleanup: "scripts"  # Options: "none", "scripts", "markdown"
-  
+
   output_formats:
     - "docx"
     - "html"
     - "pdf"
-  
+
   git:
     auto_commit: true
     commit_message_template: "Add {{workflow}} collection: {{collection_id}}"
-  
+
   collection_id:
     date_format: "YYYYMMDD"
     sanitize_spaces: "_"
@@ -230,7 +224,7 @@ workflows:
           - "default"
           - "mobile"
           - "frontend"
-    
+
     custom_fields:
       - name: "salary_range"
         type: "string"
@@ -239,7 +233,7 @@ workflows:
         type: "enum"
         options: ["remote", "hybrid", "onsite"]
         description: "Work location preference"
-  
+
   blog:
     custom_fields:
       - name: "estimated_reading_time"

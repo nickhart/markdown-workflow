@@ -5,10 +5,7 @@ import initCommand from './commands/init.js';
 
 const program = new Command();
 
-program
-  .name('wf')
-  .description('Markdown Workflow CLI')
-  .version('1.0.0');
+program.name('wf').description('Markdown Workflow CLI').version('1.0.0');
 
 // wf-init command
 program
@@ -18,10 +15,12 @@ program
   .option('-f, --force', 'Force initialization even if project already exists')
   .action(async (options) => {
     try {
-      const workflows = options.workflows ? options.workflows.split(',').map((w: string) => w.trim()) : undefined;
-      await initCommand({ 
-        workflows, 
-        force: options.force 
+      const workflows = options.workflows
+        ? options.workflows.split(',').map((w: string) => w.trim())
+        : undefined;
+      await initCommand({
+        workflows,
+        force: options.force,
       });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
@@ -31,7 +30,10 @@ program
 
 // Handle unknown commands
 program.on('command:*', () => {
-  console.error('Invalid command: %s\nSee --help for a list of available commands.', program.args.join(' '));
+  console.error(
+    'Invalid command: %s\nSee --help for a list of available commands.',
+    program.args.join(' '),
+  );
   process.exit(1);
 });
 

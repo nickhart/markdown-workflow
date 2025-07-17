@@ -15,10 +15,18 @@ export class ConfigDiscovery {
    * Find the system root (where markdown-workflow is installed)
    */
   static findSystemRoot(): string {
-    // For ES modules, use import.meta.url
-    const currentFile = fileURLToPath(import.meta.url);
-    let currentPath = path.dirname(currentFile);
-    
+    // For ES modules, use import.meta.url when available
+    let currentPath: string;
+
+    try {
+      // This will work in ES modules
+      const currentFile = fileURLToPath(import.meta.url);
+      currentPath = path.dirname(currentFile);
+    } catch {
+      // Fallback for testing or CommonJS environments
+      currentPath = path.resolve(__dirname);
+    }
+
     // Navigate up until we find the root of the markdown-workflow installation
     while (currentPath !== path.parse(currentPath).root) {
       // Look for package.json with our package name
@@ -29,15 +37,15 @@ export class ConfigDiscovery {
           if (packageJson.name === 'markdown-workflow') {
             return currentPath;
           }
-        } catch (error) {
+        } catch {
           // Continue searching if package.json is invalid
         }
       }
       currentPath = path.dirname(currentPath);
     }
-    
+
     // Fallback: assume we're in the project structure
-    return path.resolve(path.dirname(currentFile), '../..');
+    return path.resolve(currentPath, '../..');
   }
 
   /**
@@ -45,7 +53,7 @@ export class ConfigDiscovery {
    */
   static findProjectRoot(startPath: string = process.cwd()): string | null {
     let currentPath = path.resolve(startPath);
-    
+
     while (currentPath !== path.parse(currentPath).root) {
       const markerPath = path.join(currentPath, this.PROJECT_MARKER);
       if (fs.existsSync(markerPath) && fs.statSync(markerPath).isDirectory()) {
@@ -53,7 +61,7 @@ export class ConfigDiscovery {
       }
       currentPath = path.dirname(currentPath);
     }
-    
+
     return null;
   }
 
@@ -63,11 +71,13 @@ export class ConfigDiscovery {
   static discoverConfiguration(cwd: string = process.cwd()): ConfigPaths {
     const systemRoot = this.findSystemRoot();
     const projectRoot = this.findProjectRoot(cwd);
-    
+
     return {
       systemRoot,
       projectRoot,
-      projectConfig: projectRoot ? path.join(projectRoot, this.PROJECT_MARKER, this.CONFIG_FILE) : undefined
+      projectConfig: projectRoot
+        ? path.join(projectRoot, this.PROJECT_MARKER, this.CONFIG_FILE)
+        : undefined,
     };
   }
 
@@ -80,12 +90,10 @@ export class ConfigDiscovery {
         return null;
       }
 
-      const configContent = fs.readFileSync(configPath, 'utf8');
-      
       // For now, we'll need to implement YAML parsing
       // This is a placeholder - we'll implement proper YAML parsing in the next step
       console.log('TODO: Implement YAML parsing for config:', configPath);
-      
+
       return null;
     } catch (error) {
       console.error(`Error loading project config from ${configPath}:`, error);
@@ -98,15 +106,16 @@ export class ConfigDiscovery {
    */
   static getAvailableWorkflows(systemRoot: string): string[] {
     const workflowsPath = path.join(systemRoot, 'workflows');
-    
+
     if (!fs.existsSync(workflowsPath)) {
       return [];
     }
 
     try {
-      return fs.readdirSync(workflowsPath, { withFileTypes: true })
-        .filter(dirent => dirent.isDirectory())
-        .map(dirent => dirent.name);
+      return fs
+        .readdirSync(workflowsPath, { withFileTypes: true })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => dirent.name);
     } catch (error) {
       console.error(`Error reading workflows directory ${workflowsPath}:`, error);
       return [];
@@ -119,7 +128,7 @@ export class ConfigDiscovery {
   static async resolveConfiguration(cwd: string = process.cwd()): Promise<ResolvedConfig> {
     const paths = this.discoverConfiguration(cwd);
     const availableWorkflows = this.getAvailableWorkflows(paths.systemRoot);
-    
+
     let projectConfig: ProjectConfig | null = null;
     if (paths.projectConfig) {
       projectConfig = await this.loadProjectConfig(paths.projectConfig);
@@ -128,7 +137,7 @@ export class ConfigDiscovery {
     return {
       paths,
       projectConfig: projectConfig || undefined,
-      availableWorkflows
+      availableWorkflows,
     };
   }
 
@@ -145,9 +154,7 @@ export class ConfigDiscovery {
   static requireProjectRoot(cwd: string = process.cwd()): string {
     const projectRoot = this.findProjectRoot(cwd);
     if (!projectRoot) {
-      throw new Error(
-        'Not in a markdown-workflow project. Run "wf-init" to initialize a project.'
-      );
+      throw new Error('Not in a markdown-workflow project. Run "wf-init" to initialize a project.');
     }
     return projectRoot;
   }
@@ -157,12 +164,12 @@ export class ConfigDiscovery {
    */
   static getProjectPaths(projectRoot: string) {
     const projectDir = path.join(projectRoot, this.PROJECT_MARKER);
-    
+
     return {
       projectDir,
       configFile: path.join(projectDir, this.CONFIG_FILE),
       workflowsDir: path.join(projectDir, 'workflows'),
-      collectionsDir: path.join(projectDir, 'collections')
+      collectionsDir: path.join(projectDir, 'collections'),
     };
   }
 }

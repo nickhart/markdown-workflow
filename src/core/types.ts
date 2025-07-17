@@ -25,7 +25,7 @@ export interface WorkflowActionParameter {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'enum' | 'array' | 'date';
   required?: boolean;
-  default?: any;
+  default?: string | number | boolean | string[];
   options?: string[];
   description: string;
 }
@@ -116,7 +116,7 @@ export interface WorkflowOverride {
     };
   };
   custom_fields?: WorkflowCustomField[];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface ProjectConfig {
@@ -151,7 +151,7 @@ export interface CollectionMetadata {
     status: string;
     date: string;
   }>;
-  [key: string]: any;
+  [key: string]: string | number | boolean | string[] | Array<{ status: string; date: string }>;
 }
 
 export interface Collection {
