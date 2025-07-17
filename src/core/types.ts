@@ -136,7 +136,7 @@ export interface ConfigPaths {
 
 export interface ResolvedConfig {
   paths: ConfigPaths;
-  projectConfig?: ProjectConfig;
+  projectConfig?: import('./schemas.js').ProjectConfig;
   availableWorkflows: string[];
 }
 

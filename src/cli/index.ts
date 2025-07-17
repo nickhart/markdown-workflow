@@ -2,6 +2,7 @@
 
 import { Command } from 'commander';
 import initCommand from './commands/init.js';
+import createCommand from './commands/create.js';
 
 const program = new Command();
 
@@ -21,6 +22,27 @@ program
       await initCommand({
         workflows,
         force: options.force,
+      });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-create command
+program
+  .command('create')
+  .description('Create a new collection from a workflow template')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('<company>', 'Company name')
+  .argument('<role>', 'Role or position')
+  .option('-u, --url <url>', 'Job posting URL')
+  .option('-t, --template-variant <variant>', 'Template variant to use')
+  .action(async (workflow, company, role, options) => {
+    try {
+      await createCommand(workflow, company, role, {
+        url: options.url,
+        template_variant: options.templateVariant,
       });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);

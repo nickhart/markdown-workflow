@@ -1,7 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
-import { ConfigPaths, ResolvedConfig, ProjectConfig } from './types.js';
+import * as YAML from 'yaml';
+import { ConfigPaths, ResolvedConfig } from './types.js';
+import { ProjectConfigSchema, type ProjectConfig } from './schemas.js';
 
 /**
  * Configuration discovery system for markdown-workflow
@@ -82,7 +84,7 @@ export class ConfigDiscovery {
   }
 
   /**
-   * Load and parse project configuration
+   * Load and parse project configuration with Zod validation
    */
   static async loadProjectConfig(configPath: string): Promise<ProjectConfig | null> {
     try {
@@ -90,11 +92,17 @@ export class ConfigDiscovery {
         return null;
       }
 
-      // For now, we'll need to implement YAML parsing
-      // This is a placeholder - we'll implement proper YAML parsing in the next step
-      console.log('TODO: Implement YAML parsing for config:', configPath);
-
-      return null;
+      const configContent = fs.readFileSync(configPath, 'utf8');
+      const parsedYaml = YAML.parse(configContent);
+      
+      // Validate using Zod schema
+      const validationResult = ProjectConfigSchema.safeParse(parsedYaml);
+      
+      if (!validationResult.success) {
+        throw new Error(`Invalid configuration format: ${validationResult.error.message}`);
+      }
+      
+      return validationResult.data;
     } catch (error) {
       console.error(`Error loading project config from ${configPath}:`, error);
       return null;
