@@ -14,7 +14,10 @@ describe('ConfigDiscovery', () => {
   describe('findSystemRoot', () => {
     it('should find system root by package.json', () => {
       const mockPackageJson = { name: 'markdown-workflow' };
-      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify(mockPackageJson));
+      mockSystemInterface.addMockFile(
+        '/mock/system/root/package.json',
+        JSON.stringify(mockPackageJson),
+      );
 
       const result = configDiscovery.findSystemRoot();
 
@@ -61,7 +64,10 @@ describe('ConfigDiscovery', () => {
     it('should return configuration paths', () => {
       const testPath = '/test/project';
       mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
-      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
+      mockSystemInterface.addMockFile(
+        '/mock/system/root/package.json',
+        JSON.stringify({ name: 'markdown-workflow' }),
+      );
 
       const result = configDiscovery.discoverConfiguration(testPath);
 
@@ -74,7 +80,10 @@ describe('ConfigDiscovery', () => {
 
     it('should handle missing project root', () => {
       const testPath = '/test/project';
-      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
+      mockSystemInterface.addMockFile(
+        '/mock/system/root/package.json',
+        JSON.stringify({ name: 'markdown-workflow' }),
+      );
       // No project marker directory added
 
       const result = configDiscovery.discoverConfiguration(testPath);
@@ -149,7 +158,10 @@ describe('ConfigDiscovery', () => {
     it('should resolve complete configuration', async () => {
       const testPath = '/test/project';
       mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
-      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
+      mockSystemInterface.addMockFile(
+        '/mock/system/root/package.json',
+        JSON.stringify({ name: 'markdown-workflow' }),
+      );
       mockSystemInterface.addMockDirectory('/mock/system/root/workflows');
       mockSystemInterface.addMockDirectory('/mock/system/root/workflows/job');
       mockSystemInterface.addMockDirectory('/mock/system/root/workflows/blog');

@@ -68,7 +68,10 @@ export class ConfigDiscovery {
     while (currentPath !== path.parse(currentPath).root) {
       // Check if this directory contains the project marker
       const markerPath = path.join(currentPath, ConfigDiscovery.PROJECT_MARKER);
-      if (this.systemInterface.existsSync(markerPath) && this.systemInterface.statSync(markerPath).isDirectory()) {
+      if (
+        this.systemInterface.existsSync(markerPath) &&
+        this.systemInterface.statSync(markerPath).isDirectory()
+      ) {
         // Found the project root - return this directory
         return currentPath;
       }

@@ -2,7 +2,7 @@ import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
 
 /**
  * Fluent builder for creating mock file systems
- * 
+ *
  * @example
  * ```typescript
  * const mockFs = new FileSystemBuilder()
@@ -99,17 +99,13 @@ export class FileSystemBuilder {
    */
   withWorkflow(name: string, options: WorkflowOptions = {}): this {
     const workflowYml = options.workflowYml || `workflow:\n  name: "${name}"`;
-    
-    this.dir('workflows')
-      .dir(name)
-        .file('workflow.yml', workflowYml);
+
+    this.dir('workflows').dir(name).file('workflow.yml', workflowYml);
 
     if (options.templates) {
       this.dir('templates');
       for (const [templateName, templateContent] of Object.entries(options.templates)) {
-        this.dir(templateName)
-          .file('default.md', templateContent)
-          .back();
+        this.dir(templateName).file('default.md', templateContent).back();
       }
       this.back(); // exit templates
     }
@@ -127,22 +123,22 @@ export class FileSystemBuilder {
    */
   withProjectStructure(projectPath: string = '/mock/project', config?: string): this {
     const configContent = config || `user:\n  name: "Test User"`;
-    
+
     // Save current state
     const savedPath = this.currentPath;
     const savedStack = [...this.pathStack];
-    
+
     // Create project structure at the specified path
     this.mockSystem.addMockDirectory(projectPath);
     this.mockSystem.addMockDirectory(`${projectPath}/.markdown-workflow`);
     this.mockSystem.addMockDirectory(`${projectPath}/.markdown-workflow/workflows`);
     this.mockSystem.addMockDirectory(`${projectPath}/.markdown-workflow/collections`);
     this.mockSystem.addMockFile(`${projectPath}/.markdown-workflow/config.yml`, configContent);
-    
+
     // Restore state
     this.currentPath = savedPath;
     this.pathStack = savedStack;
-    
+
     return this;
   }
 
@@ -191,13 +187,13 @@ export function createCompleteTestSystem(): MockSystemInterface {
     .withWorkflow('job', {
       templates: {
         resume: '# Resume: {{user.name}} at {{company}}',
-        cover_letter: '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}'
-      }
+        cover_letter: '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}',
+      },
     })
     .withWorkflow('blog', {
       templates: {
-        post: '# Blog Post: {{title}}'
-      }
+        post: '# Blog Post: {{title}}',
+      },
     })
     .build();
 }

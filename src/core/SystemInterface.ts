@@ -65,4 +65,3 @@ export class NodeSystemInterface implements SystemInterface {
     return fs.readdirSync(path, { withFileTypes: true });
   }
 }
-

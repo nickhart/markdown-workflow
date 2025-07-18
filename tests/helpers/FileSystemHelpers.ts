@@ -16,20 +16,20 @@ export type FileSystemPaths = Record<string, string>; // path -> content
 export function populateFileSystem(
   mockSystem: MockSystemInterface,
   content: FileSystemContent,
-  basePath: string = ''
+  basePath: string = '',
 ): void {
   const currentPath = basePath ? `${basePath}/${content.name}` : `/${content.name}`;
-  
+
   // Add the current directory
   mockSystem.addMockDirectory(currentPath);
-  
+
   // Add all files in this directory
   Object.entries(content.files).forEach(([filename, fileContent]) => {
     mockSystem.addMockFile(`${currentPath}/${filename}`, fileContent);
   });
-  
+
   // Recursively add subdirectories
-  content.dirs.forEach(subDir => {
+  content.dirs.forEach((subDir) => {
     populateFileSystem(mockSystem, subDir, currentPath);
   });
 }
@@ -37,9 +37,11 @@ export function populateFileSystem(
 /**
  * Create a simple MockSystemInterface with common test filesystem layout
  */
-export function createMockFileSystem(customContent?: Partial<FileSystemContent>): MockSystemInterface {
+export function createMockFileSystem(
+  customContent?: Partial<FileSystemContent>,
+): MockSystemInterface {
   const mockSystem = new MockSystemInterface('/mock/system/root');
-  
+
   const defaultContent: FileSystemContent = {
     name: 'mock/system/root',
     dirs: [
@@ -56,46 +58,47 @@ export function createMockFileSystem(customContent?: Partial<FileSystemContent>)
                     name: 'resume',
                     dirs: [],
                     files: {
-                      'default.md': '# Resume: {{user.name}} at {{company}}'
-                    }
+                      'default.md': '# Resume: {{user.name}} at {{company}}',
+                    },
                   },
                   {
                     name: 'cover_letter',
                     dirs: [],
                     files: {
-                      'default.md': '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}'
-                    }
-                  }
+                      'default.md':
+                        '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}',
+                    },
+                  },
                 ],
-                files: {}
-              }
+                files: {},
+              },
             ],
             files: {
-              'workflow.yml': createJobWorkflowYAML()
-            }
+              'workflow.yml': createJobWorkflowYAML(),
+            },
           },
           {
             name: 'blog',
             dirs: [],
             files: {
-              'workflow.yml': createBlogWorkflowYAML()
-            }
-          }
+              'workflow.yml': createBlogWorkflowYAML(),
+            },
+          },
         ],
-        files: {}
-      }
+        files: {},
+      },
     ],
     files: {
-      'package.json': JSON.stringify({ name: 'markdown-workflow' })
-    }
+      'package.json': JSON.stringify({ name: 'markdown-workflow' }),
+    },
   };
-  
+
   // Merge custom content if provided
   const finalContent = customContent ? { ...defaultContent, ...customContent } : defaultContent;
-  
+
   // Populate filesystem starting from root
   populateFileSystem(mockSystem, finalContent);
-  
+
   return mockSystem;
 }
 
@@ -105,12 +108,12 @@ export function createMockFileSystem(customContent?: Partial<FileSystemContent>)
 export function createProjectFileSystem(projectPath: string = '/mock/project'): FileSystemContent {
   // Remove leading slash and split path into parts
   const pathParts = projectPath.replace(/^\//, '').split('/');
-  
+
   // Build nested structure from the path parts
   const buildStructure = (parts: string[], index: number = 0): FileSystemContent => {
     const currentPart = parts[index];
     const isLast = index === parts.length - 1;
-    
+
     if (isLast) {
       // This is the project directory - add the .markdown-workflow structure
       return {
@@ -120,25 +123,25 @@ export function createProjectFileSystem(projectPath: string = '/mock/project'): 
             name: '.markdown-workflow',
             dirs: [
               { name: 'workflows', dirs: [], files: {} },
-              { name: 'collections', dirs: [], files: {} }
+              { name: 'collections', dirs: [], files: {} },
             ],
             files: {
-              'config.yml': createDefaultConfigYAML()
-            }
-          }
+              'config.yml': createDefaultConfigYAML(),
+            },
+          },
         ],
-        files: {}
+        files: {},
       };
     } else {
       // This is an intermediate directory
       return {
         name: currentPart,
         dirs: [buildStructure(parts, index + 1)],
-        files: {}
+        files: {},
       };
     }
   };
-  
+
   return buildStructure(pathParts);
 }
 
@@ -267,7 +270,7 @@ workflows: {}`;
 
 /**
  * Create a mock file system from a flat path-to-content mapping
- * 
+ *
  * @example
  * ```typescript
  * const mockFs = createFileSystemFromPaths({
@@ -283,7 +286,7 @@ export function createFileSystemFromPaths(paths: FileSystemPaths): MockSystemInt
   if (pathKeys.length === 0) {
     throw new Error('No paths provided');
   }
-  
+
   // Find common root
   let root = pathKeys[0];
   for (const path of pathKeys.slice(1)) {
@@ -295,28 +298,28 @@ export function createFileSystemFromPaths(paths: FileSystemPaths): MockSystemInt
       }
     }
   }
-  
+
   // The root we found is the common directory, no need to get parent
   // (The original logic was wrong - it assumed root might be a file)
-  
+
   const mockSystem = new MockSystemInterface(root);
-  
+
   // Sort paths to ensure directories are created before files
   const sortedPaths = pathKeys.sort();
-  
+
   for (const fullPath of sortedPaths) {
     const content = paths[fullPath];
-    
+
     // Create all parent directories
     const dirPath = fullPath.substring(0, fullPath.lastIndexOf('/'));
     if (dirPath) {
       createDirectoryPath(mockSystem, dirPath);
     }
-    
+
     // Add the file
     mockSystem.addMockFile(fullPath, content);
   }
-  
+
   return mockSystem;
 }
 
@@ -326,7 +329,7 @@ export function createFileSystemFromPaths(paths: FileSystemPaths): MockSystemInt
 function createDirectoryPath(mockSystem: MockSystemInterface, dirPath: string): void {
   const parts = dirPath.split('/').filter(Boolean);
   let currentPath = '';
-  
+
   for (const part of parts) {
     currentPath += '/' + part;
     if (!mockSystem.existsSync(currentPath)) {
@@ -342,8 +345,10 @@ export function createEnhancedMockFileSystem(): MockSystemInterface {
   return createFileSystemFromPaths({
     '/mock/system/package.json': JSON.stringify({ name: 'markdown-workflow' }),
     '/mock/system/workflows/job/workflow.yml': createJobWorkflowYAML(),
-    '/mock/system/workflows/job/templates/resume/default.md': '# Resume: {{user.name}} at {{company}}',
-    '/mock/system/workflows/job/templates/cover_letter/default.md': '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}',
+    '/mock/system/workflows/job/templates/resume/default.md':
+      '# Resume: {{user.name}} at {{company}}',
+    '/mock/system/workflows/job/templates/cover_letter/default.md':
+      '# Cover Letter: {{user.name}} applying to {{company}} for {{role}}',
     '/mock/system/workflows/blog/workflow.yml': createBlogWorkflowYAML(),
   });
 }
@@ -351,7 +356,9 @@ export function createEnhancedMockFileSystem(): MockSystemInterface {
 /**
  * Create a project file system using the path-based approach
  */
-export function createProjectFileSystemFromPaths(projectPath: string = '/mock/project'): MockSystemInterface {
+export function createProjectFileSystemFromPaths(
+  projectPath: string = '/mock/project',
+): MockSystemInterface {
   return createFileSystemFromPaths({
     [`${projectPath}/.markdown-workflow/config.yml`]: createDefaultConfigYAML(),
     [`${projectPath}/.markdown-workflow/workflows/.gitkeep`]: '',
@@ -361,41 +368,41 @@ export function createProjectFileSystemFromPaths(projectPath: string = '/mock/pr
 
 /**
  * Load a mock file system from a fixtures directory
- * 
+ *
  * @param fixtureDir - Path to the fixture directory (relative to tests/fixtures)
  * @param rootPath - Root path for the mock system (defaults to the fixture directory name)
- * 
+ *
  * @example
  * ```typescript
  * // Load from tests/fixtures/example-workflow/
  * const mockFs = loadFileSystemFromFixtures('example-workflow');
- * 
+ *
  * // Or with custom root path
  * const mockFs = loadFileSystemFromFixtures('example-workflow', '/custom/root');
  * ```
  */
 export function loadFileSystemFromFixtures(
   fixtureDir: string,
-  rootPath?: string
+  rootPath?: string,
 ): MockSystemInterface {
   const fixturesPath = path.resolve(__dirname, '../fixtures');
   const fixturePath = path.join(fixturesPath, fixtureDir);
-  
+
   const actualRoot = rootPath || `/${fixtureDir}`;
-  
+
   try {
     const paths = crawlDirectoryStructure(fixturePath, {
       includeContent: true,
-      excludePatterns: ['.DS_Store', '.git', 'node_modules']
+      excludePatterns: ['.DS_Store', '.git', 'node_modules'],
     });
-    
+
     // Convert relative paths to absolute paths with the specified root
     const absolutePaths: Record<string, string> = {};
     for (const [relativePath, content] of Object.entries(paths)) {
       const absolutePath = path.posix.join(actualRoot, relativePath);
       absolutePaths[absolutePath] = content;
     }
-    
+
     return createFileSystemFromPaths(absolutePaths);
   } catch (error) {
     throw new Error(`Failed to load fixture from ${fixturePath}: ${error}`);
@@ -404,7 +411,7 @@ export function loadFileSystemFromFixtures(
 
 /**
  * Combine multiple file systems into one
- * 
+ *
  * @example
  * ```typescript
  * const systemFs = createEnhancedMockFileSystem();
@@ -416,18 +423,18 @@ export function combineFileSystems(...fileSystems: MockSystemInterface[]): MockS
   if (fileSystems.length === 0) {
     throw new Error('At least one file system must be provided');
   }
-  
+
   const combined = fileSystems[0];
-  
+
   for (let i = 1; i < fileSystems.length; i++) {
     const fs = fileSystems[i];
-    
+
     // Get all files and directories from the other file system
     // This is a simplified approach - in a real implementation, you'd need to
     // access the internal state of MockSystemInterface
     // For now, we'll just return the first file system
     console.warn('combineFileSystems: Currently only returns the first file system');
   }
-  
+
   return combined;
 }

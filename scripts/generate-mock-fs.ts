@@ -17,19 +17,19 @@ interface CrawlerOptions {
  */
 export function crawlDirectoryStructure(
   rootPath: string,
-  options: Partial<CrawlerOptions> = {}
+  options: Partial<CrawlerOptions> = {},
 ): Record<string, string> {
   const {
     maxDepth = 10,
     excludePatterns = ['.git', 'node_modules', '.DS_Store'],
-    includeContent = true
+    includeContent = true,
   } = options;
 
   const result: Record<string, string> = {};
-  
+
   function shouldExclude(filePath: string): boolean {
-    return excludePatterns.some(pattern => 
-      filePath.includes(pattern) || path.basename(filePath).match(new RegExp(pattern))
+    return excludePatterns.some(
+      (pattern) => filePath.includes(pattern) || path.basename(filePath).match(new RegExp(pattern)),
     );
   }
 
@@ -40,11 +40,11 @@ export function crawlDirectoryStructure(
 
     try {
       const stat = fs.statSync(currentPath);
-      
+
       if (stat.isFile()) {
         const relativePath = path.relative(rootPath, currentPath);
         const absolutePath = `/${relativePath.replace(/\\/g, '/')}`;
-        
+
         if (includeContent) {
           try {
             const content = fs.readFileSync(currentPath, 'utf-8');
@@ -58,7 +58,7 @@ export function crawlDirectoryStructure(
         }
       } else if (stat.isDirectory()) {
         const items = fs.readdirSync(currentPath);
-        
+
         for (const item of items) {
           const itemPath = path.join(currentPath, item);
           crawl(itemPath, depth + 1);
@@ -78,17 +78,17 @@ export function crawlDirectoryStructure(
  */
 export function generateFileSystemCode(
   paths: Record<string, string>,
-  exportName: string = 'mockFileSystem'
+  exportName: string = 'mockFileSystem',
 ): string {
   const escapedPaths: Record<string, string> = {};
-  
+
   for (const [filePath, content] of Object.entries(paths)) {
     // Escape content for TypeScript string literals
     const escapedContent = content
       .replace(/\\/g, '\\\\')
       .replace(/`/g, '\\`')
       .replace(/\$\{/g, '\\${');
-    
+
     escapedPaths[filePath] = escapedContent;
   }
 
@@ -113,7 +113,7 @@ ${pathEntries}
  */
 export async function main() {
   const args = process.argv.slice(2);
-  
+
   if (args.length < 2) {
     console.error('Usage: generate-mock-fs <source-directory> <output-file> [options]');
     console.error('');
@@ -121,28 +121,32 @@ export async function main() {
     console.error('  --max-depth <n>     Maximum directory depth to crawl (default: 10)');
     console.error('  --exclude <pattern> Exclude files/directories matching pattern');
     console.error('  --no-content        Only include file names, not content');
-    console.error('  --export-name <name> Name for the exported constant (default: mockFileSystem)');
+    console.error(
+      '  --export-name <name> Name for the exported constant (default: mockFileSystem)',
+    );
     console.error('');
     console.error('Examples:');
     console.error('  generate-mock-fs ./test-fixtures ./tests/fixtures/generated.ts');
-    console.error('  generate-mock-fs ./workflows ./tests/fixtures/workflows.ts --export-name workflowsFileSystem');
+    console.error(
+      '  generate-mock-fs ./workflows ./tests/fixtures/workflows.ts --export-name workflowsFileSystem',
+    );
     process.exit(1);
   }
 
   const sourcePath = path.resolve(args[0]);
   const outputPath = path.resolve(args[1]);
-  
+
   const options: Partial<CrawlerOptions> = {
     rootPath: sourcePath,
     outputPath,
     includeContent: true,
-    exportName: 'mockFileSystem'
+    exportName: 'mockFileSystem',
   };
 
   // Parse additional arguments
   for (let i = 2; i < args.length; i++) {
     const arg = args[i];
-    
+
     if (arg === '--max-depth' && i + 1 < args.length) {
       options.maxDepth = parseInt(args[i + 1], 10);
       i++;
@@ -170,18 +174,17 @@ export async function main() {
   try {
     const paths = crawlDirectoryStructure(sourcePath, options);
     const code = generateFileSystemCode(paths, options.exportName!);
-    
+
     // Ensure output directory exists
     const outputDir = path.dirname(outputPath);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
-    
+
     fs.writeFileSync(outputPath, code);
-    
+
     console.log(`✅ Generated mock file system with ${Object.keys(paths).length} files`);
     console.log(`📁 Output written to: ${outputPath}`);
-    
   } catch (error) {
     console.error('Error generating mock file system:', error);
     process.exit(1);

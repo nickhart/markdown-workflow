@@ -3,13 +3,13 @@ import * as path from 'path';
 import { createCommand } from '../../src/cli/commands/create.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
 import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import { 
-  createMockFileSystem, 
-  createProjectFileSystem, 
+import {
+  createMockFileSystem,
+  createProjectFileSystem,
   populateFileSystem,
   createFileSystemFromPaths,
   createEnhancedMockFileSystem,
-  createProjectFileSystemFromPaths
+  createProjectFileSystemFromPaths,
 } from '../helpers/FileSystemHelpers.js';
 import { FileSystemBuilder } from '../helpers/FileSystemBuilder.js';
 
@@ -26,7 +26,7 @@ describe('createCommand', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
-    
+
     // Setup path mocks
     mockPath.join.mockImplementation((...args) => args.join('/'));
     mockPath.resolve.mockImplementation((...args) => args.join('/'));
@@ -49,14 +49,16 @@ describe('createCommand', () => {
 
     // Create a comprehensive mock file system with both system and project structure
     mockSystemInterface = createEnhancedMockFileSystem();
-    
+
     // Add project structure to the system
     const projectPath = '/mock/project';
     mockSystemInterface.addMockDirectory(projectPath);
     mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
     mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow/workflows`);
     mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow/collections`);
-    mockSystemInterface.addMockFile(`${projectPath}/.markdown-workflow/config.yml`, `user:
+    mockSystemInterface.addMockFile(
+      `${projectPath}/.markdown-workflow/config.yml`,
+      `user:
   name: "Test User"
   preferred_name: "test_user"
   email: "test@example.com"
@@ -87,12 +89,13 @@ system:
     sanitize_spaces: "_"
     max_length: 50
 
-workflows: {}`);
-    
+workflows: {}`,
+    );
+
     configDiscovery = new ConfigDiscovery(mockSystemInterface);
-    
+
     // Mock system setup is now working correctly!
-    
+
     // Setup fs mocks for loadWorkflowDefinition and template processing
     mockFs.existsSync.mockImplementation((path) => {
       if (typeof path === 'string' && path.includes('workflow.yml')) {
@@ -103,7 +106,7 @@ workflows: {}`);
       }
       return false;
     });
-    
+
     mockFs.mkdirSync.mockImplementation();
     mockFs.writeFileSync.mockImplementation();
     mockFs.readFileSync.mockImplementation((path) => {
@@ -135,19 +138,19 @@ workflows: {}`);
       const noProjectConfig = new ConfigDiscovery(noProjectSystem);
 
       await expect(
-        createCommand('job', 'Acme Corp', 'Developer', { 
+        createCommand('job', 'Acme Corp', 'Developer', {
           cwd: '/mock/project',
-          configDiscovery: noProjectConfig 
-        })
+          configDiscovery: noProjectConfig,
+        }),
       ).rejects.toThrow('Not in a markdown-workflow project');
     });
 
     it('should throw error for unknown workflow', async () => {
       await expect(
-        createCommand('unknown', 'Acme Corp', 'Developer', { 
+        createCommand('unknown', 'Acme Corp', 'Developer', {
           cwd: '/mock/project',
-          configDiscovery 
-        })
+          configDiscovery,
+        }),
       ).rejects.toThrow('Unknown workflow: unknown');
     });
 
@@ -164,10 +167,10 @@ workflows: {}`);
       });
 
       await expect(
-        createCommand('job', 'Acme Corp', 'Developer', { 
+        createCommand('job', 'Acme Corp', 'Developer', {
           cwd: '/mock/project',
-          configDiscovery 
-        })
+          configDiscovery,
+        }),
       ).rejects.toThrow('Collection already exists');
     });
   });
@@ -187,21 +190,21 @@ workflows: {}`);
     });
 
     it('should create collection successfully', async () => {
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+      await createCommand('job', 'Acme Corp', 'Developer', {
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       // Should create collection directory
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining('acme_corp_developer_'),
-        { recursive: true }
+        { recursive: true },
       );
 
       // Should create metadata file
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining('company: "Acme Corp"')
+        expect.stringContaining('company: "Acme Corp"'),
       );
 
       // Should log success
@@ -210,47 +213,47 @@ workflows: {}`);
 
     it('should generate correct collection ID', async () => {
       const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+
+      await createCommand('job', 'Acme Corp', 'Developer', {
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining(`acme_corp_developer_${dateStr}`)
+        expect.stringContaining(`acme_corp_developer_${dateStr}`),
       );
     });
 
     it('should include URL in metadata when provided', async () => {
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+      await createCommand('job', 'Acme Corp', 'Developer', {
         url: 'https://example.com/job',
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining('url: "https://example.com/job"')
+        expect.stringContaining('url: "https://example.com/job"'),
       );
     });
 
     it('should process templates', async () => {
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+      await createCommand('job', 'Acme Corp', 'Developer', {
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       // Should create collection directory
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining('acme_corp_developer_'),
-        { recursive: true }
+        { recursive: true },
       );
 
       // Should create metadata file
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining('company: "Acme Corp"')
+        expect.stringContaining('company: "Acme Corp"'),
       );
     });
   });
@@ -266,29 +269,29 @@ workflows: {}`);
     });
 
     it('should sanitize company and role names', async () => {
-      await createCommand('job', 'Acme Corp & Co!', 'Senior Developer (Remote)', { 
+      await createCommand('job', 'Acme Corp & Co!', 'Senior Developer (Remote)', {
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringMatching(/acme_corp_co_senior_developer_remote_\d{8}/)
+        expect.stringMatching(/acme_corp_co_senior_developer_remote_\d{8}/),
       );
     });
 
     it('should truncate long collection IDs', async () => {
       const longCompany = 'A'.repeat(30);
       const longRole = 'B'.repeat(30);
-      
-      await createCommand('job', longCompany, longRole, { 
+
+      await createCommand('job', longCompany, longRole, {
         cwd: '/mock/project',
-        configDiscovery 
+        configDiscovery,
       });
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringMatching(/collection\.yml$/),
-        expect.stringMatching(/collection_id: "[^"]{1,50}"/)
+        expect.stringMatching(/collection_id: "[^"]{1,50}"/),
       );
     });
   });
@@ -316,16 +319,14 @@ workflows: {}`);
 
       // Should not throw error
       await expect(
-        createCommand('job', 'Acme Corp', 'Developer', { 
+        createCommand('job', 'Acme Corp', 'Developer', {
           cwd: '/mock/project',
-          configDiscovery 
-        })
+          configDiscovery,
+        }),
       ).resolves.not.toThrow();
 
       // Should log warning
-      expect(console.warn).toHaveBeenCalledWith(
-        expect.stringContaining('Template not found')
-      );
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('Template not found'));
     });
 
     it('should handle template processing errors gracefully', async () => {
@@ -338,16 +339,16 @@ workflows: {}`);
 
       // Should not throw error
       await expect(
-        createCommand('job', 'Acme Corp', 'Developer', { 
+        createCommand('job', 'Acme Corp', 'Developer', {
           cwd: '/mock/project',
-          configDiscovery 
-        })
+          configDiscovery,
+        }),
       ).resolves.not.toThrow();
 
       // Should create collection successfully even with template errors
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining('acme_corp_developer_'),
-        { recursive: true }
+        { recursive: true },
       );
     });
   });
@@ -370,29 +371,32 @@ workflows: {}`);
       customSystem.addMockDirectory('/custom/.markdown-workflow');
       customSystem.addMockDirectory('/custom/.markdown-workflow/workflows');
       customSystem.addMockDirectory('/custom/.markdown-workflow/collections');
-      customSystem.addMockFile('/custom/.markdown-workflow/config.yml', `user:
+      customSystem.addMockFile(
+        '/custom/.markdown-workflow/config.yml',
+        `user:
   name: "Custom User"
   preferred_name: "custom_user"
 
 system:
   scraper: "wget"
 
-workflows: {}`);
+workflows: {}`,
+      );
       const customConfig = new ConfigDiscovery(customSystem);
 
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+      await createCommand('job', 'Acme Corp', 'Developer', {
         cwd: '/custom',
-        configDiscovery: customConfig
+        configDiscovery: customConfig,
       });
 
       expect(mockFs.mkdirSync).toHaveBeenCalled();
     });
 
     it('should handle template variant option', async () => {
-      await createCommand('job', 'Acme Corp', 'Developer', { 
+      await createCommand('job', 'Acme Corp', 'Developer', {
         template_variant: 'mobile',
         cwd: '/mock/project',
-        configDiscovery
+        configDiscovery,
       });
 
       expect(mockFs.mkdirSync).toHaveBeenCalled();

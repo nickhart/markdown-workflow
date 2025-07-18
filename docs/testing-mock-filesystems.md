@@ -62,13 +62,13 @@ const mockFs = new FileSystemBuilder()
   .withWorkflow('job', {
     templates: {
       resume: '# Resume: {{user.name}} at {{company}}',
-      cover_letter: '# Cover Letter: {{user.name}} for {{role}}'
-    }
+      cover_letter: '# Cover Letter: {{user.name}} for {{role}}',
+    },
   })
   .withWorkflow('blog', {
     templates: {
-      post: '# Blog Post: {{title}}'
-    }
+      post: '# Blog Post: {{title}}',
+    },
   })
   .build();
 
@@ -76,12 +76,12 @@ const mockFs = new FileSystemBuilder()
 const mockFs2 = new FileSystemBuilder('/test')
   .file('config.json', '{"test": true}')
   .dir('workflows')
-    .dir('job')
-      .file('workflow.yml', 'name: job')
-      .dir('templates')
-        .file('resume.md', '# Resume')
-      .back() // Exit templates dir
-    .back() // Exit job dir
+  .dir('job')
+  .file('workflow.yml', 'name: job')
+  .dir('templates')
+  .file('resume.md', '# Resume')
+  .back() // Exit templates dir
+  .back() // Exit job dir
   .back() // Exit workflows dir
   .build();
 ```
@@ -94,10 +94,10 @@ const mockFs2 = new FileSystemBuilder('/test')
 Pre-built helpers for common testing scenarios.
 
 ```typescript
-import { 
+import {
   createEnhancedMockFileSystem,
   createProjectFileSystemFromPaths,
-  createCompleteTestSystem 
+  createCompleteTestSystem,
 } from '../helpers/FileSystemHelpers.js';
 
 // Complete system with job and blog workflows
@@ -125,6 +125,7 @@ const mockFs2 = loadFileSystemFromFixtures('example-workflow', '/custom/root');
 ```
 
 **Directory Structure:**
+
 ```
 tests/fixtures/example-workflow/
 ├── package.json
@@ -157,6 +158,7 @@ npm run generate-mock-fs ./workflows ./tests/fixtures/workflows.ts \
 ```
 
 This generates:
+
 ```typescript
 // Auto-generated mock file system data
 import { FileSystemPaths } from '../helpers/FileSystemHelpers.js';
@@ -164,7 +166,7 @@ import { FileSystemPaths } from '../helpers/FileSystemHelpers.js';
 export const workflowsData: FileSystemPaths = {
   '/package.json': `{"name": "markdown-workflow"}`,
   '/workflows/job/workflow.yml': `workflow:\n  name: job`,
-  '/workflows/job/templates/resume/default.md': `# Resume Template`
+  '/workflows/job/templates/resume/default.md': `# Resume Template`,
 };
 
 // Usage:
@@ -191,9 +193,9 @@ describe('MyComponent', () => {
     mockSystem = createFileSystemFromPaths({
       '/system/package.json': JSON.stringify({ name: 'markdown-workflow' }),
       '/system/workflows/job/workflow.yml': 'workflow:\n  name: job',
-      '/project/.markdown-workflow/config.yml': 'user:\n  name: "Test User"'
+      '/project/.markdown-workflow/config.yml': 'user:\n  name: "Test User"',
     });
-    
+
     // Create ConfigDiscovery with dependency injection
     configDiscovery = new ConfigDiscovery(mockSystem);
   });
@@ -210,16 +212,16 @@ describe('MyComponent', () => {
 ```typescript
 it('should create files correctly', () => {
   const mockFs = createFileSystemFromPaths({
-    '/project/.markdown-workflow/config.yml': 'user:\n  name: "Test"'
+    '/project/.markdown-workflow/config.yml': 'user:\n  name: "Test"',
   });
 
   // Test file existence
   expect(mockFs.existsSync('/project/.markdown-workflow/config.yml')).toBe(true);
-  
+
   // Test file content
   const content = mockFs.readFileSync('/project/.markdown-workflow/config.yml');
   expect(content).toContain('Test');
-  
+
   // Test directory operations
   expect(mockFs.existsSync('/project/.markdown-workflow')).toBe(true);
 });
@@ -235,18 +237,18 @@ it('should handle complete workflow system', () => {
     .withWorkflow('job', {
       templates: {
         resume: '# Resume for {{user.name}}',
-        cover_letter: '# Cover Letter for {{company}}'
-      }
+        cover_letter: '# Cover Letter for {{company}}',
+      },
     })
     .withProjectStructure('/project')
     .build();
 
   const configDiscovery = new ConfigDiscovery(mockFs);
-  
+
   // Test system discovery
   const workflows = configDiscovery.getAvailableWorkflows('/system');
   expect(workflows).toContain('job');
-  
+
   // Test project detection
   expect(configDiscovery.isInProject('/project')).toBe(true);
 });
@@ -293,29 +295,29 @@ const builder = new FileSystemBuilder('/root')
   .file('name.txt', 'content')
   .files({
     'file1.txt': 'content1',
-    'file2.txt': 'content2'
+    'file2.txt': 'content2',
   })
-  
+
   // Directory operations
   .dir('dirname')
-    .file('nested.txt', 'content')
+  .file('nested.txt', 'content')
   .back() // Exit directory
-  
+
   // Bulk operations
   .dirWithFiles('configs', {
     'config1.yml': 'key1: value1',
-    'config2.yml': 'key2: value2'
+    'config2.yml': 'key2: value2',
   })
-  
+
   // Shortcuts
   .withSystemStructure() // Adds package.json
   .withWorkflow('name', options)
   .withProjectStructure('/path', configContent)
-  
+
   // Navigation
   .toRoot() // Go back to root
   .getCurrentPath() // Get current path (for debugging)
-  
+
   .build(); // Create MockSystemInterface
 ```
 
@@ -323,13 +325,13 @@ const builder = new FileSystemBuilder('/root')
 
 ### When to Use Each Approach
 
-| Approach | Best For | Complexity | Maintenance |
-|----------|----------|------------|-------------|
-| **Path-Based** | Simple tests, few files | Low | Easy |
-| **Builder Pattern** | Complex structures, reusable setup | Medium | Medium |
-| **Fixture Files** | Real file validation, syntax highlighting | Medium | Easy |
-| **CLI Generator** | Large existing directories | Low | Easy |
-| **Enhanced Helpers** | Standard test scenarios | Low | Easy |
+| Approach             | Best For                                  | Complexity | Maintenance |
+| -------------------- | ----------------------------------------- | ---------- | ----------- |
+| **Path-Based**       | Simple tests, few files                   | Low        | Easy        |
+| **Builder Pattern**  | Complex structures, reusable setup        | Medium     | Medium      |
+| **Fixture Files**    | Real file validation, syntax highlighting | Medium     | Easy        |
+| **CLI Generator**    | Large existing directories                | Low        | Easy        |
+| **Enhanced Helpers** | Standard test scenarios                   | Low        | Easy        |
 
 ### Recommended Patterns
 
@@ -348,7 +350,7 @@ describe('MyComponent', () => {
       // Path-based for simple, focused tests
       const mockFs = createFileSystemFromPaths({
         '/system/package.json': JSON.stringify({ name: 'test' }),
-        '/system/workflows/job/workflow.yml': 'workflow: job'
+        '/system/workflows/job/workflow.yml': 'workflow: job',
       });
       // ... test code
     });
@@ -356,7 +358,7 @@ describe('MyComponent', () => {
 
   describe('complex workflows', () => {
     let mockFs: MockSystemInterface;
-    
+
     beforeEach(() => {
       // Builder pattern for complex, reusable setup
       mockFs = new FileSystemBuilder()
@@ -365,7 +367,7 @@ describe('MyComponent', () => {
         .withWorkflow('blog', { templates: { post: '# Post' } })
         .build();
     });
-    
+
     it('should handle multiple workflows', () => {
       // ... test code
     });
@@ -387,7 +389,7 @@ describe('MyComponent', () => {
 // Handle missing files gracefully
 it('should handle missing files', () => {
   const mockFs = createFileSystemFromPaths({});
-  
+
   expect(() => mockFs.readFileSync('/nonexistent')).toThrow('ENOENT');
   expect(mockFs.existsSync('/nonexistent')).toBe(false);
 });
@@ -396,10 +398,10 @@ it('should handle missing files', () => {
 it('should handle edge cases', () => {
   // Empty paths
   expect(() => createFileSystemFromPaths({})).toThrow('No paths provided');
-  
+
   // Root-only paths
   const mockFs = createFileSystemFromPaths({
-    '/file.txt': 'content'
+    '/file.txt': 'content',
   });
   expect(mockFs.existsSync('/file.txt')).toBe(true);
 });
@@ -413,34 +415,34 @@ it('should handle edge cases', () => {
 // Benchmark different approaches
 it('should benchmark approaches', () => {
   const iterations = 100;
-  
+
   // Path-based timing
   const pathStart = performance.now();
   for (let i = 0; i < iterations; i++) {
     createFileSystemFromPaths({
       '/system/package.json': '{"name": "test"}',
-      '/system/workflows/job/workflow.yml': 'name: job'
+      '/system/workflows/job/workflow.yml': 'name: job',
     });
   }
   const pathTime = performance.now() - pathStart;
-  
+
   // Builder pattern timing
   const builderStart = performance.now();
   for (let i = 0; i < iterations; i++) {
     new FileSystemBuilder('/system')
       .file('package.json', '{"name": "test"}')
       .dir('workflows')
-        .dir('job')
-          .file('workflow.yml', 'name: job')
-        .back()
+      .dir('job')
+      .file('workflow.yml', 'name: job')
+      .back()
       .back()
       .build();
   }
   const builderTime = performance.now() - builderStart;
-  
+
   console.log(`Path-based: ${pathTime.toFixed(2)}ms`);
   console.log(`Builder: ${builderTime.toFixed(2)}ms`);
-  
+
   // Both should be reasonably fast
   expect(pathTime).toBeLessThan(1000);
   expect(builderTime).toBeLessThan(2000);
@@ -453,12 +455,11 @@ it('should benchmark approaches', () => {
 // Extend FileSystemBuilder with custom shortcuts
 class CustomFileSystemBuilder extends FileSystemBuilder {
   withCustomWorkflow(name: string): this {
-    return this
-      .dir('workflows')
-        .dir(name)
-          .file('workflow.yml', `workflow:\n  name: "${name}"`)
-          .file('custom.md', '# Custom template')
-        .back()
+    return this.dir('workflows')
+      .dir(name)
+      .file('workflow.yml', `workflow:\n  name: "${name}"`)
+      .file('custom.md', '# Custom template')
+      .back()
       .back();
   }
 }
@@ -491,6 +492,7 @@ console.log('Current path:', builder.getCurrentPath());
 ### From Static Mocking
 
 **Before (deprecated):**
+
 ```typescript
 // ❌ Old approach with static mocking
 jest.mock('fs');
@@ -502,11 +504,12 @@ const workflows = ConfigDiscovery.getAvailableWorkflows('/path');
 ```
 
 **After (recommended):**
+
 ```typescript
 // ✅ New approach with dependency injection
 const mockSystem = createFileSystemFromPaths({
   '/system/package.json': '{"name": "markdown-workflow"}',
-  '/system/workflows/job/workflow.yml': 'workflow: job'
+  '/system/workflows/job/workflow.yml': 'workflow: job',
 });
 
 const configDiscovery = new ConfigDiscovery(mockSystem);
@@ -516,6 +519,7 @@ const workflows = configDiscovery.getAvailableWorkflows('/system');
 ### From Nested Objects
 
 **Before:**
+
 ```typescript
 // ❌ Complex nested structure
 const content: FileSystemContent = {
@@ -527,31 +531,32 @@ const content: FileSystemContent = {
         {
           name: 'job',
           dirs: [],
-          files: { 'workflow.yml': 'workflow: job' }
-        }
+          files: { 'workflow.yml': 'workflow: job' },
+        },
       ],
-      files: {}
-    }
+      files: {},
+    },
   ],
-  files: { 'package.json': '{"name": "test"}' }
+  files: { 'package.json': '{"name": "test"}' },
 };
 ```
 
 **After:**
+
 ```typescript
 // ✅ Simple path-based approach
 const mockFs = createFileSystemFromPaths({
   '/system/package.json': '{"name": "test"}',
-  '/system/workflows/job/workflow.yml': 'workflow: job'
+  '/system/workflows/job/workflow.yml': 'workflow: job',
 });
 
 // ✅ Or builder pattern
 const mockFs = new FileSystemBuilder('/system')
   .file('package.json', '{"name": "test"}')
   .dir('workflows')
-    .dir('job')
-      .file('workflow.yml', 'workflow: job')
-    .back()
+  .dir('job')
+  .file('workflow.yml', 'workflow: job')
+  .back()
   .back()
   .build();
 ```

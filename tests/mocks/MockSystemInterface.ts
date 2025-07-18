@@ -1,11 +1,11 @@
 import * as fs from 'fs';
-import { SystemInterface } from '../../src/core/SystemInterface'
+import { SystemInterface } from '../../src/core/SystemInterface';
 
 type FileSystemContent = {
   name: string;
   dirs: FileSystemContent[];
   files: string[];
-}
+};
 
 const exampleFileSystemContent = {
   name: 'mock/system/root',
@@ -14,13 +14,13 @@ const exampleFileSystemContent = {
       name: 'workflows',
       dirs: [
         { name: 'job', dirs: [], files: ['job.md'] },
-        { name: 'blog', dirs: [], files: ['blog.md'] }
+        { name: 'blog', dirs: [], files: ['blog.md'] },
       ],
-      files: []
+      files: [],
     },
-    { name: 'collections', dirs: [], files: [] }
+    { name: 'collections', dirs: [], files: [] },
   ],
-  files: ['package.json']
+  files: ['package.json'],
 };
 
 /**
@@ -35,7 +35,7 @@ export class MockSystemInterface implements SystemInterface {
   constructor(
     currentPath: string = '/mock/system/root',
     files: Record<string, string> = {},
-    directories: string[] = []
+    directories: string[] = [],
   ) {
     this.mockCurrentPath = currentPath;
     this.mockFiles = new Map(Object.entries(files));
@@ -43,7 +43,7 @@ export class MockSystemInterface implements SystemInterface {
     this.mockStats = new Map();
 
     // Create mock stats for directories
-    directories.forEach(dir => {
+    directories.forEach((dir) => {
       this.mockStats.set(dir, {
         isDirectory: () => true,
         isFile: () => false,
@@ -51,7 +51,7 @@ export class MockSystemInterface implements SystemInterface {
     });
 
     // Create mock stats for files
-    Object.keys(files).forEach(file => {
+    Object.keys(files).forEach((file) => {
       this.mockStats.set(file, {
         isDirectory: () => false,
         isFile: () => true,
@@ -92,7 +92,7 @@ export class MockSystemInterface implements SystemInterface {
     const entries: fs.Dirent[] = [];
 
     // Add subdirectories
-    this.mockDirectories.forEach(dir => {
+    this.mockDirectories.forEach((dir) => {
       if (dir.startsWith(path + '/') && !dir.substring(path.length + 1).includes('/')) {
         entries.push({
           name: dir.substring(path.length + 1),
