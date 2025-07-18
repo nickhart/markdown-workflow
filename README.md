@@ -1,8 +1,8 @@
 # Markdown Workflow
 
-[![CI](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/CI/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/ci.yml)
-[![Security](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/Security/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/security.yml)
-[![Quality Gate](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/Quality%20Gate/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/quality.yml)
+[![CI](https://github.com/nickhart/markdown-workflow/workflows/CI/badge.svg)](https://github.com/nickhart/markdown-workflow/actions/workflows/ci.yml)
+[![Security](https://github.com/nickhart/markdown-workflow/workflows/Security/badge.svg)](https://github.com/nickhart/markdown-workflow/actions/workflows/security.yml)
+[![Quality Gate](https://github.com/nickhart/markdown-workflow/workflows/Quality%20Gate/badge.svg)](https://github.com/nickhart/markdown-workflow/actions/workflows/quality.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A generalized markdown-based workflow system built with Node.js and TypeScript. It provides a template-driven workflow engine for creating documents, managing content, and tracking collections through different stages.
