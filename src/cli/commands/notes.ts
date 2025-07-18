@@ -18,7 +18,8 @@ export async function notesCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const projectRoot = ConfigDiscovery.requireProjectRoot(cwd);
+  const configDiscovery = new ConfigDiscovery();
+  const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
   const engine = new WorkflowEngine(projectRoot);
@@ -75,7 +76,8 @@ export async function listNoteTypesCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const projectRoot = ConfigDiscovery.requireProjectRoot(cwd);
+  const configDiscovery = new ConfigDiscovery();
+  const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
   const engine = new WorkflowEngine(projectRoot);

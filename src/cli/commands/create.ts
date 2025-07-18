@@ -10,6 +10,7 @@ interface CreateOptions {
   url?: string;
   template_variant?: string;
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -23,12 +24,15 @@ export async function createCommand(
 ): Promise<void> {
   const cwd = options.cwd || process.cwd();
 
+  // Use provided ConfigDiscovery instance or create new one
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
+
   // Ensure we're in a project
-  const projectRoot = ConfigDiscovery.requireProjectRoot(cwd);
-  const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
+  const projectRoot = configDiscovery.requireProjectRoot(cwd);
+  const projectPaths = configDiscovery.getProjectPaths(projectRoot);
 
   // Get system configuration
-  const systemConfig = await ConfigDiscovery.resolveConfiguration(cwd);
+  const systemConfig = await configDiscovery.resolveConfiguration(cwd);
 
   // Validate workflow exists
   if (!systemConfig.availableWorkflows.includes(workflowName)) {
@@ -183,13 +187,14 @@ async function processTemplate(
     const templateContent = fs.readFileSync(templatePath, 'utf8');
 
     // Load user configuration for template variables
-    const projectRoot = ConfigDiscovery.findProjectRoot();
+    const configDiscovery = new ConfigDiscovery();
+    const projectRoot = configDiscovery.findProjectRoot();
     let userConfig = null;
 
     if (projectRoot) {
-      const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
+      const projectPaths = configDiscovery.getProjectPaths(projectRoot);
       if (fs.existsSync(projectPaths.configFile)) {
-        const config = await ConfigDiscovery.loadProjectConfig(projectPaths.configFile);
+        const config = await configDiscovery.loadProjectConfig(projectPaths.configFile);
         userConfig = config?.user;
       }
     }

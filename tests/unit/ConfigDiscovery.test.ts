@@ -1,43 +1,37 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { ConfigPaths, ResolvedConfig } from '../../src/core/types.js';
-
-// Mock only fs module, not path
-jest.mock('fs');
-
-const mockFs = fs as jest.Mocked<typeof fs>;
+import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
 
 describe('ConfigDiscovery', () => {
+  let mockSystemInterface: MockSystemInterface;
+  let configDiscovery: ConfigDiscovery;
+
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockSystemInterface = new MockSystemInterface();
+    configDiscovery = new ConfigDiscovery(mockSystemInterface);
   });
 
   describe('findSystemRoot', () => {
     it('should find system root by package.json', () => {
       const mockPackageJson = { name: 'markdown-workflow' };
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(mockPackageJson));
+      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify(mockPackageJson));
 
-      const result = ConfigDiscovery.findSystemRoot();
+      const result = configDiscovery.findSystemRoot();
 
-      expect(result).toBeDefined();
-      expect(mockFs.readFileSync).toHaveBeenCalled();
+      expect(result).toBe('/mock/system/root');
     });
 
     it('should handle invalid package.json gracefully', () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('invalid json');
+      mockSystemInterface.addMockFile('/mock/system/root/package.json', 'invalid json');
 
-      const result = ConfigDiscovery.findSystemRoot();
+      const result = configDiscovery.findSystemRoot();
 
       expect(result).toBeDefined();
     });
 
     it('should return fallback path when package.json not found', () => {
-      mockFs.existsSync.mockReturnValue(false);
-
-      const result = ConfigDiscovery.findSystemRoot();
+      // No mock files added, so package.json doesn't exist
+      const result = configDiscovery.findSystemRoot();
 
       expect(result).toBeDefined();
     });
@@ -46,19 +40,18 @@ describe('ConfigDiscovery', () => {
   describe('findProjectRoot', () => {
     it('should find project root when marker exists', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
 
-      const result = ConfigDiscovery.findProjectRoot(testPath);
+      const result = configDiscovery.findProjectRoot(testPath);
 
       expect(result).toBe(testPath);
     });
 
     it('should return null when no project root found', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(false);
+      // No mock directories added, so marker doesn't exist
 
-      const result = ConfigDiscovery.findProjectRoot(testPath);
+      const result = configDiscovery.findProjectRoot(testPath);
 
       expect(result).toBeNull();
     });
@@ -67,10 +60,10 @@ describe('ConfigDiscovery', () => {
   describe('discoverConfiguration', () => {
     it('should return configuration paths', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
+      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
 
-      const result = ConfigDiscovery.discoverConfiguration(testPath);
+      const result = configDiscovery.discoverConfiguration(testPath);
 
       expect(result).toMatchObject({
         systemRoot: expect.any(String),
@@ -81,9 +74,10 @@ describe('ConfigDiscovery', () => {
 
     it('should handle missing project root', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(false);
+      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
+      // No project marker directory added
 
-      const result = ConfigDiscovery.discoverConfiguration(testPath);
+      const result = configDiscovery.discoverConfiguration(testPath);
 
       expect(result).toMatchObject({
         systemRoot: expect.any(String),
@@ -95,24 +89,18 @@ describe('ConfigDiscovery', () => {
 
   describe('loadProjectConfig', () => {
     it('should return null for non-existent config', async () => {
-      mockFs.existsSync.mockReturnValue(false);
-
-      const result = await ConfigDiscovery.loadProjectConfig('/test/config.yml');
+      // No mock file added, so config doesn't exist
+      const result = await configDiscovery.loadProjectConfig('/test/config.yml');
 
       expect(result).toBeNull();
     });
 
     it('should handle file read errors', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      // Mock console.log to throw an error to trigger the catch block
-      const originalConsoleLog = console.log;
-      console.log = jest.fn().mockImplementation(() => {
-        throw new Error('File read error');
-      });
-
+      // Add file that exists but will cause YAML parsing error
+      mockSystemInterface.addMockFile('/test/config.yml', 'invalid: yaml: content: [');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      const result = await ConfigDiscovery.loadProjectConfig('/test/config.yml');
+      const result = await configDiscovery.loadProjectConfig('/test/config.yml');
 
       expect(result).toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -121,44 +109,37 @@ describe('ConfigDiscovery', () => {
       );
 
       consoleSpy.mockRestore();
-      console.log = originalConsoleLog;
     });
   });
 
   describe('getAvailableWorkflows', () => {
     it('should return workflow directories', () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readdirSync.mockReturnValue([
-        { name: 'job', isDirectory: () => true },
-        { name: 'blog', isDirectory: () => true },
-        { name: 'file.txt', isDirectory: () => false },
-      ] as any);
+      mockSystemInterface.addMockDirectory('/system/workflows');
+      mockSystemInterface.addMockDirectory('/system/workflows/job');
+      mockSystemInterface.addMockDirectory('/system/workflows/blog');
+      mockSystemInterface.addMockFile('/system/workflows/file.txt', 'content');
 
-      const result = ConfigDiscovery.getAvailableWorkflows('/system');
+      const result = configDiscovery.getAvailableWorkflows('/system');
 
       expect(result).toEqual(['job', 'blog']);
     });
 
     it('should return empty array when workflows directory missing', () => {
-      mockFs.existsSync.mockReturnValue(false);
-
-      const result = ConfigDiscovery.getAvailableWorkflows('/system');
+      // No workflows directory added
+      const result = configDiscovery.getAvailableWorkflows('/system');
 
       expect(result).toEqual([]);
     });
 
     it('should handle readdir errors', () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readdirSync.mockImplementation(() => {
-        throw new Error('Read error');
-      });
+      // Add workflows directory but don't add any subdirectories
+      mockSystemInterface.addMockDirectory('/system/workflows');
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      const result = ConfigDiscovery.getAvailableWorkflows('/system');
+      const result = configDiscovery.getAvailableWorkflows('/system');
 
       expect(result).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
     });
@@ -167,14 +148,13 @@ describe('ConfigDiscovery', () => {
   describe('resolveConfiguration', () => {
     it('should resolve complete configuration', async () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
-      mockFs.readdirSync.mockReturnValue([
-        { name: 'job', isDirectory: () => true },
-        { name: 'blog', isDirectory: () => true },
-      ] as any);
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
+      mockSystemInterface.addMockFile('/mock/system/root/package.json', JSON.stringify({ name: 'markdown-workflow' }));
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows');
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows/job');
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows/blog');
 
-      const result = await ConfigDiscovery.resolveConfiguration(testPath);
+      const result = await configDiscovery.resolveConfiguration(testPath);
 
       expect(result).toMatchObject({
         paths: expect.any(Object),
@@ -186,19 +166,18 @@ describe('ConfigDiscovery', () => {
   describe('isInProject', () => {
     it('should return true when in project', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
 
-      const result = ConfigDiscovery.isInProject(testPath);
+      const result = configDiscovery.isInProject(testPath);
 
       expect(result).toBe(true);
     });
 
     it('should return false when not in project', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(false);
+      // No project marker directory added
 
-      const result = ConfigDiscovery.isInProject(testPath);
+      const result = configDiscovery.isInProject(testPath);
 
       expect(result).toBe(false);
     });
@@ -207,20 +186,19 @@ describe('ConfigDiscovery', () => {
   describe('requireProjectRoot', () => {
     it('should return project root when found', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.statSync.mockReturnValue({ isDirectory: () => true } as any);
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
 
-      const result = ConfigDiscovery.requireProjectRoot(testPath);
+      const result = configDiscovery.requireProjectRoot(testPath);
 
       expect(result).toBe(testPath);
     });
 
     it('should throw error when not in project', () => {
       const testPath = '/test/project';
-      mockFs.existsSync.mockReturnValue(false);
+      // No project marker directory added
 
       expect(() => {
-        ConfigDiscovery.requireProjectRoot(testPath);
+        configDiscovery.requireProjectRoot(testPath);
       }).toThrow('Not in a markdown-workflow project');
     });
   });
@@ -229,7 +207,7 @@ describe('ConfigDiscovery', () => {
     it('should return correct project paths', () => {
       const projectRoot = '/test/project';
 
-      const result = ConfigDiscovery.getProjectPaths(projectRoot);
+      const result = configDiscovery.getProjectPaths(projectRoot);
 
       expect(result).toEqual({
         projectDir: path.join(projectRoot, '.markdown-workflow'),

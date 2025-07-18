@@ -7,6 +7,7 @@ interface InitOptions {
   workflows?: string[];
   force?: boolean;
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -16,13 +17,16 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   const cwd = options.cwd || process.cwd();
   const force = options.force || false;
 
+  // Use provided ConfigDiscovery instance or create new one
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
+
   // Check if already in a project
-  if (ConfigDiscovery.isInProject(cwd) && !force) {
+  if (configDiscovery.isInProject(cwd) && !force) {
     throw new Error('Already in a markdown-workflow project. Use --force to reinitialize.');
   }
 
   // Get system configuration
-  const systemConfig = await ConfigDiscovery.resolveConfiguration(cwd);
+  const systemConfig = await configDiscovery.resolveConfiguration(cwd);
   const availableWorkflows = systemConfig.availableWorkflows;
 
   // Determine which workflows to initialize
@@ -56,7 +60,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
  * Create the project directory structure
  */
 async function createProjectStructure(projectRoot: string, workflows: string[]): Promise<void> {
-  const projectPaths = ConfigDiscovery.getProjectPaths(projectRoot);
+  const configDiscovery = new ConfigDiscovery();
+  const projectPaths = configDiscovery.getProjectPaths(projectRoot);
 
   // Create main project directory
   fs.mkdirSync(projectPaths.projectDir, { recursive: true });

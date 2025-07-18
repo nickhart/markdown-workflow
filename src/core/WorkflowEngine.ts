@@ -30,12 +30,16 @@ export class WorkflowEngine {
   private projectConfig: ProjectConfig | null = null;
   // List of workflow names available in the system
   private availableWorkflows: string[] = [];
+  // Configuration discovery instance
+  private configDiscovery: ConfigDiscovery;
 
-  constructor(projectRoot?: string) {
+  constructor(projectRoot?: string, configDiscovery?: ConfigDiscovery) {
+    // Use provided ConfigDiscovery instance or create a new one
+    this.configDiscovery = configDiscovery || new ConfigDiscovery();
     // Find where markdown-workflow is installed (contains workflow definitions)
-    this.systemRoot = ConfigDiscovery.findSystemRoot();
+    this.systemRoot = this.configDiscovery.findSystemRoot();
     // Find or validate the user's project directory
-    this.projectRoot = projectRoot || ConfigDiscovery.requireProjectRoot();
+    this.projectRoot = projectRoot || this.configDiscovery.requireProjectRoot();
     // Load configuration and discover available workflows
     this.initializeEngine();
   }
@@ -46,7 +50,7 @@ export class WorkflowEngine {
    */
   private async initializeEngine(): Promise<void> {
     // Use ConfigDiscovery to find and load project configuration
-    const config = await ConfigDiscovery.resolveConfiguration(this.projectRoot);
+    const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
     // Store user's project config (user info, preferences, etc.)
     this.projectConfig = config.projectConfig || null;
     // Store list of available workflow names (from system workflows directory)
@@ -90,7 +94,7 @@ export class WorkflowEngine {
    */
   async getCollections(workflowName: string): Promise<Collection[]> {
     // Get project paths using ConfigDiscovery
-    const projectPaths = ConfigDiscovery.getProjectPaths(this.projectRoot);
+    const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
     // Build path to workflow collections directory
     const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
 
@@ -142,7 +146,7 @@ export class WorkflowEngine {
    * Get a specific collection by ID
    */
   async getCollection(workflowName: string, collectionId: string): Promise<Collection | null> {
-    const projectPaths = ConfigDiscovery.getProjectPaths(this.projectRoot);
+    const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
     const collectionPath = path.join(projectPaths.collectionsDir, workflowName, collectionId);
 
     if (!fs.existsSync(collectionPath)) {
