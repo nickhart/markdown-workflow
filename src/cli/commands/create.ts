@@ -94,12 +94,20 @@ export async function createCommand(
       const template = workflowDefinition.workflow.templates.find((t) => t.name === templateName);
 
       if (template) {
+        // Filter options to only include string values for template processing
+        const templateVariables: Record<string, string> = {
+          company,
+          role,
+          ...(options.url && { url: options.url }),
+          ...(options.template_variant && { template_variant: options.template_variant }),
+        };
+
         await processTemplate(
           template,
           collectionPath,
           systemConfig.paths.systemRoot,
           workflowName,
-          { company, role, ...options },
+          templateVariables,
         );
       }
     }
