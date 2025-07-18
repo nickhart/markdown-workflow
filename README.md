@@ -1,5 +1,10 @@
 # Markdown Workflow
 
+[![CI](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/CI/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/ci.yml)
+[![Security](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/Security/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/security.yml)
+[![Quality Gate](https://github.com/YOUR-USERNAME/markdown-workflow/workflows/Quality%20Gate/badge.svg)](https://github.com/YOUR-USERNAME/markdown-workflow/actions/workflows/quality.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A generalized markdown-based workflow system built with Node.js and TypeScript. It provides a template-driven workflow engine for creating documents, managing content, and tracking collections through different stages.
 
 ## Features
@@ -126,13 +131,25 @@ wf --help                            # Show available commands
 wf create --help                     # Show create command options
 ```
 
-### Coming Soon (WorkflowEngine implemented, CLI integration pending)
+### Workflow Management
 
 ```bash
-wf list [workflow] [status]          # List collections
-wf status <workflow> <id> <status>   # Update collection status
-wf format <workflow> <id>            # Format documents to DOCX/HTML/PDF
-wf notes <workflow> <id> <type>      # Create interview notes
+# List collections
+wf list job                          # List all job collections
+wf list job active                   # List active job collections only
+wf list job --format json           # Output as JSON
+
+# Update collection status
+wf status job company_role_20240101 submitted    # Update status
+wf status job company_role_20240101 interview    # Move to interview stage
+
+# Format documents
+wf format job company_role_20240101              # Format to DOCX (default)
+wf format job company_role_20240101 --format pdf # Format to PDF
+
+# Create interview notes
+wf notes job company_role_20240101 recruiter     # Create recruiter notes
+wf notes job company_role_20240101 technical --interviewer "John Doe"
 ```
 
 ## Development
