@@ -246,12 +246,17 @@ Templates are resolved in order:
 1. User project templates (highest priority)
 2. System templates (fallback)
 
+## Documentation
+
+- **[Testing Guide](docs/testing-mock-filesystems.md)** - Comprehensive testing guide with mock filesystem approaches
+- **[CLAUDE.md](CLAUDE.md)** - Project instructions for AI assistants
+
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests
+4. Add tests (see [Testing Guide](docs/testing-mock-filesystems.md))
 5. Submit a pull request
 
 ## License

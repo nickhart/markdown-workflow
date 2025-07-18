@@ -22,7 +22,8 @@
     "test:watch": "jest --watch",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "preflight": "pnpm build && pnpm test && pnpm lint && pnpm format:check"
+    "preflight": "pnpm build && pnpm test && pnpm lint && pnpm format:check",
+    "generate-mock-fs": "tsx scripts/generate-mock-fs.ts"
   },
   "dependencies": {
     "chalk": "^5.4.1",

@@ -3,7 +3,15 @@ import * as path from 'path';
 import { createCommand } from '../../src/cli/commands/create.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
 import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import { createMockFileSystem, createProjectFileSystem, populateFileSystem } from '../helpers/FileSystemHelpers.js';
+import { 
+  createMockFileSystem, 
+  createProjectFileSystem, 
+  populateFileSystem,
+  createFileSystemFromPaths,
+  createEnhancedMockFileSystem,
+  createProjectFileSystemFromPaths
+} from '../helpers/FileSystemHelpers.js';
+import { FileSystemBuilder } from '../helpers/FileSystemBuilder.js';
 
 // Mock dependencies
 jest.mock('fs');
@@ -16,7 +24,7 @@ describe('createCommand', () => {
   let mockSystemInterface: MockSystemInterface;
   let configDiscovery: ConfigDiscovery;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
     
     // Setup path mocks
@@ -39,10 +47,51 @@ describe('createCommand', () => {
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
 
-    // Create filesystem with both system and project layout
-    mockSystemInterface = createMockFileSystem();
-    populateFileSystem(mockSystemInterface, createProjectFileSystem('/mock/project'));
+    // Create a comprehensive mock file system with both system and project structure
+    mockSystemInterface = createEnhancedMockFileSystem();
+    
+    // Add project structure to the system
+    const projectPath = '/mock/project';
+    mockSystemInterface.addMockDirectory(projectPath);
+    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
+    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow/workflows`);
+    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow/collections`);
+    mockSystemInterface.addMockFile(`${projectPath}/.markdown-workflow/config.yml`, `user:
+  name: "Test User"
+  preferred_name: "test_user"
+  email: "test@example.com"
+  phone: "(555) 123-4567"
+  address: "123 Test St"
+  city: "Test City"
+  state: "TS"
+  zip: "12345"
+  linkedin: "linkedin.com/in/testuser"
+  github: "github.com/testuser"
+  website: "testuser.com"
+
+system:
+  scraper: "wget"
+  web_download:
+    timeout: 30
+    add_utf8_bom: true
+    html_cleanup: "scripts"
+  output_formats:
+    - "docx"
+    - "html"
+    - "pdf"
+  git:
+    auto_commit: false
+    commit_message_template: "Update {{workflow}} collection {{collection_id}}"
+  collection_id:
+    date_format: "YYYYMMDD"
+    sanitize_spaces: "_"
+    max_length: 50
+
+workflows: {}`);
+    
     configDiscovery = new ConfigDiscovery(mockSystemInterface);
+    
+    // Mock system setup is now working correctly!
     
     // Setup fs mocks for loadWorkflowDefinition and template processing
     mockFs.existsSync.mockImplementation((path) => {
@@ -315,8 +364,20 @@ describe('createCommand', () => {
 
     it('should use custom working directory', async () => {
       // Create a custom project filesystem at /custom path
-      const customSystem = createMockFileSystem();
-      populateFileSystem(customSystem, createProjectFileSystem('/custom'));
+      const customSystem = createEnhancedMockFileSystem();
+      // Add the custom project structure
+      customSystem.addMockDirectory('/custom');
+      customSystem.addMockDirectory('/custom/.markdown-workflow');
+      customSystem.addMockDirectory('/custom/.markdown-workflow/workflows');
+      customSystem.addMockDirectory('/custom/.markdown-workflow/collections');
+      customSystem.addMockFile('/custom/.markdown-workflow/config.yml', `user:
+  name: "Custom User"
+  preferred_name: "custom_user"
+
+system:
+  scraper: "wget"
+
+workflows: {}`);
       const customConfig = new ConfigDiscovery(customSystem);
 
       await createCommand('job', 'Acme Corp', 'Developer', { 

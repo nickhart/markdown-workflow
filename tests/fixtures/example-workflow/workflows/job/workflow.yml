@@ -1,0 +1,26 @@
+workflow:
+  name: "job"
+  description: "Job application workflow"
+  version: "1.0.0"
+  stages:
+    - name: "active"
+      description: "Active applications"
+      color: "blue"
+  templates:
+    - name: "resume"
+      file: "templates/resume/default.md"
+      output: "resume_{{user.preferred_name}}.md"
+      description: "Resume template"
+  statics: []
+  actions:
+    - name: "create"
+      description: "Create new collection"
+      templates: ["resume"]
+      metadata_file: "collection.yml"
+  metadata:
+    required_fields: ["company", "role"]
+    optional_fields: ["url"]
+    auto_generated: ["collection_id", "date_created"]
+  collection_id:
+    pattern: "{{company}}_{{role}}_{{date}}"
+    max_length: 50
