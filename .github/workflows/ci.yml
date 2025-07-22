@@ -1,7 +1,7 @@
 name: CI
 
 env:
-  DOCS_ONLY_PATTERNS: '\.md$|^docs/|^CHANGELOG|^README'
+  DOCS_ONLY_PATTERNS: '\.md$|^docs/|^VERSION'
 
 on:
   push:
