@@ -31,6 +31,7 @@
     "gh:ci:list": "gh run list --workflow=ci.yml --limit=5",
     "gh:ci:watch": "gh run watch",
     "gh:ci:logs": "gh run view --log",
+    "gh:ci:logs:failed": "gh run view --log-failed",
     "gh:ci:rerun": "gh run rerun --failed",
     "gh:ci:trigger": "gh workflow run ci.yml"
   },
