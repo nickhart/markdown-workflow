@@ -22,9 +22,6 @@ jobs:
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Install turborepo
-        run: pnpm install -g turbo
-
       - name: Install dependencies
         run: pnpm install
 
@@ -42,7 +39,7 @@ jobs:
           node-version: '20'
 
       - name: Build project
-        run: turbo run build
+        run: pnpm dlx turbo run build
 
       - name: Cache build artifacts
         uses: actions/cache@v4
@@ -68,7 +65,7 @@ jobs:
           node-version: '20'
 
       - name: Run tests
-        run: turbo run test -- --coverage
+        run: pnpm dlx turbo run test -- --coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
@@ -92,7 +89,7 @@ jobs:
           node-version: '20'
 
       - name: Run lint
-        run: turbo run lint
+        run: pnpm dlx turbo run lint
 
   format:
     name: Check Formatting
@@ -108,7 +105,7 @@ jobs:
           node-version: '20'
 
       - name: Check formatting
-        run: turbo run format:check
+        run: pnpm dlx turbo run format:check
 
   # Summary job that depends on all others
   ci-success:
