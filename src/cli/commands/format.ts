@@ -4,6 +4,7 @@ import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 interface FormatOptions {
   format?: 'docx' | 'html' | 'pdf';
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -17,7 +18,7 @@ export async function formatCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
@@ -67,7 +68,7 @@ export async function formatAllCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine

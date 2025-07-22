@@ -23,29 +23,20 @@ import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/dateUti
  * - Validating status transitions between workflow stages
  */
 export class WorkflowEngine {
-  // Path to the markdown-workflow system installation
   private systemRoot: string;
-  // Path to the user's project root (where they're running workflows)
   private projectRoot: string;
-  // User's project configuration (loaded from config.yml)
   private projectConfig: ProjectConfig | null = null;
-  // List of workflow names available in the system
   private availableWorkflows: string[] = [];
-  // Configuration discovery instance
   private configDiscovery: ConfigDiscovery;
 
   constructor(projectRoot?: string, configDiscovery?: ConfigDiscovery) {
-    // Use provided ConfigDiscovery instance or create a new one
     this.configDiscovery = configDiscovery || new ConfigDiscovery();
-    // Find where markdown-workflow is installed (contains workflow definitions)
     const foundSystemRoot = this.configDiscovery.findSystemRoot();
     if (!foundSystemRoot) {
       throw new Error('System root not found. Ensure markdown-workflow is installed.');
     }
     this.systemRoot = foundSystemRoot;
-    // Find or validate the user's project directory
     this.projectRoot = projectRoot || this.configDiscovery.requireProjectRoot();
-    // Load configuration and discover available workflows
     this.initializeEngine();
   }
 
@@ -54,11 +45,8 @@ export class WorkflowEngine {
    * Loads user configuration and discovers available workflows
    */
   private async initializeEngine(): Promise<void> {
-    // Use ConfigDiscovery to find and load project configuration
     const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
-    // Store user's project config (user info, preferences, etc.)
     this.projectConfig = config.projectConfig || null;
-    // Store list of available workflow names (from system workflows directory)
     this.availableWorkflows = config.availableWorkflows;
   }
 
@@ -67,26 +55,21 @@ export class WorkflowEngine {
    * Reads the workflow.yml file from the system workflows directory and validates it
    */
   async loadWorkflow(workflowName: string): Promise<WorkflowFile> {
-    // Build path to workflow definition in system installation
     const workflowPath = path.join(this.systemRoot, 'workflows', workflowName, 'workflow.yml');
 
-    // Check if workflow definition exists
     if (!fs.existsSync(workflowPath)) {
       throw new Error(`Workflow definition not found: ${workflowName}`);
     }
 
     try {
-      // Read and parse the YAML workflow definition
       const workflowContent = fs.readFileSync(workflowPath, 'utf8');
       const parsedYaml = YAML.parse(workflowContent);
 
-      // Validate the workflow structure using Zod schema
       const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
       if (!validationResult.success) {
         throw new Error(`Invalid workflow format: ${validationResult.error.message}`);
       }
 
-      // Return the validated workflow definition
       return validationResult.data;
     } catch (error) {
       throw new Error(`Failed to load workflow ${workflowName}: ${error}`);
@@ -98,47 +81,37 @@ export class WorkflowEngine {
    * Scans the collections directory and loads metadata for each collection
    */
   async getCollections(workflowName: string): Promise<Collection[]> {
-    // Get project paths using ConfigDiscovery
     const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
-    // Build path to workflow collections directory
     const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
 
-    // Return empty array if no collections directory exists yet
     if (!fs.existsSync(workflowCollectionsDir)) {
       return [];
     }
 
     const collections: Collection[] = [];
-    // Get all subdirectories (each represents a collection)
     const collectionDirs = fs
       .readdirSync(workflowCollectionsDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name);
 
-    // Load metadata for each collection
     for (const collectionId of collectionDirs) {
       const collectionPath = path.join(workflowCollectionsDir, collectionId);
       const metadataPath = path.join(collectionPath, 'collection.yml');
 
-      // Only process directories that have collection metadata
       if (fs.existsSync(metadataPath)) {
         try {
-          // Load and parse collection metadata
           const metadataContent = fs.readFileSync(metadataPath, 'utf8');
           const parsedMetadata = YAML.parse(metadataContent);
           const metadata = parsedMetadata as CollectionMetadata;
 
-          // Get list of artifact files in this collection
           const artifacts = this.getCollectionArtifacts(collectionPath);
 
-          // Add collection to results
           collections.push({
             metadata,
             artifacts,
             path: collectionPath,
           });
         } catch (error) {
-          // Log warning but continue processing other collections
           console.warn(`Failed to load collection metadata for ${collectionId}:`, error);
         }
       }
@@ -188,7 +161,6 @@ export class WorkflowEngine {
     collectionId: string,
     newStatus: string,
   ): Promise<void> {
-    // Load workflow definition and collection data
     const workflow = await this.loadWorkflow(workflowName);
     const collection = await this.getCollection(workflowName, collectionId);
 
@@ -196,32 +168,26 @@ export class WorkflowEngine {
       throw new Error(`Collection not found: ${collectionId}`);
     }
 
-    // Validate status transition against workflow definition
     const currentStage = workflow.workflow.stages.find(
       (s) => s.name === collection.metadata.status,
     );
     const targetStage = workflow.workflow.stages.find((s) => s.name === newStatus);
 
-    // Check if target status exists in workflow
     if (!targetStage) {
       throw new Error(`Invalid status: ${newStatus}`);
     }
 
-    // Check if transition is allowed (current stage must list new status in "next" array)
     if (currentStage && currentStage.next && !currentStage.next.includes(newStatus)) {
       throw new Error(`Invalid status transition: ${collection.metadata.status} → ${newStatus}`);
     }
 
-    // Update collection metadata
     collection.metadata.status = newStatus;
     collection.metadata.date_modified = getCurrentISODate(this.projectConfig || undefined);
-    // Add status change to history for audit trail
     collection.metadata.status_history.push({
       status: newStatus,
       date: getCurrentISODate(this.projectConfig || undefined),
     });
 
-    // Save updated metadata back to file
     const metadataPath = path.join(collection.path, 'collection.yml');
     const metadataContent = YAML.stringify(collection.metadata);
     fs.writeFileSync(metadataPath, metadataContent);
@@ -237,7 +203,6 @@ export class WorkflowEngine {
     actionName: string,
     parameters: Record<string, unknown> = {},
   ): Promise<void> {
-    // Load workflow definition and collection data
     const workflow = await this.loadWorkflow(workflowName);
     const collection = await this.getCollection(workflowName, collectionId);
 
@@ -245,13 +210,12 @@ export class WorkflowEngine {
       throw new Error(`Collection not found: ${collectionId}`);
     }
 
-    // Find the action definition in the workflow
     const action = workflow.workflow.actions.find((a) => a.name === actionName);
     if (!action) {
       throw new Error(`Action not found: ${actionName}`);
     }
 
-    // Dispatch to appropriate action handler
+    // TODO: don't hard-code the action names!
     switch (actionName) {
       case 'format':
         await this.executeFormatAction(workflow, collection, action, parameters);
@@ -274,20 +238,16 @@ export class WorkflowEngine {
     action: WorkflowAction,
     parameters: Record<string, unknown>,
   ): Promise<void> {
-    // Get format type from parameters, default to docx
     const formatType = parameters.format || 'docx';
-    // Create output directory for formatted files
     const outputDir = path.join(collection.path, 'formatted');
 
-    // Ensure output directory exists
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    // Find all markdown files in the collection
     const markdownFiles = collection.artifacts.filter((file) => file.endsWith('.md'));
 
-    // Process each markdown file
+    // TODO: allow the user to specify which files to convert (all, or specific ones)
     for (const file of markdownFiles) {
       const inputPath = path.join(collection.path, file);
       const baseName = path.basename(file, '.md');
@@ -315,19 +275,16 @@ export class WorkflowEngine {
     action: WorkflowAction,
     parameters: Record<string, unknown>,
   ): Promise<void> {
-    // Extract note type from parameters (e.g., "recruiter", "panel", "technical")
     const noteType = parameters.note_type;
     if (!noteType) {
       throw new Error('note_type parameter is required for notes action');
     }
 
-    // Find the interview notes template in the workflow definition
     const notesTemplate = workflow.workflow.templates.find((t) => t.name === 'interview_notes');
     if (!notesTemplate) {
       throw new Error('Interview notes template not found');
     }
 
-    // Build path to the template file
     const templatePath = path.join(
       this.systemRoot,
       'workflows',
@@ -338,10 +295,8 @@ export class WorkflowEngine {
       throw new Error(`Template not found: ${templatePath}`);
     }
 
-    // Read the template content
     const templateContent = fs.readFileSync(templatePath, 'utf8');
 
-    // Prepare variables for template substitution
     const templateVariables = {
       note_type: noteType,
       company: collection.metadata.company,
@@ -356,13 +311,10 @@ export class WorkflowEngine {
       user: this.projectConfig?.user || this.getDefaultUserConfig(),
     };
 
-    // Process template content with Mustache templating
     const processedContent = Mustache.render(templateContent, templateVariables);
-    // Generate output filename from template pattern
     const outputFile = Mustache.render(notesTemplate.output, templateVariables);
     const outputPath = path.join(collection.path, outputFile);
 
-    // Write the processed content to the collection directory
     fs.writeFileSync(outputPath, processedContent);
     console.log(`Created: ${outputFile}`);
   }
