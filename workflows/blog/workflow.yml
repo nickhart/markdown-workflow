@@ -50,6 +50,7 @@ workflow:
   actions:
     - name: "create"
       description: "Create new blog post"
+      usage: "wf create blog <title> <description> [--url <url>] [--template-variant <variant>]"
       templates: ["post"]
       metadata_file: "collection.yml"
       parameters:

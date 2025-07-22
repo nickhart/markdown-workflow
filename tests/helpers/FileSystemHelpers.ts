@@ -184,6 +184,7 @@ function createJobWorkflowYAML(): string {
   actions:
     - name: "create"
       description: "Create new collection"
+      usage: "wf create job <company> <role> [--url <job_posting_url>] [--template-variant <variant>]"
       templates: ["resume", "cover_letter"]
       metadata_file: "collection.yml"
   metadata:
@@ -222,6 +223,7 @@ function createBlogWorkflowYAML(): string {
   actions:
     - name: "create"
       description: "Create new post"
+      usage: "wf create blog <title> <description> [--url <url>] [--template-variant <variant>]"
       templates: ["post"]
       metadata_file: "post.yml"
   metadata:
