@@ -71,8 +71,6 @@
 
 - [ ] **Advanced Features**
   - [ ] `wf-search` - Search collections and workflows
-  - [ ] `wf-backup` - Backup collections
-  - [ ] `wf-restore` - Restore from backup
   - [ ] `wf-migrate` - Migrate between workflow versions
 
 ## 📦 Repository Structure (Low Priority)
@@ -145,12 +143,13 @@
   - [ ] Custom converters (pandoc alternatives)
   - [ ] Custom actions and workflows
   - [ ] Third-party integrations
-  - [ ] Extension marketplace
 
 - [ ] **Collaboration Features**
   - [ ] Shared collections
   - [ ] Real-time collaboration
   - [ ] Version control integration
+    - `wf commit artifact_id` will commit the artifact, and just the artifact.
+    - with a default message? (eg: 'moved from submitted to interview')
   - [ ] Team workflows
 
 - [ ] **AI Integration**
@@ -166,12 +165,6 @@
   - [ ] Online collection management
   - [ ] Mobile-responsive design
   - [ ] Offline synchronization
-
-- [ ] **Desktop Application**
-  - [ ] Electron-based GUI
-  - [ ] Visual workflow designer
-  - [ ] Drag-and-drop interface
-  - [ ] Rich text editing
 
 ## 📝 Implementation Notes
 
