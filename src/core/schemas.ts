@@ -34,6 +34,7 @@ export const WorkflowActionParameterSchema = z.object({
 export const WorkflowActionSchema = z.object({
   name: z.string(),
   description: z.string(),
+  usage: z.string().optional(),
   templates: z.array(z.string()).optional(),
   converter: z.string().optional(),
   formats: z.array(z.string()).optional(),

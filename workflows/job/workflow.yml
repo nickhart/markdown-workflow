@@ -79,6 +79,7 @@ workflow:
   actions:
     - name: "create"
       description: "Create new job application"
+      usage: "wf create job <company> <role> [--url <job_posting_url>] [--template-variant <variant>]"
       templates: ["resume", "cover_letter"]
       metadata_file: "collection.yml"
       parameters:
