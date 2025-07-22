@@ -38,6 +38,10 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
       - name: Build project
         run: pnpm dlx turbo run build
 
@@ -64,6 +68,10 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
       - name: Run tests
         run: pnpm dlx turbo run test -- --coverage
 
@@ -88,6 +96,10 @@ jobs:
         with:
           node-version: '20'
 
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
       - name: Run lint
         run: pnpm dlx turbo run lint
 
@@ -103,6 +115,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 8
 
       - name: Check formatting
         run: pnpm dlx turbo run format:check
