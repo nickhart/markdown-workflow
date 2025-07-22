@@ -1,0 +1,9 @@
+{
+  "name": "web",
+  "scripts": {
+    "build": "next build",
+    "test": "jest",
+    "lint": "eslint src",
+    "format": "prettier --check ."
+  }
+}

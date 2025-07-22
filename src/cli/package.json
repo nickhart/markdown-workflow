@@ -1,0 +1,9 @@
+{
+  "name": "cli",
+  "scripts": {
+    "build": "tsc --project tsconfig.json",
+    "test": "jest",
+    "lint": "eslint src",
+    "format": "prettier --check ."
+  }
+}
