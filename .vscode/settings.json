@@ -11,7 +11,5 @@
     "**/coverage": true,
     "**/.next": true
   },
-  "cSpell.words": [
-    "turborepo"
-  ]
+  "cSpell.words": ["turborepo"]
 }
