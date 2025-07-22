@@ -19,11 +19,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-
       - name: Get pnpm store directory
         shell: bash
         run: |
@@ -50,11 +45,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -87,11 +77,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
@@ -134,11 +119,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
-
       - name: Restore node_modules cache
         uses: actions/cache@v4
         with:
@@ -160,11 +140,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.12.1
 
       - name: Restore node_modules cache
         uses: actions/cache@v4
