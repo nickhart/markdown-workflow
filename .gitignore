@@ -48,3 +48,7 @@ CLAUDE.md
 # Test artifacts
 test-*
 .markdown-workflow
+tmp/
+
+# turbo
+.turbo/

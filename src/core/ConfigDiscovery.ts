@@ -20,27 +20,25 @@ export class ConfigDiscovery {
   constructor(systemInterface: SystemInterface = new NodeSystemInterface()) {
     this.systemInterface = systemInterface;
   }
-  // Directory name that marks a markdown-workflow project (like .git)
+
+  // constants for the project structure
   private static readonly PROJECT_MARKER = '.markdown-workflow';
-  // Configuration file name within the project marker directory
   private static readonly CONFIG_FILE = 'config.yml';
 
   /**
    * Find the system root (where markdown-workflow is installed)
-   * Traverses up from current file location to find package.json
+   * Traverses up from current file location to find package.json.
+   * If called from outside a markdown-workflow project, it will throw an error.
    */
-  findSystemRoot(): string {
-    let currentPath = this.systemInterface.getCurrentFilePath();
+  findSystemRoot(startPath: string = process.cwd()): string | null {
+    let currentPath = path.resolve(startPath);
 
-    // Navigate up the directory tree until we find the root of the markdown-workflow installation
     while (currentPath !== path.parse(currentPath).root) {
-      // Look for package.json with our package name
       const packageJsonPath = path.join(currentPath, 'package.json');
       if (this.systemInterface.existsSync(packageJsonPath)) {
         try {
           const packageJsonContent = this.systemInterface.readFileSync(packageJsonPath);
           const packageJson = JSON.parse(packageJsonContent);
-          // Check if this is the markdown-workflow package
           if (packageJson.name === 'markdown-workflow') {
             return currentPath;
           }
@@ -48,12 +46,10 @@ export class ConfigDiscovery {
           // Continue searching if package.json is invalid JSON
         }
       }
-      // Move up one directory level
-      currentPath = path.dirname(currentPath);
+      currentPath = path.dirname(currentPath); // parent directory
     }
 
-    // Fallback: assume we're in the project structure
-    return path.resolve(currentPath, '../..');
+    return null;
   }
 
   /**
@@ -89,17 +85,42 @@ export class ConfigDiscovery {
    */
   discoverConfiguration(cwd: string = process.cwd()): ConfigPaths {
     // Find where markdown-workflow is installed (system)
-    const systemRoot = this.findSystemRoot();
+    const systemRoot = this.findSystemRoot(this.systemInterface.getCurrentFilePath());
+    if (!systemRoot) {
+      throw new Error('System root not found. Ensure markdown-workflow is installed.');
+    }
+
     // Find the user's project root (if we're in a project)
     const projectRoot = this.findProjectRoot(cwd);
+    if (!projectRoot) {
+      throw new Error('Project root not found. Ensure you are in a markdown-workflow project.');
+    }
 
     return {
       systemRoot,
       projectRoot,
-      // If we're in a project, build path to config file
-      projectConfig: projectRoot
-        ? path.join(projectRoot, ConfigDiscovery.PROJECT_MARKER, ConfigDiscovery.CONFIG_FILE)
-        : undefined,
+      // Build path to config file
+      projectConfig: path.join(projectRoot, ConfigDiscovery.PROJECT_MARKER, ConfigDiscovery.CONFIG_FILE),
+    };
+  }
+
+  /**
+   * Discover system configuration without requiring a project context
+   * Used by commands like init that need to work outside of project directories
+   */
+  discoverSystemConfiguration(): { systemRoot: string; availableWorkflows: string[] } {
+    // Find where markdown-workflow is installed (system)
+    const systemRoot = this.findSystemRoot(this.systemInterface.getCurrentFilePath());
+    if (!systemRoot) {
+      throw new Error('System root not found. Ensure markdown-workflow is installed.');
+    }
+
+    // Get available workflows from system
+    const availableWorkflows = this.getAvailableWorkflows(systemRoot);
+
+    return {
+      systemRoot,
+      availableWorkflows,
     };
   }
 

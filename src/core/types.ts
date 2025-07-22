@@ -99,6 +99,11 @@ export interface SystemConfig {
     sanitize_spaces: string;
     max_length: number;
   };
+  testing?: {
+    override_current_date?: string;
+    override_timezone?: string;
+    deterministic_ids?: boolean;
+  };
 }
 
 export interface WorkflowCustomField {

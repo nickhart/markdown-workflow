@@ -27,11 +27,12 @@ A generalized markdown-based workflow system built with Node.js and TypeScript. 
 # Install dependencies
 pnpm install
 
-# Build the CLI
-pnpm run cli:build
+# Build the CLI (cached with TurboRepo)
+pnpm cli:build
 
 # The CLI is now available at dist/cli/index.js
 # You can run it with: node dist/cli/index.js <command>
+# Subsequent builds are instant thanks to turbo caching
 ```
 
 **Option B: Global Installation (if setup.sh exists)**
@@ -165,10 +166,29 @@ pnpm build                 # Build for production
 
 ### CLI Development
 
+The project uses **TurboRepo** for fast, cached builds and task execution:
+
 ```bash
 pnpm run cli <command>     # Run CLI in development
-pnpm run cli:build         # Build CLI
-pnpm test                  # Run tests
+pnpm cli:build             # Build CLI with caching (instant on repeated builds)
+pnpm turbo cli:build       # Explicit turbo build (same as above)
+```
+
+### Testing
+
+TurboRepo optimizes test execution with intelligent caching:
+
+```bash
+# Unit tests
+pnpm test                  # Run Jest tests with caching
+pnpm test:watch            # Watch mode (not cached)
+
+# E2E tests  
+pnpm test:e2e:snapshots    # Run E2E snapshot tests (build cached automatically)
+pnpm test:e2e:snapshots:update  # Regenerate snapshots
+
+# With explicit turbo (same results, shows caching info)
+pnpm turbo:test:e2e:snapshots    # See turbo cache performance
 ```
 
 ### API Development

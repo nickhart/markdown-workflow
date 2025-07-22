@@ -63,9 +63,11 @@
 
 - [x] **Collection Management**
   - [x] `wf-create` - Create new collection
-  - [ ] `wf-status` - Update collection status
-  - [ ] `wf-list` - List collections
-  - [ ] `wf-format` - Format collection documents
+  - [x] `wf-status` - Update collection status
+  - [x] `wf-list` - List collections
+  - [x] `wf-format` - Format collection documents
+  - [x] `wf-notes` - Create interview/meeting notes
+  - [x] `wf-init` - Initialize project with workflows
 
 - [ ] **Advanced Features**
   - [ ] `wf-search` - Search collections and workflows
@@ -107,15 +109,17 @@
 
 ### Test Coverage
 
-- [ ] **Unit Tests**
-  - [ ] Complete TemplateProcessor tests
-  - [ ] Complete WorkflowEngine tests
-  - [ ] CLI command tests
-  - [ ] Configuration tests
+- [x] **Unit Tests**
+  - [x] TemplateProcessor tests
+  - [x] WorkflowEngine tests  
+  - [x] CLI command tests
+  - [x] Configuration tests
+  - [x] Mock filesystem utilities
 
-- [ ] **Integration Tests**
-  - [ ] End-to-end workflow execution
-  - [ ] Repository integration tests
+- [x] **Integration Tests**
+  - [x] End-to-end workflow execution
+  - [x] Snapshot-based regression testing
+  - [x] TurboRepo build caching
   - [ ] Cross-platform compatibility tests
   - [ ] Performance benchmarks
 

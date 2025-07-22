@@ -187,9 +187,10 @@ describe('Mock File System Approaches', () => {
       }
       const builderTime = performance.now() - builderStart;
 
-      console.log(`Path-based: ${pathTime.toFixed(2)}ms`);
-      console.log(`Builder: ${builderTime.toFixed(2)}ms`);
-      console.log(`Builder overhead: ${((builderTime / pathTime - 1) * 100).toFixed(1)}%`);
+      // Performance comparison (uncomment to see timing details)
+      // console.log(`Path-based: ${pathTime.toFixed(2)}ms`);
+      // console.log(`Builder: ${builderTime.toFixed(2)}ms`);
+      // console.log(`Builder overhead: ${((builderTime / pathTime - 1) * 100).toFixed(1)}%`);
 
       // Both should be reasonably fast
       expect(pathTime).toBeLessThan(1000);

@@ -12,16 +12,41 @@ describe('ConfigDiscovery', () => {
   });
 
   describe('findSystemRoot', () => {
-    it('should find system root by package.json', () => {
+    it('should find system root by package.json from current file path', () => {
       const mockPackageJson = { name: 'markdown-workflow' };
       mockSystemInterface.addMockFile(
         '/mock/system/root/package.json',
         JSON.stringify(mockPackageJson),
       );
 
-      const result = configDiscovery.findSystemRoot();
+      // MockSystemInterface.getCurrentFilePath() returns '/mock/system/root'
+      const result = configDiscovery.findSystemRoot('/mock/system/root');
 
       expect(result).toBe('/mock/system/root');
+    });
+
+    it('should find system root by package.json from custom start path', () => {
+      const mockPackageJson = { name: 'markdown-workflow' };
+      mockSystemInterface.addMockFile(
+        '/custom/path/package.json',
+        JSON.stringify(mockPackageJson),
+      );
+
+      const result = configDiscovery.findSystemRoot('/custom/path/subdir');
+
+      expect(result).toBe('/custom/path');
+    });
+
+    it('should return null when system repo not found from start path', () => {
+      const mockPackageJson = { name: 'other-project' };
+      mockSystemInterface.addMockFile(
+        '/custom/path/package.json',
+        JSON.stringify(mockPackageJson),
+      );
+
+      const result = configDiscovery.findSystemRoot('/custom/path/subdir');
+
+      expect(result).toBeNull();
     });
 
     it('should handle invalid package.json gracefully', () => {
@@ -29,14 +54,14 @@ describe('ConfigDiscovery', () => {
 
       const result = configDiscovery.findSystemRoot();
 
-      expect(result).toBeDefined();
+      expect(result).toBeNull();
     });
 
-    it('should return fallback path when package.json not found', () => {
+    it('should return null when package.json not found', () => {
       // No mock files added, so package.json doesn't exist
-      const result = configDiscovery.findSystemRoot();
+      const result = configDiscovery.findSystemRoot('/some/path');
 
-      expect(result).toBeDefined();
+      expect(result).toBeNull();
     });
   });
 
@@ -61,7 +86,7 @@ describe('ConfigDiscovery', () => {
   });
 
   describe('discoverConfiguration', () => {
-    it('should return configuration paths', () => {
+    it('should return configuration paths when in project directory', () => {
       const testPath = '/test/project';
       mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
       mockSystemInterface.addMockFile(
@@ -78,7 +103,18 @@ describe('ConfigDiscovery', () => {
       });
     });
 
-    it('should handle missing project root', () => {
+
+    it('should throw error when system root not found', () => {
+      const testPath = '/test/project';
+      mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
+      // No system package.json added
+
+      expect(() => {
+        configDiscovery.discoverConfiguration(testPath);
+      }).toThrow('System root not found. Ensure markdown-workflow is installed.');
+    });
+
+    it('should throw error when project root not found', () => {
       const testPath = '/test/project';
       mockSystemInterface.addMockFile(
         '/mock/system/root/package.json',
@@ -86,13 +122,37 @@ describe('ConfigDiscovery', () => {
       );
       // No project marker directory added
 
-      const result = configDiscovery.discoverConfiguration(testPath);
+      expect(() => {
+        configDiscovery.discoverConfiguration(testPath);
+      }).toThrow('Project root not found. Ensure you are in a markdown-workflow project.');
+    });
+  });
 
-      expect(result).toMatchObject({
-        systemRoot: expect.any(String),
-        projectRoot: null,
-        projectConfig: undefined,
+  describe('discoverSystemConfiguration', () => {
+    it('should return system configuration without requiring project', () => {
+      mockSystemInterface.addMockFile(
+        '/mock/system/root/package.json',
+        JSON.stringify({ name: 'markdown-workflow' }),
+      );
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows');
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows/job');
+      mockSystemInterface.addMockDirectory('/mock/system/root/workflows/blog');
+
+      const result = configDiscovery.discoverSystemConfiguration();
+
+      expect(result).toEqual({
+        systemRoot: '/mock/system/root',
+        availableWorkflows: ['job', 'blog'],
       });
+    });
+
+
+    it('should throw error when system root not found', () => {
+      // No system package.json added
+
+      expect(() => {
+        configDiscovery.discoverSystemConfiguration();
+      }).toThrow('System root not found. Ensure markdown-workflow is installed.');
     });
   });
 

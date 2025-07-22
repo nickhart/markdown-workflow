@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+// Jest globals are available
 import * as fs from 'fs';
 import * as path from 'path';
 import { listCommand } from '../../src/cli/commands/list.js';

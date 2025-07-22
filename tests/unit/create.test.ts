@@ -5,13 +5,8 @@ import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
 import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
 import {
   createMockFileSystem,
-  createProjectFileSystem,
-  populateFileSystem,
-  createFileSystemFromPaths,
   createEnhancedMockFileSystem,
-  createProjectFileSystemFromPaths,
 } from '../helpers/FileSystemHelpers.js';
-import { FileSystemBuilder } from '../helpers/FileSystemBuilder.js';
 
 // Mock dependencies
 jest.mock('fs');
@@ -333,6 +328,9 @@ workflows: {}`,
       mockFs.readFileSync.mockImplementation((path) => {
         if (typeof path === 'string' && path.includes('templates/')) {
           throw new Error('Read error');
+        }
+        if (typeof path !== 'string') {
+          throw new Error('Expected string path');
         }
         return mockSystemInterface.readFileSync(path);
       });

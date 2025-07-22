@@ -10,6 +10,7 @@ import {
   type WorkflowAction,
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
+import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/dateUtils.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -37,7 +38,11 @@ export class WorkflowEngine {
     // Use provided ConfigDiscovery instance or create a new one
     this.configDiscovery = configDiscovery || new ConfigDiscovery();
     // Find where markdown-workflow is installed (contains workflow definitions)
-    this.systemRoot = this.configDiscovery.findSystemRoot();
+    const foundSystemRoot = this.configDiscovery.findSystemRoot();
+    if (!foundSystemRoot) {
+      throw new Error('System root not found. Ensure markdown-workflow is installed.');
+    }
+    this.systemRoot = foundSystemRoot;
     // Find or validate the user's project directory
     this.projectRoot = projectRoot || this.configDiscovery.requireProjectRoot();
     // Load configuration and discover available workflows
@@ -209,11 +214,11 @@ export class WorkflowEngine {
 
     // Update collection metadata
     collection.metadata.status = newStatus;
-    collection.metadata.date_modified = new Date().toISOString();
+    collection.metadata.date_modified = getCurrentISODate(this.projectConfig || undefined);
     // Add status change to history for audit trail
     collection.metadata.status_history.push({
       status: newStatus,
-      date: new Date().toISOString(),
+      date: getCurrentISODate(this.projectConfig || undefined),
     });
 
     // Save updated metadata back to file
@@ -342,7 +347,7 @@ export class WorkflowEngine {
       company: collection.metadata.company,
       role: collection.metadata.role,
       application_name: collection.metadata.collection_id,
-      date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD format
+      date: formatDate(getCurrentDate(this.projectConfig || undefined), 'YYYY-MM-DD', this.projectConfig || undefined),
       interviewer: parameters.interviewer || '',
       user: this.projectConfig?.user || this.getDefaultUserConfig(),
     };

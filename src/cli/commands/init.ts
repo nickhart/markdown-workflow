@@ -25,8 +25,8 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
     throw new Error('Already in a markdown-workflow project. Use --force to reinitialize.');
   }
 
-  // Get system configuration
-  const systemConfig = await configDiscovery.resolveConfiguration(cwd);
+  // Get system configuration (works without project context)
+  const systemConfig = configDiscovery.discoverSystemConfiguration();
   const availableWorkflows = systemConfig.availableWorkflows;
 
   // Determine which workflows to initialize
@@ -144,6 +144,12 @@ async function createDefaultConfig(configPath: string): Promise<void> {
         sanitize_spaces: '_',
         max_length: 50,
       },
+      testing: {
+        // Uncomment to override current date for predictable testing
+        // override_current_date: '2025-01-21T10:00:00.000Z',
+        // override_timezone: 'UTC',
+        // deterministic_ids: true,
+      },
     },
     workflows: {
       job: {
@@ -218,6 +224,13 @@ system:
     date_format: "YYYYMMDD"
     sanitize_spaces: "_"
     max_length: 50
+
+  # Testing Overrides (for predictable testing and snapshots)
+  testing:
+    # Uncomment to override current date for predictable testing
+    # override_current_date: "2025-01-21T10:00:00.000Z"
+    # override_timezone: "UTC"
+    # deterministic_ids: true
 
 # Workflow-specific overrides
 workflows:

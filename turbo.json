@@ -1,0 +1,50 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "tsconfig.json", "next.config.js"],
+      "outputs": [".next/**", "!.next/cache/**"]
+    },
+    "cli:build": {
+      "dependsOn": [],
+      "inputs": ["src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "tsconfig.cli.json"],
+      "outputs": ["dist/cli/**"],
+      "cache": true,
+      "outputLogs": "new-only"
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "eslint.config.js", ".eslintrc.json"],
+      "outputs": []
+    },
+    "test": {
+      "dependsOn": [],
+      "inputs": ["src/**/*.ts", "tests/**/*.ts", "jest.config.js"],
+      "outputs": ["coverage/**"]
+    },
+    "test:e2e": {
+      "dependsOn": ["cli:build"],
+      "inputs": ["test-e2e.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**"],
+      "outputs": [],
+      "cache": false
+    },
+    "test:e2e:snapshots": {
+      "dependsOn": ["cli:build"],
+      "inputs": ["test-e2e-snapshots.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**", "scripts/snapshot.js"],
+      "outputs": ["__fs_snapshots__/**"],
+      "cache": false
+    },
+    "test:e2e:snapshots:update": {
+      "dependsOn": ["cli:build"],
+      "inputs": ["test-e2e-snapshots.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**", "scripts/snapshot.js"],
+      "outputs": ["__fs_snapshots__/**"],
+      "cache": false
+    }
+  },
+  "globalDependencies": ["package.json", "pnpm-lock.yaml"]
+}

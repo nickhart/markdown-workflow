@@ -12,18 +12,25 @@
     "wf": "dist/cli/index.js"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
+    "dev": "turbo dev",
+    "build": "turbo build",
     "start": "next start",
     "lint": "next lint",
     "cli": "tsx src/cli/index.ts",
     "cli:build": "tsc --project tsconfig.cli.json",
     "test": "jest",
     "test:watch": "jest --watch",
+    "test:e2e": "./test-e2e.sh",
+    "test:e2e:snapshots": "./test-e2e-snapshots.sh",
+    "test:e2e:snapshots:update": "./test-e2e-snapshots.sh --update",
+    "turbo:test:e2e": "turbo test:e2e",
+    "turbo:test:e2e:snapshots": "turbo test:e2e:snapshots",
+    "turbo:test:e2e:snapshots:update": "turbo test:e2e:snapshots:update",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "preflight": "pnpm build && pnpm test && pnpm lint && pnpm format:check",
-    "generate-mock-fs": "tsx scripts/generate-mock-fs.ts"
+    "preflight": "turbo build test lint format:check",
+    "generate-mock-fs": "tsx scripts/generate-mock-fs.ts",
+    "snapshot": "node scripts/snapshot.js"
   },
   "dependencies": {
     "chalk": "^5.4.1",
@@ -54,6 +61,7 @@
     "ts-jest": "^29.4.0",
     "ts-jest-mock-import-meta": "^1.3.0",
     "tsx": "^4.19.2",
+    "turbo": "^2.5.5",
     "typescript": "^5"
   },
   "jest": {

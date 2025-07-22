@@ -4,7 +4,8 @@ import * as YAML from 'yaml';
 import Mustache from 'mustache';
 import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
-import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
+import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
+import { generateCollectionId, getCurrentISODate, formatDate, getCurrentDate } from '../../shared/dateUtils.js';
 
 interface CreateOptions {
   url?: string;
@@ -48,7 +49,7 @@ export async function createCommand(
   );
 
   // Generate collection ID
-  const collectionId = generateCollectionId(company, role);
+  const collectionId = generateCollectionId(company, role, systemConfig.projectConfig);
 
   // Create collection directory
   const collectionPath = path.join(projectPaths.collectionsDir, collectionId);
@@ -66,12 +67,12 @@ export async function createCommand(
     collection_id: collectionId,
     workflow: workflowName,
     status: workflowDefinition.workflow.stages[0].name, // First stage
-    date_created: new Date().toISOString(),
-    date_modified: new Date().toISOString(),
+    date_created: getCurrentISODate(systemConfig.projectConfig),
+    date_modified: getCurrentISODate(systemConfig.projectConfig),
     status_history: [
       {
         status: workflowDefinition.workflow.stages[0].name,
-        date: new Date().toISOString(),
+        date: getCurrentISODate(systemConfig.projectConfig),
       },
     ],
     company,
@@ -108,6 +109,7 @@ export async function createCommand(
           systemConfig.paths.systemRoot,
           workflowName,
           templateVariables,
+          systemConfig.projectConfig,
         );
       }
     }
@@ -151,28 +153,6 @@ async function loadWorkflowDefinition(
   }
 }
 
-/**
- * Generate collection ID from company and role
- */
-function generateCollectionId(company: string, role: string): string {
-  const sanitize = (str: string): string => {
-    return str
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '') // Remove special chars
-      .replace(/\s+/g, '_') // Replace spaces with underscores
-      .replace(/_+/g, '_') // Remove duplicate underscores
-      .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
-  };
-
-  const sanitizedCompany = sanitize(company);
-  const sanitizedRole = sanitize(role);
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-
-  const collectionId = `${sanitizedCompany}_${sanitizedRole}_${dateStr}`;
-
-  // Truncate if too long
-  return collectionId.length > 50 ? collectionId.slice(0, 50) : collectionId;
-}
 
 /**
  * Process a template file with variable substitution
@@ -183,6 +163,7 @@ async function processTemplate(
   systemRoot: string,
   workflowName: string,
   variables: Record<string, string>,
+  projectConfig?: ProjectConfig | null,
 ): Promise<void> {
   const templatePath = path.join(systemRoot, 'workflows', workflowName, template.file);
 
@@ -211,7 +192,7 @@ async function processTemplate(
     const userConfigForTemplate = userConfig || getDefaultUserConfig();
     const templateVariables = {
       ...variables,
-      date: new Date().toISOString().slice(0, 10),
+      date: formatDate(getCurrentDate(projectConfig || undefined), 'YYYY-MM-DD', projectConfig || undefined),
       user: {
         ...userConfigForTemplate,
         // Add sanitized version of preferred_name for filenames
