@@ -49,7 +49,7 @@ export function crawlDirectoryStructure(
           try {
             const content = fs.readFileSync(currentPath, 'utf-8');
             result[absolutePath] = content;
-          } catch (err) {
+          } catch {
             // Handle binary files or permission issues
             result[absolutePath] = `[Binary or unreadable file: ${path.basename(currentPath)}]`;
           }

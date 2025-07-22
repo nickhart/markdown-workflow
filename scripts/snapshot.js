@@ -148,13 +148,13 @@ function compareSnapshots(snapshot1, snapshot2) {
     typeChanged: [],
   };
 
-  function buildPathMap(tree, pathMap = new Map(), basePath = '') {
+  function buildPathMap(tree, pathMap = new Map()) {
     for (const item of tree) {
       const fullPath = item.path;
       pathMap.set(fullPath, item);
 
       if (item.children) {
-        buildPathMap(item.children, pathMap, fullPath);
+        buildPathMap(item.children, pathMap);
       }
     }
     return pathMap;
