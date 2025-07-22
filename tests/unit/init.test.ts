@@ -3,10 +3,7 @@ import * as path from 'path';
 import { initCommand } from '../../src/cli/commands/init.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
 import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import {
-  createEnhancedMockFileSystem,
-  createFileSystemFromPaths,
-} from '../helpers/FileSystemHelpers.js';
+import { createEnhancedMockFileSystem } from '../helpers/FileSystemHelpers.js';
 
 // Mock dependencies
 jest.mock('fs');

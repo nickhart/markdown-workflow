@@ -29,19 +29,42 @@
     },
     "test:e2e": {
       "dependsOn": ["cli:build"],
-      "inputs": ["test-e2e.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**"],
+      "inputs": [
+        "test-e2e.sh",
+        "src/cli/**/*.ts",
+        "src/core/**/*.ts",
+        "src/shared/**/*.ts",
+        "workflows/**",
+        "test-configs/**"
+      ],
       "outputs": [],
       "cache": false
     },
     "test:e2e:snapshots": {
       "dependsOn": ["cli:build"],
-      "inputs": ["test-e2e-snapshots.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**", "scripts/snapshot.js"],
+      "inputs": [
+        "test-e2e-snapshots.sh",
+        "src/cli/**/*.ts",
+        "src/core/**/*.ts",
+        "src/shared/**/*.ts",
+        "workflows/**",
+        "test-configs/**",
+        "scripts/snapshot.js"
+      ],
       "outputs": ["__fs_snapshots__/**"],
       "cache": false
     },
     "test:e2e:snapshots:update": {
       "dependsOn": ["cli:build"],
-      "inputs": ["test-e2e-snapshots.sh", "src/cli/**/*.ts", "src/core/**/*.ts", "src/shared/**/*.ts", "workflows/**", "test-configs/**", "scripts/snapshot.js"],
+      "inputs": [
+        "test-e2e-snapshots.sh",
+        "src/cli/**/*.ts",
+        "src/core/**/*.ts",
+        "src/shared/**/*.ts",
+        "workflows/**",
+        "test-configs/**",
+        "scripts/snapshot.js"
+      ],
       "outputs": ["__fs_snapshots__/**"],
       "cache": false
     }

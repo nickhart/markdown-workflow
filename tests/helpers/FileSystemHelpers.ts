@@ -427,7 +427,7 @@ export function combineFileSystems(...fileSystems: MockSystemInterface[]): MockS
   const combined = fileSystems[0];
 
   for (let i = 1; i < fileSystems.length; i++) {
-    const fs = fileSystems[i];
+    const _fs = fileSystems[i];
 
     // Get all files and directories from the other file system
     // This is a simplified approach - in a real implementation, you'd need to

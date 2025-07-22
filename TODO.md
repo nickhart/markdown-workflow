@@ -111,7 +111,7 @@
 
 - [x] **Unit Tests**
   - [x] TemplateProcessor tests
-  - [x] WorkflowEngine tests  
+  - [x] WorkflowEngine tests
   - [x] CLI command tests
   - [x] Configuration tests
   - [x] Mock filesystem utilities

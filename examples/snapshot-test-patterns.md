@@ -151,10 +151,10 @@ BASELINE_SNAPSHOTS=(
 
 for snapshot in "${BASELINE_SNAPSHOTS[@]}"; do
     echo "Testing regression for: $snapshot"
-    
+
     TEST_DIR="/tmp/regression-$snapshot-$$"
     mkdir -p "$TEST_DIR" && cd "$TEST_DIR"
-    
+
     # Recreate the scenario (commands depend on snapshot)
     case $snapshot in
         "fresh-init")
@@ -167,13 +167,13 @@ for snapshot in "${BASELINE_SNAPSHOTS[@]}"; do
             ;;
         # ... more cases
     esac
-    
+
     # Validate against baseline
     if ! pnpm snapshot compare "$snapshot" "$TEST_DIR" --content; then
         echo "❌ Regression detected in $snapshot"
         exit 1
     fi
-    
+
     rm -rf "$TEST_DIR"
 done
 
@@ -183,6 +183,7 @@ echo "✅ All regression tests passed"
 ## 🔧 **Best Practices**
 
 ### **1. Use Descriptive Snapshot Names**
+
 ```bash
 # Good
 pnpm snapshot create "job-with-interview-notes" "$TEST_DIR"
@@ -194,12 +195,14 @@ pnpm snapshot create "snapshot" "$TEST_DIR"
 ```
 
 ### **2. Always Use Testing Config for Predictable Results**
+
 ```bash
 # Always copy testing config for deterministic dates
 cp ../test-configs/testing-config.yml .markdown-workflow/config.yml
 ```
 
 ### **3. Test Both Success and Failure Cases**
+
 ```bash
 # Test successful operations
 wf-create job "Valid Co" "Valid Role"
@@ -216,6 +219,7 @@ set -e
 ```
 
 ### **4. Use Content Snapshots for Template Testing**
+
 ```bash
 # When testing template output, include --content
 pnpm snapshot create "template-output" "$TEST_DIR" --content
@@ -223,7 +227,8 @@ pnpm snapshot compare "template-output" "$TEST_DIR" --content
 ```
 
 ### **5. Organize Snapshots by Feature**
-```
+
+```text
 __fs_snapshots__/
 ├── init-basic.json
 ├── init-with-workflows.json
@@ -257,16 +262,16 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '18'
-      
+
       - name: Install dependencies
         run: pnpm install
-      
+
       - name: Build project
         run: pnpm build
-      
+
       - name: Run snapshot tests
         run: pnpm test:e2e:snapshots
-      
+
       - name: Check for snapshot changes
         run: |
           if git diff --exit-code __fs_snapshots__/; then

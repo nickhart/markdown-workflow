@@ -100,11 +100,13 @@ export const SystemConfigSchema = z.object({
     sanitize_spaces: z.string(),
     max_length: z.number(),
   }),
-  testing: z.object({
-    override_current_date: z.string().optional(),
-    override_timezone: z.string().optional(),
-    deterministic_ids: z.boolean().optional(),
-  }).optional(),
+  testing: z
+    .object({
+      override_current_date: z.string().optional(),
+      override_timezone: z.string().optional(),
+      deterministic_ids: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const WorkflowCustomFieldSchema = z.object({

@@ -5,7 +5,7 @@ This project includes a Jest-like filesystem snapshot testing tool that allows y
 ## 🎯 **Use Cases**
 
 - **CLI Testing**: Verify that commands create the expected file structure
-- **Regression Testing**: Ensure new changes don't break existing functionality  
+- **Regression Testing**: Ensure new changes don't break existing functionality
 - **Template Validation**: Confirm that templates generate the correct output
 - **Migration Testing**: Validate file structure changes during upgrades
 
@@ -52,7 +52,7 @@ Snapshots are stored in `__fs_snapshots__/` as JSON files containing:
   "tree": [
     {
       "name": "file.txt",
-      "path": "file.txt", 
+      "path": "file.txt",
       "type": "file",
       "size": 1234,
       "modified": "2025-01-21T08:00:00.000Z",
@@ -61,7 +61,7 @@ Snapshots are stored in `__fs_snapshots__/` as JSON files containing:
     {
       "name": "subfolder",
       "path": "subfolder",
-      "type": "directory", 
+      "type": "directory",
       "children": [...]
     }
   ]
@@ -72,7 +72,7 @@ Snapshots are stored in `__fs_snapshots__/` as JSON files containing:
 
 When differences are found:
 
-```
+```text
 ❌ Found 3 difference(s):
 
 + Added files:
@@ -95,12 +95,14 @@ When differences are found:
 We provide two test scripts:
 
 #### Basic E2E Tests
+
 ```bash
 # Run basic CLI functionality tests
 pnpm test:e2e
 ```
 
-#### Snapshot-Enhanced E2E Tests  
+#### Snapshot-Enhanced E2E Tests
+
 ```bash
 # Run tests with filesystem validation
 pnpm test:e2e:snapshots
@@ -124,6 +126,7 @@ pnpm snapshot compare initialized-project ./test-project
 ### Exclusion Patterns
 
 By default, these patterns are excluded:
+
 - `node_modules`
 - `.git`
 - `__fs_snapshots__`
@@ -134,6 +137,7 @@ By default, these patterns are excluded:
 - `coverage`
 
 #### Custom Exclusions
+
 ```bash
 pnpm snapshot create my-snapshot ./dir --exclude node_modules .env "*.tmp"
 ```
@@ -147,17 +151,19 @@ pnpm snapshot create my-snapshot ./dir --exclude node_modules .env "*.tmp"
 ## 📋 **Best Practices**
 
 ### 1. **Descriptive Snapshot Names**
+
 ```bash
 # Good
 pnpm snapshot create fresh-init-project ./project
 pnpm snapshot create project-with-job-collection ./project
 
-# Bad  
+# Bad
 pnpm snapshot create test1 ./project
 pnpm snapshot create temp ./project
 ```
 
 ### 2. **Test Isolation**
+
 ```bash
 # Always test in temporary directories
 TEST_DIR="/tmp/my-test-$$"
@@ -167,13 +173,16 @@ rm -rf "$TEST_DIR"
 ```
 
 ### 3. **Baseline Snapshots**
+
 Create snapshots for common states:
+
 - Empty directory
 - Fresh project initialization
 - Project with sample data
 - Project after typical operations
 
 ### 4. **Version Control**
+
 ```bash
 # Include snapshots in git for team collaboration
 git add __fs_snapshots__/
@@ -191,9 +200,9 @@ One of the biggest challenges with filesystem snapshots is that CLI commands oft
 system:
   testing:
     # Fixed date for predictable testing
-    override_current_date: "2025-01-21T10:00:00.000Z"
+    override_current_date: '2025-01-21T10:00:00.000Z'
     # Fixed timezone for consistent formatting
-    override_timezone: "UTC"  
+    override_timezone: 'UTC'
     # Use deterministic IDs instead of date-based ones
     deterministic_ids: true
 ```
@@ -203,7 +212,7 @@ system:
 When `override_current_date` is set, all date functions in the system use this fixed date instead of the current system date:
 
 - Collection IDs: `company_role_20250121` (always the same)
-- Template dates: `{{date}}` resolves to `2025-01-21` 
+- Template dates: `{{date}}` resolves to `2025-01-21`
 - Metadata timestamps: Always use the override date
 - Status history: Predictable timestamps
 
@@ -226,7 +235,7 @@ pnpm snapshot create predictable-project ./test-project --content
 ### **Benefits**
 
 - ✅ **Deterministic snapshots**: Same input always produces same output
-- ✅ **Team collaboration**: Snapshots work across different machines/timezones  
+- ✅ **Team collaboration**: Snapshots work across different machines/timezones
 - ✅ **CI/CD friendly**: Tests don't break when run on different days
 - ✅ **Debugging**: Easy to trace issues when dates are predictable
 
@@ -264,7 +273,7 @@ fi
   run: |
     pnpm build
     pnpm test:e2e:snapshots
-    
+
 - name: Check for snapshot changes
   run: |
     if git diff --exit-code __fs_snapshots__/; then
@@ -292,15 +301,19 @@ pnpm snapshot delete old-snapshot-name
 ## 📊 **Snapshot Formats**
 
 ### Directory Structure Snapshot
+
 Captures the hierarchical organization of files and folders.
 
-### File Metadata Snapshot  
+### File Metadata Snapshot
+
 Includes size, modification time, permissions for each file.
 
 ### Content Hash Snapshot
+
 MD5 hashes for detecting content changes in text files.
 
 ### Mixed Snapshot
+
 Combines structure, metadata, and selective content hashing.
 
 ## 🐛 **Troubleshooting**
@@ -308,20 +321,25 @@ Combines structure, metadata, and selective content hashing.
 ### Common Issues
 
 **Snapshot not found**
+
 ```bash
 ❌ Snapshot 'my-snapshot' not found
 ```
+
 - Check snapshot name spelling
 - Run `pnpm snapshot list` to see available snapshots
 
 **Permission errors**
+
 ```bash
 ❌ Error scanning directory: Permission denied
 ```
+
 - Ensure read permissions on target directory
 - Run with appropriate user permissions
 
 **Large content files**
+
 ```bash
 # Content snapshots work best with text files < 10KB
 # For larger files, rely on size and modification time
@@ -344,14 +362,16 @@ import { execSync } from 'child_process';
 
 test('CLI creates expected structure', () => {
   const testDir = '/tmp/cli-test';
-  
+
   // Run CLI command
   execSync(`node dist/cli/index.js init`, { cwd: testDir });
-  
+
   // Compare with snapshot
-  const result = execSync(`node scripts/snapshot.js compare expected-init ${testDir}`, 
-    { cwd: process.cwd(), encoding: 'utf8' });
-  
+  const result = execSync(`node scripts/snapshot.js compare expected-init ${testDir}`, {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
   expect(result).toContain('No differences found');
 });
 ```

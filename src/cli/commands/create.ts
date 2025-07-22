@@ -5,7 +5,12 @@ import Mustache from 'mustache';
 import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
 import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
-import { generateCollectionId, getCurrentISODate, formatDate, getCurrentDate } from '../../shared/dateUtils.js';
+import {
+  generateCollectionId,
+  getCurrentISODate,
+  formatDate,
+  getCurrentDate,
+} from '../../shared/dateUtils.js';
 
 interface CreateOptions {
   url?: string;
@@ -153,7 +158,6 @@ async function loadWorkflowDefinition(
   }
 }
 
-
 /**
  * Process a template file with variable substitution
  */
@@ -192,7 +196,11 @@ async function processTemplate(
     const userConfigForTemplate = userConfig || getDefaultUserConfig();
     const templateVariables = {
       ...variables,
-      date: formatDate(getCurrentDate(projectConfig || undefined), 'YYYY-MM-DD', projectConfig || undefined),
+      date: formatDate(
+        getCurrentDate(projectConfig || undefined),
+        'YYYY-MM-DD',
+        projectConfig || undefined,
+      ),
       user: {
         ...userConfigForTemplate,
         // Add sanitized version of preferred_name for filenames

@@ -1,13 +1,13 @@
 import * as fs from 'fs';
 import { SystemInterface } from '../../src/core/SystemInterface';
 
-type FileSystemContent = {
+type _FileSystemContent = {
   name: string;
-  dirs: FileSystemContent[];
+  dirs: _FileSystemContent[];
   files: string[];
 };
 
-const exampleFileSystemContent = {
+const _exampleFileSystemContent = {
   name: 'mock/system/root',
   dirs: [
     {

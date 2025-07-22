@@ -126,7 +126,7 @@ const mockFs2 = loadFileSystemFromFixtures('example-workflow', '/custom/root');
 
 **Directory Structure:**
 
-```
+```text
 tests/fixtures/example-workflow/
 ├── package.json
 ├── workflows/

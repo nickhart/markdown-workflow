@@ -100,7 +100,11 @@ export class ConfigDiscovery {
       systemRoot,
       projectRoot,
       // Build path to config file
-      projectConfig: path.join(projectRoot, ConfigDiscovery.PROJECT_MARKER, ConfigDiscovery.CONFIG_FILE),
+      projectConfig: path.join(
+        projectRoot,
+        ConfigDiscovery.PROJECT_MARKER,
+        ConfigDiscovery.CONFIG_FILE,
+      ),
     };
   }
 

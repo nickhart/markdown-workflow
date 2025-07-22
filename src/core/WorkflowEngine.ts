@@ -347,7 +347,11 @@ export class WorkflowEngine {
       company: collection.metadata.company,
       role: collection.metadata.role,
       application_name: collection.metadata.collection_id,
-      date: formatDate(getCurrentDate(this.projectConfig || undefined), 'YYYY-MM-DD', this.projectConfig || undefined),
+      date: formatDate(
+        getCurrentDate(this.projectConfig || undefined),
+        'YYYY-MM-DD',
+        this.projectConfig || undefined,
+      ),
       interviewer: parameters.interviewer || '',
       user: this.projectConfig?.user || this.getDefaultUserConfig(),
     };

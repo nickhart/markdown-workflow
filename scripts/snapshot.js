@@ -3,7 +3,7 @@
 /**
  * Filesystem Snapshot Tool
  * Jest-like snapshot testing for filesystem directory structures
- * 
+ *
  * Usage:
  *   node scripts/snapshot.js create <name> <directory>
  *   node scripts/snapshot.js compare <name> <directory>
@@ -29,9 +29,9 @@ if (!fs.existsSync(SNAPSHOTS_DIR)) {
  */
 function createSnapshot(directory, options = {}) {
   const { includeContent = false, excludePatterns = [] } = options;
-  
+
   function shouldExclude(filePath) {
-    return excludePatterns.some(pattern => {
+    return excludePatterns.some((pattern) => {
       if (typeof pattern === 'string') {
         return filePath.includes(pattern);
       }
@@ -41,21 +41,21 @@ function createSnapshot(directory, options = {}) {
       return false;
     });
   }
-  
+
   function scanDirectory(dir, relativePath = '') {
     const items = [];
-    
+
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
-      
+
       for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
         const fullPath = path.join(dir, entry.name);
         const entryRelativePath = path.join(relativePath, entry.name);
-        
+
         if (shouldExclude(entryRelativePath)) {
           continue;
         }
-        
+
         const stats = fs.statSync(fullPath);
         const item = {
           name: entry.name,
@@ -64,7 +64,7 @@ function createSnapshot(directory, options = {}) {
           size: entry.isFile() ? stats.size : 0,
           modified: stats.mtime.toISOString(),
         };
-        
+
         if (entry.isFile() && includeContent) {
           try {
             const content = fs.readFileSync(fullPath, 'utf8');
@@ -77,20 +77,20 @@ function createSnapshot(directory, options = {}) {
             item.contentHash = `ERROR: ${error.message}`;
           }
         }
-        
+
         if (entry.isDirectory()) {
           item.children = scanDirectory(fullPath, entryRelativePath);
         }
-        
+
         items.push(item);
       }
     } catch (error) {
       console.error(`Error scanning directory ${dir}:`, error.message);
     }
-    
+
     return items;
   }
-  
+
   return {
     options,
     tree: scanDirectory(directory),
@@ -101,7 +101,18 @@ function createSnapshot(directory, options = {}) {
  * Check if a file appears to be a text file
  */
 function isTextFile(filePath) {
-  const textExtensions = ['.txt', '.md', '.json', '.yml', '.yaml', '.js', '.ts', '.html', '.css', '.xml'];
+  const textExtensions = [
+    '.txt',
+    '.md',
+    '.json',
+    '.yml',
+    '.yaml',
+    '.js',
+    '.ts',
+    '.html',
+    '.css',
+    '.xml',
+  ];
   const ext = path.extname(filePath).toLowerCase();
   return textExtensions.includes(ext);
 }
@@ -136,33 +147,33 @@ function compareSnapshots(snapshot1, snapshot2) {
     modified: [],
     typeChanged: [],
   };
-  
+
   function buildPathMap(tree, pathMap = new Map(), basePath = '') {
     for (const item of tree) {
       const fullPath = item.path;
       pathMap.set(fullPath, item);
-      
+
       if (item.children) {
         buildPathMap(item.children, pathMap, fullPath);
       }
     }
     return pathMap;
   }
-  
+
   const map1 = buildPathMap(snapshot1.tree);
   const map2 = buildPathMap(snapshot2.tree);
-  
+
   // Find added files
   for (const [path, item] of map2) {
     if (!map1.has(path)) {
       differences.added.push(item);
     }
   }
-  
+
   // Find removed files and modifications
   for (const [path, item1] of map1) {
     const item2 = map2.get(path);
-    
+
     if (!item2) {
       differences.removed.push(item1);
     } else {
@@ -174,9 +185,9 @@ function compareSnapshots(snapshot1, snapshot2) {
       else if (item1.type === 'file') {
         const sizeChanged = item1.size !== item2.size;
         const timeChanged = item1.modified !== item2.modified;
-        const contentChanged = item1.contentHash && item2.contentHash && 
-                              item1.contentHash !== item2.contentHash;
-        
+        const contentChanged =
+          item1.contentHash && item2.contentHash && item1.contentHash !== item2.contentHash;
+
         if (sizeChanged || timeChanged || contentChanged) {
           differences.modified.push({
             path,
@@ -190,7 +201,7 @@ function compareSnapshots(snapshot1, snapshot2) {
       }
     }
   }
-  
+
   return differences;
 }
 
@@ -199,24 +210,24 @@ function compareSnapshots(snapshot1, snapshot2) {
  */
 function formatDifferences(differences) {
   const lines = [];
-  
+
   if (differences.added.length > 0) {
     lines.push('\n+ Added files:');
-    differences.added.forEach(item => {
+    differences.added.forEach((item) => {
       lines.push(`  + ${item.path} (${item.type})`);
     });
   }
-  
+
   if (differences.removed.length > 0) {
     lines.push('\n- Removed files:');
-    differences.removed.forEach(item => {
+    differences.removed.forEach((item) => {
       lines.push(`  - ${item.path} (${item.type})`);
     });
   }
-  
+
   if (differences.modified.length > 0) {
     lines.push('\n~ Modified files:');
-    differences.modified.forEach(item => {
+    differences.modified.forEach((item) => {
       lines.push(`  ~ ${item.path}`);
       if (item.changes.size) {
         lines.push(`    size: ${item.changes.size.from} → ${item.changes.size.to}`);
@@ -229,23 +240,20 @@ function formatDifferences(differences) {
       }
     });
   }
-  
+
   if (differences.typeChanged.length > 0) {
     lines.push('\n⚠ Type changes:');
-    differences.typeChanged.forEach(item => {
+    differences.typeChanged.forEach((item) => {
       lines.push(`  ⚠ ${item.path}: ${item.from} → ${item.to}`);
     });
   }
-  
+
   return lines.join('\n');
 }
 
 // CLI Commands
 
-program
-  .name('snapshot')
-  .description('Filesystem snapshot tool for testing')
-  .version('1.0.0');
+program.name('snapshot').description('Filesystem snapshot tool for testing').version('1.0.0');
 
 program
   .command('create')
@@ -266,13 +274,13 @@ program
         'build',
         'coverage',
       ];
-      
+
       console.log(`Creating snapshot '${name}' of '${directory}'...`);
       const snapshot = createSnapshot(directory, {
         includeContent: options.content,
         excludePatterns,
       });
-      
+
       const snapshotPath = saveSnapshot(name, snapshot);
       console.log(`✅ Snapshot saved to: ${snapshotPath}`);
       console.log(`📁 Captured ${countItems(snapshot.tree)} items`);
@@ -302,25 +310,28 @@ program
         'build',
         'coverage',
       ];
-      
+
       console.log(`Comparing '${directory}' with snapshot '${name}'...`);
-      
+
       const existingSnapshot = loadSnapshot(name);
       const currentSnapshot = createSnapshot(directory, {
         includeContent: options.content,
         excludePatterns,
       });
-      
+
       const differences = compareSnapshots(existingSnapshot, currentSnapshot);
-      const totalChanges = differences.added.length + differences.removed.length + 
-                          differences.modified.length + differences.typeChanged.length;
-      
+      const totalChanges =
+        differences.added.length +
+        differences.removed.length +
+        differences.modified.length +
+        differences.typeChanged.length;
+
       if (totalChanges === 0) {
         console.log('✅ No differences found - snapshot matches!');
       } else {
         console.log(`❌ Found ${totalChanges} difference(s):`);
         console.log(formatDifferences(differences));
-        
+
         if (options.update) {
           saveSnapshot(name, currentSnapshot);
           console.log(`\n🔄 Snapshot '${name}' updated`);
@@ -340,14 +351,15 @@ program
   .description('List all snapshots')
   .action(() => {
     try {
-      const snapshots = fs.readdirSync(SNAPSHOTS_DIR)
-        .filter(file => file.endsWith('.json'))
-        .map(file => {
+      const snapshots = fs
+        .readdirSync(SNAPSHOTS_DIR)
+        .filter((file) => file.endsWith('.json'))
+        .map((file) => {
           const name = path.basename(file, '.json');
           const snapshotPath = path.join(SNAPSHOTS_DIR, file);
           const stats = fs.statSync(snapshotPath);
           const snapshot = JSON.parse(fs.readFileSync(snapshotPath, 'utf8'));
-          
+
           return {
             name,
             created: stats.birthtime.toISOString(),
@@ -355,14 +367,14 @@ program
           };
         })
         .sort((a, b) => new Date(b.created) - new Date(a.created));
-      
+
       if (snapshots.length === 0) {
         console.log('No snapshots found');
         return;
       }
-      
+
       console.log('Available snapshots:\n');
-      snapshots.forEach(snapshot => {
+      snapshots.forEach((snapshot) => {
         console.log(`📸 ${snapshot.name}`);
         console.log(`   Created: ${snapshot.created}`);
         console.log(`   Items: ${snapshot.items}`);
@@ -385,7 +397,7 @@ program
         console.error(`❌ Snapshot '${name}' not found`);
         process.exit(1);
       }
-      
+
       fs.unlinkSync(snapshotPath);
       console.log(`✅ Snapshot '${name}' deleted`);
     } catch (error) {
@@ -409,7 +421,7 @@ program
         console.error(`❌ Snapshot '${name}' not found`);
         process.exit(1);
       }
-      
+
       const excludePatterns = options.exclude || [
         'node_modules',
         '.git',
@@ -420,13 +432,13 @@ program
         'build',
         'coverage',
       ];
-      
+
       console.log(`Updating snapshot '${name}' with '${directory}'...`);
       const snapshot = createSnapshot(directory, {
         includeContent: options.content,
         excludePatterns,
       });
-      
+
       saveSnapshot(name, snapshot);
       console.log(`✅ Snapshot '${name}' updated`);
       console.log(`📁 Captured ${countItems(snapshot.tree)} items`);

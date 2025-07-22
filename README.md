@@ -183,7 +183,7 @@ TurboRepo optimizes test execution with intelligent caching:
 pnpm test                  # Run Jest tests with caching
 pnpm test:watch            # Watch mode (not cached)
 
-# E2E tests  
+# E2E tests
 pnpm test:e2e:snapshots    # Run E2E snapshot tests (build cached automatically)
 pnpm test:e2e:snapshots:update  # Regenerate snapshots
 
@@ -209,7 +209,7 @@ pnpm run api              # Start API server
 
 Like git, the system discovers configuration by walking up directories to find `.markdown-workflow/`:
 
-```
+```text
 ~/my-writing-project/
 ├── .markdown-workflow/
 │   ├── config.yml

@@ -27,10 +27,7 @@ describe('ConfigDiscovery', () => {
 
     it('should find system root by package.json from custom start path', () => {
       const mockPackageJson = { name: 'markdown-workflow' };
-      mockSystemInterface.addMockFile(
-        '/custom/path/package.json',
-        JSON.stringify(mockPackageJson),
-      );
+      mockSystemInterface.addMockFile('/custom/path/package.json', JSON.stringify(mockPackageJson));
 
       const result = configDiscovery.findSystemRoot('/custom/path/subdir');
 
@@ -39,10 +36,7 @@ describe('ConfigDiscovery', () => {
 
     it('should return null when system repo not found from start path', () => {
       const mockPackageJson = { name: 'other-project' };
-      mockSystemInterface.addMockFile(
-        '/custom/path/package.json',
-        JSON.stringify(mockPackageJson),
-      );
+      mockSystemInterface.addMockFile('/custom/path/package.json', JSON.stringify(mockPackageJson));
 
       const result = configDiscovery.findSystemRoot('/custom/path/subdir');
 
@@ -103,7 +97,6 @@ describe('ConfigDiscovery', () => {
       });
     });
 
-
     it('should throw error when system root not found', () => {
       const testPath = '/test/project';
       mockSystemInterface.addMockDirectory('/test/project/.markdown-workflow');
@@ -145,7 +138,6 @@ describe('ConfigDiscovery', () => {
         availableWorkflows: ['job', 'blog'],
       });
     });
-
 
     it('should throw error when system root not found', () => {
       // No system package.json added
