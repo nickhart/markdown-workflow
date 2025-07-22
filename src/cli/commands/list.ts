@@ -6,6 +6,7 @@ interface ListOptions {
   status?: string;
   format?: 'table' | 'json' | 'yaml';
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -15,7 +16,7 @@ export async function listCommand(workflowName: string, options: ListOptions = {
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine

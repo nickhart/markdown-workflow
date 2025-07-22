@@ -3,6 +3,7 @@ import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 
 interface StatusOptions {
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -17,7 +18,7 @@ export async function statusCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
@@ -81,7 +82,7 @@ export async function showStatusesCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine

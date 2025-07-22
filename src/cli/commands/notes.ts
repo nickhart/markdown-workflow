@@ -4,6 +4,7 @@ import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 interface NotesOptions {
   interviewer?: string;
   cwd?: string;
+  configDiscovery?: ConfigDiscovery;
 }
 
 /**
@@ -18,7 +19,7 @@ export async function notesCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
@@ -76,7 +77,7 @@ export async function listNoteTypesCommand(
   const cwd = options.cwd || process.cwd();
 
   // Ensure we're in a project
-  const configDiscovery = new ConfigDiscovery();
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
   // Initialize workflow engine
