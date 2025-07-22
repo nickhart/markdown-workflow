@@ -10,5 +10,8 @@
     "**/dist": true,
     "**/coverage": true,
     "**/.next": true
-  }
+  },
+  "cSpell.words": [
+    "turborepo"
+  ]
 }
