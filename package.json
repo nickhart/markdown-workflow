@@ -13,7 +13,7 @@
   },
   "scripts": {
     "start": "next start",
-    "lint": "eslint . --ext .ts,.tsx,.js --ignore-pattern .gitignore",
+    "lint": "eslint . --ext .ts,.tsx,.js",
     "cli": "tsx src/cli/index.ts",
     "cli:build": "tsc --project tsconfig.cli.json",
     "build": "tsc --project tsconfig.cli.json",
@@ -23,7 +23,7 @@
     "test:e2e:snapshots": "./test-e2e-snapshots.sh",
     "test:e2e:snapshots:update": "./test-e2e-snapshots.sh --update",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
     "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
     "preflight": "turbo run build test lint format:check",
     "generate-mock-fs": "tsx scripts/generate-mock-fs.ts",
