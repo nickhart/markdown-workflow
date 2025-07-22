@@ -29,7 +29,7 @@
     "generate-mock-fs": "tsx scripts/generate-mock-fs.ts",
     "snapshot": "node scripts/snapshot.js",
     "gh:ci:list": "gh run list --workflow=ci.yml --limit=5",
-    "gh:ci:watch": "gh run watch --workflow=ci.yml",
+    "gh:ci:watch": "gh run watch",
     "gh:ci:logs": "gh run view --log",
     "gh:ci:rerun": "gh run rerun --failed",
     "gh:ci:trigger": "gh workflow run ci.yml"
