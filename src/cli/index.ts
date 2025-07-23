@@ -6,6 +6,7 @@ import createWithHelpCommand from './commands/createWithHelp.js';
 import availableCommand from './commands/available.js';
 import formatCommand from './commands/format.js';
 import { statusCommand, showStatusesCommand } from './commands/status.js';
+import listCommand from './commands/list.js';
 
 const program = new Command();
 
@@ -105,6 +106,25 @@ program
         // Update collection status
         await statusCommand(workflow, collectionId, newStatus);
       }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-list command
+program
+  .command('list')
+  .description('List collections for a workflow')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .option('-s, --status <status>', 'Filter by status')
+  .option('-f, --format <format>', 'Output format (table, json, yaml)', 'table')
+  .action(async (workflow, options) => {
+    try {
+      await listCommand(workflow, {
+        status: options.status,
+        format: options.format,
+      });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);

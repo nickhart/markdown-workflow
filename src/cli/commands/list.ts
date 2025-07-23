@@ -1,3 +1,4 @@
+import * as YAML from 'yaml';
 import { WorkflowEngine } from '../../core/WorkflowEngine.js';
 import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 import { Collection } from '../../core/types.js';
@@ -51,8 +52,7 @@ export async function listCommand(workflowName: string, options: ListOptions = {
       console.log(JSON.stringify(filteredCollections, null, 2));
       break;
     case 'yaml':
-      // TODO: Implement YAML output
-      console.log('YAML output not yet implemented');
+      console.log(YAML.stringify(filteredCollections));
       break;
     case 'table':
     default:
