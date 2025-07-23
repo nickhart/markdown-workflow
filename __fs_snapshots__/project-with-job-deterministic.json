@@ -21,60 +21,6 @@
       "modified": "2025-01-21T08:00:00.000Z",
       "children": [
         {
-          "name": "collections",
-          "path": ".markdown-workflow/collections",
-          "type": "directory",
-          "size": 0,
-          "modified": "2025-01-21T08:00:00.000Z",
-          "children": [
-            {
-              "name": "job",
-              "path": ".markdown-workflow/collections/job",
-              "type": "directory",
-              "size": 0,
-              "modified": "2025-01-21T08:00:00.000Z",
-              "children": [
-                {
-                  "name": "example_corp_software_engineer_20250121",
-                  "path": ".markdown-workflow/collections/job/example_corp_software_engineer_20250121",
-                  "type": "directory",
-                  "size": 0,
-                  "modified": "2025-01-21T08:00:00.000Z",
-                  "children": [
-                    {
-                      "name": "collection.yml",
-                      "path": ".markdown-workflow/collections/job/example_corp_software_engineer_20250121/collection.yml",
-                      "type": "file",
-                      "size": 417,
-                      "modified": "2025-01-21T08:00:00.000Z",
-                      "contentHash": "55fcca17b6665ae27e2590dbe43ade49",
-                      "content": "# Collection Metadata\ncollection_id: \"example_corp_software_engineer_20250121\"\nworkflow: \"job\"\nstatus: \"active\"\ndate_created: \"2025-01-21T10:00:00.000Z\"\ndate_modified: \"2025-01-21T10:00:00.000Z\"\n\n# Application Details\ncompany: \"Example Corp\"\nrole: \"Software Engineer\"\n\n\n# Status History\nstatus_history:\n  - status: \"active\"\n    date: \"2025-01-21T10:00:00.000Z\"\n\n# Additional Fields\n# Add custom fields here as needed\n"
-                    },
-                    {
-                      "name": "cover_letter_testuser.md",
-                      "path": ".markdown-workflow/collections/job/example_corp_software_engineer_20250121/cover_letter_testuser.md",
-                      "type": "file",
-                      "size": 3277,
-                      "modified": "2025-01-21T08:00:00.000Z",
-                      "contentHash": "c4a8a57ddbd012b15f101d8f22ff4b90",
-                      "content": "# Cover Letter\n\n**Test User**  \n123 Test Street  \nTest City, TS 12345  \ntest@example.com | (555) 123-4567\n\n---\n\n**2025-01-21**\n\n**Hiring Manager**  \nExample Corp  \nExample Corp Address  \nCity, State ZIP\n\n---\n\n**Dear Hiring Manager,**\n\nI am writing to express my strong interest in the **Software Engineer** position at Example Corp. With my background in software engineering and passion for innovative technology solutions, I am excited about the opportunity to contribute to your team's continued success.\n\n## Why Example Corp?\n\nExample Corp has consistently impressed me with its commitment to innovation and technical excellence. Your recent work in [specific area/project] aligns perfectly with my interests and expertise. I am particularly drawn to Example Corp's culture of continuous learning and collaborative problem-solving, which I believe are essential for driving meaningful impact in the Software Engineer role.\n\n## What I Bring to the Table\n\n**Technical Expertise:** My experience with modern web technologies, cloud platforms, and scalable architecture makes me well-suited for the challenges of this Software Engineer position. I have successfully:\n\n- Led development of high-performance applications serving millions of users\n- Implemented robust CI/CD pipelines reducing deployment time by 60%\n- Mentored junior developers and established best practices across teams\n- Contributed to open-source projects and technical documentation\n\n**Problem-Solving Mindset:** Throughout my career, I have consistently approached complex challenges with analytical thinking and creative solutions. Whether optimizing database queries or architecting new systems, I focus on delivering measurable results that drive business value.\n\n**Collaborative Leadership:** As someone who thrives in team environments, I understand the importance of clear communication and knowledge sharing. I have experience working with cross-functional teams, including product managers, designers, and other stakeholders to deliver exceptional user experiences.\n\n## Specific Contributions I Can Make\n\nBased on my research of Example Corp and the Software Engineer position, I am particularly excited about the opportunity to:\n\n1. **Scale Infrastructure:** Leverage my experience with cloud platforms and microservices to help Example Corp handle growing user demands\n2. **Enhance Developer Experience:** Implement tooling and processes that improve team productivity and code quality\n3. **Drive Innovation:** Contribute to architectural decisions that position Example Corp for future growth and success\n\n## Moving Forward\n\nI would welcome the opportunity to discuss how my skills and experience can contribute to Example Corp's continued growth and success. I am available for an interview at your convenience and look forward to learning more about the Software Engineer role and your team's current challenges and goals.\n\nThank you for considering my application. I am excited about the possibility of joining Example Corp and contributing to your mission of [company mission/values].\n\n---\n\n**Sincerely,**\n\n**Test User**\n\n---\n\n_Attachments: Resume, Portfolio_  \n_Contact: test@example.com | (555) 123-4567_  \n_LinkedIn: linkedin.com&#x2F;in&#x2F;testuser | GitHub: github.com&#x2F;testuser_\n"
-                    },
-                    {
-                      "name": "resume_testuser.md",
-                      "path": ".markdown-workflow/collections/job/example_corp_software_engineer_20250121/resume_testuser.md",
-                      "type": "file",
-                      "size": 2938,
-                      "modified": "2025-01-21T08:00:00.000Z",
-                      "contentHash": "fa2b1dc8d7e61487286d310191ff8953",
-                      "content": "# Test User\n\n**test@example.com** | **(555) 123-4567** | **Test City, TS**  \n**LinkedIn:** linkedin.com&#x2F;in&#x2F;testuser | **GitHub:** github.com&#x2F;testuser | **Website:** testuser.com\n\n---\n\n## Professional Summary\n\nExperienced software engineer with a passion for building scalable applications and leading technical teams. Proven track record of delivering high-quality solutions in fast-paced environments. Seeking to contribute to Example Corp's mission as a Software Engineer.\n\n---\n\n## Technical Skills\n\n- **Languages:** JavaScript, TypeScript, Python, Java, Go\n- **Frontend:** React, Vue.js, HTML5, CSS3, Tailwind CSS\n- **Backend:** Node.js, Express, Django, Spring Boot\n- **Databases:** PostgreSQL, MongoDB, Redis\n- **Cloud:** AWS, Google Cloud, Docker, Kubernetes\n- **Tools:** Git, Jenkins, Jest, Webpack, Vite\n\n---\n\n## Professional Experience\n\n### Senior Software Engineer | Tech Company Inc.\n\n_January 2021 - Present_\n\n- Led development of microservices architecture serving 1M+ users\n- Mentored junior developers and established code review processes\n- Reduced deployment time by 60% through CI/CD pipeline optimization\n- Collaborated with product managers to define technical requirements\n\n### Software Engineer | Startup Solutions LLC\n\n_June 2019 - December 2020_\n\n- Built responsive web applications using React and Node.js\n- Implemented automated testing resulting in 40% reduction in bugs\n- Contributed to open-source projects and technical documentation\n- Participated in agile development process and sprint planning\n\n### Junior Developer | Digital Agency Co.\n\n_August 2018 - May 2019_\n\n- Developed client websites using modern web technologies\n- Collaborated with designers to implement pixel-perfect UIs\n- Optimized application performance and SEO metrics\n- Maintained legacy codebases and implemented new features\n\n---\n\n## Education\n\n### Bachelor of Science in Computer Science\n\n**University of Technology** | _2014 - 2018_\n\n- Relevant Coursework: Data Structures, Algorithms, Software Engineering, Database Systems\n- GPA: 3.7/4.0\n\n---\n\n## Projects\n\n### Project Management Dashboard\n\n- Built a full-stack web application for team collaboration\n- Technologies: React, Node.js, PostgreSQL, AWS\n- Features: Real-time updates, user authentication, data visualization\n\n### Open Source Contributions\n\n- Contributed to multiple open-source projects on GitHub\n- Maintained personal projects with 100+ stars\n- Active in developer community and code reviews\n\n---\n\n## Certifications\n\n- AWS Certified Developer - Associate (2022)\n- Google Cloud Professional Developer (2021)\n- Certified Scrum Master (2020)\n\n---\n\n## Interests\n\n- Open source development and community building\n- Technical writing and mentoring\n- Continuous learning and staying updated with latest technologies\n- Example Corp specific interest: Contributing to innovative solutions in the Software Engineer space\n\n---\n\n_References available upon request_\n"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "name": "config.yml",
           "path": ".markdown-workflow/config.yml",
           "type": "file",
@@ -139,6 +85,60 @@
                   "size": 0,
                   "modified": "2025-01-21T08:00:00.000Z",
                   "children": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "job",
+      "path": "job",
+      "type": "directory",
+      "size": 0,
+      "modified": "2025-01-21T08:00:00.000Z",
+      "children": [
+        {
+          "name": "active",
+          "path": "job/active",
+          "type": "directory",
+          "size": 0,
+          "modified": "2025-01-21T08:00:00.000Z",
+          "children": [
+            {
+              "name": "example_corp_software_engineer_20250121",
+              "path": "job/active/example_corp_software_engineer_20250121",
+              "type": "directory",
+              "size": 0,
+              "modified": "2025-01-21T08:00:00.000Z",
+              "children": [
+                {
+                  "name": "collection.yml",
+                  "path": "job/active/example_corp_software_engineer_20250121/collection.yml",
+                  "type": "file",
+                  "size": 417,
+                  "modified": "2025-01-21T08:00:00.000Z",
+                  "contentHash": "55fcca17b6665ae27e2590dbe43ade49",
+                  "content": "# Collection Metadata\ncollection_id: \"example_corp_software_engineer_20250121\"\nworkflow: \"job\"\nstatus: \"active\"\ndate_created: \"2025-01-21T10:00:00.000Z\"\ndate_modified: \"2025-01-21T10:00:00.000Z\"\n\n# Application Details\ncompany: \"Example Corp\"\nrole: \"Software Engineer\"\n\n\n# Status History\nstatus_history:\n  - status: \"active\"\n    date: \"2025-01-21T10:00:00.000Z\"\n\n# Additional Fields\n# Add custom fields here as needed\n"
+                },
+                {
+                  "name": "cover_letter_testuser.md",
+                  "path": "job/active/example_corp_software_engineer_20250121/cover_letter_testuser.md",
+                  "type": "file",
+                  "size": 3277,
+                  "modified": "2025-01-21T08:00:00.000Z",
+                  "contentHash": "c4a8a57ddbd012b15f101d8f22ff4b90",
+                  "content": "# Cover Letter\n\n**Test User**  \n123 Test Street  \nTest City, TS 12345  \ntest@example.com | (555) 123-4567\n\n---\n\n**2025-01-21**\n\n**Hiring Manager**  \nExample Corp  \nExample Corp Address  \nCity, State ZIP\n\n---\n\n**Dear Hiring Manager,**\n\nI am writing to express my strong interest in the **Software Engineer** position at Example Corp. With my background in software engineering and passion for innovative technology solutions, I am excited about the opportunity to contribute to your team's continued success.\n\n## Why Example Corp?\n\nExample Corp has consistently impressed me with its commitment to innovation and technical excellence. Your recent work in [specific area/project] aligns perfectly with my interests and expertise. I am particularly drawn to Example Corp's culture of continuous learning and collaborative problem-solving, which I believe are essential for driving meaningful impact in the Software Engineer role.\n\n## What I Bring to the Table\n\n**Technical Expertise:** My experience with modern web technologies, cloud platforms, and scalable architecture makes me well-suited for the challenges of this Software Engineer position. I have successfully:\n\n- Led development of high-performance applications serving millions of users\n- Implemented robust CI/CD pipelines reducing deployment time by 60%\n- Mentored junior developers and established best practices across teams\n- Contributed to open-source projects and technical documentation\n\n**Problem-Solving Mindset:** Throughout my career, I have consistently approached complex challenges with analytical thinking and creative solutions. Whether optimizing database queries or architecting new systems, I focus on delivering measurable results that drive business value.\n\n**Collaborative Leadership:** As someone who thrives in team environments, I understand the importance of clear communication and knowledge sharing. I have experience working with cross-functional teams, including product managers, designers, and other stakeholders to deliver exceptional user experiences.\n\n## Specific Contributions I Can Make\n\nBased on my research of Example Corp and the Software Engineer position, I am particularly excited about the opportunity to:\n\n1. **Scale Infrastructure:** Leverage my experience with cloud platforms and microservices to help Example Corp handle growing user demands\n2. **Enhance Developer Experience:** Implement tooling and processes that improve team productivity and code quality\n3. **Drive Innovation:** Contribute to architectural decisions that position Example Corp for future growth and success\n\n## Moving Forward\n\nI would welcome the opportunity to discuss how my skills and experience can contribute to Example Corp's continued growth and success. I am available for an interview at your convenience and look forward to learning more about the Software Engineer role and your team's current challenges and goals.\n\nThank you for considering my application. I am excited about the possibility of joining Example Corp and contributing to your mission of [company mission/values].\n\n---\n\n**Sincerely,**\n\n**Test User**\n\n---\n\n_Attachments: Resume, Portfolio_  \n_Contact: test@example.com | (555) 123-4567_  \n_LinkedIn: linkedin.com&#x2F;in&#x2F;testuser | GitHub: github.com&#x2F;testuser_\n"
+                },
+                {
+                  "name": "resume_testuser.md",
+                  "path": "job/active/example_corp_software_engineer_20250121/resume_testuser.md",
+                  "type": "file",
+                  "size": 2938,
+                  "modified": "2025-01-21T08:00:00.000Z",
+                  "contentHash": "fa2b1dc8d7e61487286d310191ff8953",
+                  "content": "# Test User\n\n**test@example.com** | **(555) 123-4567** | **Test City, TS**  \n**LinkedIn:** linkedin.com&#x2F;in&#x2F;testuser | **GitHub:** github.com&#x2F;testuser | **Website:** testuser.com\n\n---\n\n## Professional Summary\n\nExperienced software engineer with a passion for building scalable applications and leading technical teams. Proven track record of delivering high-quality solutions in fast-paced environments. Seeking to contribute to Example Corp's mission as a Software Engineer.\n\n---\n\n## Technical Skills\n\n- **Languages:** JavaScript, TypeScript, Python, Java, Go\n- **Frontend:** React, Vue.js, HTML5, CSS3, Tailwind CSS\n- **Backend:** Node.js, Express, Django, Spring Boot\n- **Databases:** PostgreSQL, MongoDB, Redis\n- **Cloud:** AWS, Google Cloud, Docker, Kubernetes\n- **Tools:** Git, Jenkins, Jest, Webpack, Vite\n\n---\n\n## Professional Experience\n\n### Senior Software Engineer | Tech Company Inc.\n\n_January 2021 - Present_\n\n- Led development of microservices architecture serving 1M+ users\n- Mentored junior developers and established code review processes\n- Reduced deployment time by 60% through CI/CD pipeline optimization\n- Collaborated with product managers to define technical requirements\n\n### Software Engineer | Startup Solutions LLC\n\n_June 2019 - December 2020_\n\n- Built responsive web applications using React and Node.js\n- Implemented automated testing resulting in 40% reduction in bugs\n- Contributed to open-source projects and technical documentation\n- Participated in agile development process and sprint planning\n\n### Junior Developer | Digital Agency Co.\n\n_August 2018 - May 2019_\n\n- Developed client websites using modern web technologies\n- Collaborated with designers to implement pixel-perfect UIs\n- Optimized application performance and SEO metrics\n- Maintained legacy codebases and implemented new features\n\n---\n\n## Education\n\n### Bachelor of Science in Computer Science\n\n**University of Technology** | _2014 - 2018_\n\n- Relevant Coursework: Data Structures, Algorithms, Software Engineering, Database Systems\n- GPA: 3.7/4.0\n\n---\n\n## Projects\n\n### Project Management Dashboard\n\n- Built a full-stack web application for team collaboration\n- Technologies: React, Node.js, PostgreSQL, AWS\n- Features: Real-time updates, user authentication, data visualization\n\n### Open Source Contributions\n\n- Contributed to multiple open-source projects on GitHub\n- Maintained personal projects with 100+ stars\n- Active in developer community and code reviews\n\n---\n\n## Certifications\n\n- AWS Certified Developer - Associate (2022)\n- Google Cloud Professional Developer (2021)\n- Certified Scrum Master (2020)\n\n---\n\n## Interests\n\n- Open source development and community building\n- Technical writing and mentoring\n- Continuous learning and staying updated with latest technologies\n- Example Corp specific interest: Contributing to innovative solutions in the Software Engineer space\n\n---\n\n_References available upon request_\n"
                 }
               ]
             }
