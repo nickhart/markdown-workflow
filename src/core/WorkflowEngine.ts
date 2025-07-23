@@ -1,8 +1,8 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Mustache from 'mustache';
 import { ConfigDiscovery } from './ConfigDiscovery.js';
+import { SystemInterface, NodeSystemInterface } from './SystemInterface.js';
 import {
   WorkflowFileSchema,
   type WorkflowFile,
@@ -28,9 +28,15 @@ export class WorkflowEngine {
   private projectConfig: ProjectConfig | null = null;
   private availableWorkflows: string[] = [];
   private configDiscovery: ConfigDiscovery;
+  private systemInterface: SystemInterface;
 
-  constructor(projectRoot?: string, configDiscovery?: ConfigDiscovery) {
+  constructor(
+    projectRoot?: string,
+    configDiscovery?: ConfigDiscovery,
+    systemInterface?: SystemInterface,
+  ) {
     this.configDiscovery = configDiscovery || new ConfigDiscovery();
+    this.systemInterface = systemInterface || new NodeSystemInterface();
     const foundSystemRoot = this.configDiscovery.findSystemRoot();
     if (!foundSystemRoot) {
       throw new Error('System root not found. Ensure markdown-workflow is installed.');
@@ -61,12 +67,12 @@ export class WorkflowEngine {
   async loadWorkflow(workflowName: string): Promise<WorkflowFile> {
     const workflowPath = path.join(this.systemRoot, 'workflows', workflowName, 'workflow.yml');
 
-    if (!fs.existsSync(workflowPath)) {
+    if (!this.systemInterface.existsSync(workflowPath)) {
       throw new Error(`Workflow definition not found: ${workflowName}`);
     }
 
     try {
-      const workflowContent = fs.readFileSync(workflowPath, 'utf8');
+      const workflowContent = this.systemInterface.readFileSync(workflowPath);
       const parsedYaml = YAML.parse(workflowContent);
 
       const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
@@ -88,15 +94,15 @@ export class WorkflowEngine {
     const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
     const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
 
-    if (!fs.existsSync(workflowCollectionsDir)) {
+    if (!this.systemInterface.existsSync(workflowCollectionsDir)) {
       return [];
     }
 
     const collections: Collection[] = [];
 
     // Scan through status directories (active, submitted, interview, etc.)
-    const statusDirs = fs
-      .readdirSync(workflowCollectionsDir, { withFileTypes: true })
+    const statusDirs = this.systemInterface
+      .readdirSync(workflowCollectionsDir)
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name);
 
@@ -104,8 +110,8 @@ export class WorkflowEngine {
       const statusPath = path.join(workflowCollectionsDir, statusDir);
 
       // Get collections within this status directory
-      const collectionDirs = fs
-        .readdirSync(statusPath, { withFileTypes: true })
+      const collectionDirs = this.systemInterface
+        .readdirSync(statusPath)
         .filter((dirent) => dirent.isDirectory())
         .map((dirent) => dirent.name);
 
@@ -113,9 +119,9 @@ export class WorkflowEngine {
         const collectionPath = path.join(statusPath, collectionId);
         const metadataPath = path.join(collectionPath, 'collection.yml');
 
-        if (fs.existsSync(metadataPath)) {
+        if (this.systemInterface.existsSync(metadataPath)) {
           try {
-            const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+            const metadataContent = this.systemInterface.readFileSync(metadataPath);
             const parsedMetadata = YAML.parse(metadataContent);
             const metadata = parsedMetadata as CollectionMetadata;
 
@@ -143,13 +149,13 @@ export class WorkflowEngine {
     const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
     const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
 
-    if (!fs.existsSync(workflowCollectionsDir)) {
+    if (!this.systemInterface.existsSync(workflowCollectionsDir)) {
       return null;
     }
 
     // Search through all status directories to find the collection
-    const statusDirs = fs
-      .readdirSync(workflowCollectionsDir, { withFileTypes: true })
+    const statusDirs = this.systemInterface
+      .readdirSync(workflowCollectionsDir)
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name);
 
@@ -157,9 +163,9 @@ export class WorkflowEngine {
       const collectionPath = path.join(workflowCollectionsDir, statusDir, collectionId);
       const metadataPath = path.join(collectionPath, 'collection.yml');
 
-      if (fs.existsSync(metadataPath)) {
+      if (this.systemInterface.existsSync(metadataPath)) {
         try {
-          const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+          const metadataContent = this.systemInterface.readFileSync(metadataPath);
           const parsedMetadata = YAML.parse(metadataContent);
           const metadata = parsedMetadata as CollectionMetadata;
           const artifacts = this.getCollectionArtifacts(collectionPath);
@@ -209,6 +215,9 @@ export class WorkflowEngine {
       throw new Error(`Invalid status transition: ${collection.metadata.status} → ${newStatus}`);
     }
 
+    const oldStatus = collection.metadata.status;
+
+    // Update metadata
     collection.metadata.status = newStatus;
     collection.metadata.date_modified = getCurrentISODate(this.projectConfig || undefined);
     collection.metadata.status_history.push({
@@ -216,9 +225,29 @@ export class WorkflowEngine {
       date: getCurrentISODate(this.projectConfig || undefined),
     });
 
+    // If status actually changed, move the collection directory
+    if (oldStatus !== newStatus) {
+      const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
+      const oldPath = collection.path;
+      const newPath = path.join(projectPaths.collectionsDir, workflowName, newStatus, collectionId);
+
+      // Create new status directory if it doesn't exist
+      const newStatusDir = path.dirname(newPath);
+      if (!this.systemInterface.existsSync(newStatusDir)) {
+        this.systemInterface.mkdirSync(newStatusDir, { recursive: true });
+      }
+
+      // Move the collection directory
+      this.systemInterface.renameSync(oldPath, newPath);
+
+      // Update collection path reference
+      collection.path = newPath;
+    }
+
+    // Write updated metadata to the (possibly new) location
     const metadataPath = path.join(collection.path, 'collection.yml');
     const metadataContent = YAML.stringify(collection.metadata);
-    fs.writeFileSync(metadataPath, metadataContent);
+    this.systemInterface.writeFileSync(metadataPath, metadataContent);
   }
 
   /**
@@ -270,8 +299,8 @@ export class WorkflowEngine {
     const requestedArtifacts = parameters.artifacts as string[] | undefined;
     const outputDir = path.join(collection.path, 'formatted');
 
-    if (!fs.existsSync(outputDir)) {
-      fs.mkdirSync(outputDir, { recursive: true });
+    if (!this.systemInterface.existsSync(outputDir)) {
+      this.systemInterface.mkdirSync(outputDir, { recursive: true });
     }
 
     // Get all markdown files in collection
@@ -316,7 +345,7 @@ export class WorkflowEngine {
 
       if (formatType === 'docx') {
         // Placeholder: In reality, would use pandoc or similar
-        fs.copyFileSync(inputPath, outputPath.replace('.docx', '.converted.md'));
+        this.systemInterface.copyFileSync(inputPath, outputPath.replace('.docx', '.converted.md'));
         console.log(`Created: ${outputPath}`);
       }
     }
@@ -350,11 +379,11 @@ export class WorkflowEngine {
       workflow.workflow.name,
       notesTemplate.file,
     );
-    if (!fs.existsSync(templatePath)) {
+    if (!this.systemInterface.existsSync(templatePath)) {
       throw new Error(`Template not found: ${templatePath}`);
     }
 
-    const templateContent = fs.readFileSync(templatePath, 'utf8');
+    const templateContent = this.systemInterface.readFileSync(templatePath);
 
     const templateVariables = {
       note_type: noteType,
@@ -374,7 +403,7 @@ export class WorkflowEngine {
     const outputFile = Mustache.render(notesTemplate.output, templateVariables);
     const outputPath = path.join(collection.path, outputFile);
 
-    fs.writeFileSync(outputPath, processedContent);
+    this.systemInterface.writeFileSync(outputPath, processedContent);
     console.log(`Created: ${outputFile}`);
   }
 
@@ -384,8 +413,8 @@ export class WorkflowEngine {
    */
   private getCollectionArtifacts(collectionPath: string): string[] {
     try {
-      return fs
-        .readdirSync(collectionPath, { withFileTypes: true })
+      return this.systemInterface
+        .readdirSync(collectionPath)
         .filter((dirent) => dirent.isFile() && !dirent.name.startsWith('.')) // Skip hidden files
         .map((dirent) => dirent.name);
     } catch {

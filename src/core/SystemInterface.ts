@@ -3,7 +3,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 /**
- * Interface for system operations used by ConfigDiscovery
+ * Interface for system operations used by ConfigDiscovery and WorkflowEngine
  * Allows for dependency injection and easier testing
  */
 export interface SystemInterface {
@@ -23,6 +23,11 @@ export interface SystemInterface {
   readFileSync(path: string): string;
 
   /**
+   * Write a file synchronously with UTF-8 encoding
+   */
+  writeFileSync(path: string, data: string): void;
+
+  /**
    * Get file/directory stats
    */
   statSync(path: string): fs.Stats;
@@ -31,6 +36,21 @@ export interface SystemInterface {
    * Read directory contents with file type information
    */
   readdirSync(path: string): fs.Dirent[];
+
+  /**
+   * Create a directory (and parent directories if needed)
+   */
+  mkdirSync(path: string, options?: { recursive?: boolean }): void;
+
+  /**
+   * Rename/move a file or directory
+   */
+  renameSync(oldPath: string, newPath: string): void;
+
+  /**
+   * Copy a file
+   */
+  copyFileSync(src: string, dest: string): void;
 }
 
 /**
@@ -57,11 +77,27 @@ export class NodeSystemInterface implements SystemInterface {
     return fs.readFileSync(path, 'utf8');
   }
 
+  writeFileSync(path: string, data: string): void {
+    fs.writeFileSync(path, data, 'utf8');
+  }
+
   statSync(path: string): fs.Stats {
     return fs.statSync(path);
   }
 
   readdirSync(path: string): fs.Dirent[] {
     return fs.readdirSync(path, { withFileTypes: true });
+  }
+
+  mkdirSync(path: string, options?: { recursive?: boolean }): void {
+    fs.mkdirSync(path, options);
+  }
+
+  renameSync(oldPath: string, newPath: string): void {
+    fs.renameSync(oldPath, newPath);
+  }
+
+  copyFileSync(src: string, dest: string): void {
+    fs.copyFileSync(src, dest);
   }
 }
