@@ -1,0 +1,73 @@
+# Testing Configuration with Date/Time Overrides
+# This config demonstrates how to use testing overrides for predictable snapshots
+
+# User Information (used for template substitution)
+user:
+  name: "Test User"
+  preferred_name: "test_user"
+  email: "test@example.com"
+  phone: "(555) 123-4567"
+  address: "123 Test Street"
+  city: "Test City"
+  state: "TS"
+  zip: "12345"
+  linkedin: "linkedin.com/in/testuser"
+  github: "github.com/testuser"
+  website: "testuser.com"
+
+# System Configuration
+system:
+  scraper: "wget"  # Options: "wget", "curl", "chrome"
+  web_download:
+    timeout: 30
+    add_utf8_bom: true
+    html_cleanup: "scripts"  # Options: "none", "scripts", "markdown"
+
+  output_formats:
+    - "docx"
+    - "html"
+    - "pdf"
+
+  git:
+    auto_commit: true
+    commit_message_template: "Add {{workflow}} collection: {{collection_id}}"
+
+  collection_id:
+    date_format: "YYYYMMDD"
+    sanitize_spaces: "_"
+    max_length: 50
+
+  # Testing Overrides (for predictable testing and snapshots)
+  testing:
+    # Fixed date for predictable testing - ensures snapshots always match
+    override_current_date: "2025-01-21T10:00:00.000Z"
+    # Fixed timezone for consistent date formatting
+    override_timezone: "UTC"
+    # Use deterministic IDs instead of date-based ones
+    deterministic_ids: true
+
+# Workflow-specific overrides
+workflows:
+  job:
+    templates:
+      resume:
+        default_template: "default"
+        available_templates:
+          - "default"
+          - "mobile"
+          - "frontend"
+
+    custom_fields:
+      - name: "salary_range"
+        type: "string"
+        description: "Expected salary range"
+      - name: "remote_preference"
+        type: "enum"
+        options: ["remote", "hybrid", "onsite"]
+        description: "Work location preference"
+
+  blog:
+    custom_fields:
+      - name: "estimated_reading_time"
+        type: "number"
+        description: "Estimated reading time in minutes"
