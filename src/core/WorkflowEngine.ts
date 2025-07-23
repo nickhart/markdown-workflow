@@ -93,7 +93,7 @@ export class WorkflowEngine {
     }
 
     const collections: Collection[] = [];
-    
+
     // Scan through status directories (active, submitted, interview, etc.)
     const statusDirs = fs
       .readdirSync(workflowCollectionsDir, { withFileTypes: true })
@@ -102,7 +102,7 @@ export class WorkflowEngine {
 
     for (const statusDir of statusDirs) {
       const statusPath = path.join(workflowCollectionsDir, statusDir);
-      
+
       // Get collections within this status directory
       const collectionDirs = fs
         .readdirSync(statusPath, { withFileTypes: true })

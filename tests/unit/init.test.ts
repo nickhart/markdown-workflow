@@ -88,9 +88,7 @@ describe('initCommand', () => {
       expect(mockFs.mkdirSync).toHaveBeenCalledWith(`${testDir}/.markdown-workflow/workflows`, {
         recursive: true,
       });
-      expect(mockFs.mkdirSync).toHaveBeenCalledWith(`${testDir}/.markdown-workflow/collections`, {
-        recursive: true,
-      });
+      // Note: Collections dir is now the project root, so no longer created by init
 
       // Should create config file
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
