@@ -280,7 +280,15 @@ export class WorkflowEngine {
         await this.executeFormatAction(workflow, collection, action, parameters);
         break;
       case 'notes':
-        await this.executeNotesAction(workflow, collection, action, parameters);
+        // Legacy support: map notes action to add action with notes template
+        await this.executeAddAction(workflow, collection, action, {
+          ...parameters,
+          template: 'notes',
+          prefix: parameters.note_type,
+        });
+        break;
+      case 'add':
+        await this.executeAddAction(workflow, collection, action, parameters);
         break;
       default:
         throw new Error(`Action not implemented: ${actionName}`);
@@ -354,8 +362,105 @@ export class WorkflowEngine {
   }
 
   /**
+   * Execute add action (add new item from template)
+   * Creates a new file from any template with flexible naming and variable substitution
+   */
+  private async executeAddAction(
+    workflow: WorkflowFile,
+    collection: Collection,
+    action: WorkflowAction,
+    parameters: Record<string, unknown>,
+  ): Promise<void> {
+    await this.ensureProjectConfigLoaded();
+
+    const templateName = parameters.template;
+    if (!templateName || typeof templateName !== 'string') {
+      throw new Error('template parameter is required for add action');
+    }
+
+    // Find the specified template
+    const template = workflow.workflow.templates.find((t) => t.name === templateName);
+    if (!template) {
+      const availableTemplates = workflow.workflow.templates.map((t) => t.name);
+      throw new Error(
+        `Template '${templateName}' not found. Available templates: ${availableTemplates.join(', ')}`,
+      );
+    }
+
+    // Build template path
+    const templatePath = path.join(
+      this.systemRoot,
+      'workflows',
+      workflow.workflow.name,
+      template.file,
+    );
+    if (!this.systemInterface.existsSync(templatePath)) {
+      throw new Error(`Template file not found: ${templatePath}`);
+    }
+
+    const templateContent = this.systemInterface.readFileSync(templatePath);
+
+    // Build template variables
+    const templateVariables = {
+      // Include all parameters as template variables
+      ...parameters,
+      // Standard variables
+      company: collection.metadata.company,
+      role: collection.metadata.role,
+      collection_id: collection.metadata.collection_id,
+      date: formatDate(
+        getCurrentDate(this.projectConfig || undefined),
+        'YYYY-MM-DD',
+        this.projectConfig || undefined,
+      ),
+      user: this.projectConfig?.user || this.getDefaultUserConfig(),
+      // Make sure prefix is available as template variable (capitalized for title)
+      prefix: parameters.prefix
+        ? String(parameters.prefix).charAt(0).toUpperCase() + String(parameters.prefix).slice(1)
+        : parameters.note_type
+          ? String(parameters.note_type).charAt(0).toUpperCase() +
+            String(parameters.note_type).slice(1)
+          : '',
+      // Legacy compatibility for notes
+      note_type: parameters.prefix || parameters.note_type || '',
+      interviewer: parameters.interviewer || '',
+    };
+
+    // Process template content
+    const processedContent = Mustache.render(templateContent, templateVariables);
+
+    // Generate output filename
+    let outputFile: string;
+    if (parameters.prefix && typeof parameters.prefix === 'string') {
+      // If prefix is provided, use it: prefix_templatename.md
+      const baseOutputName = template.output
+        .replace(/\{\{[^}]+\}\}/g, '') // Remove template variables
+        .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
+        .replace(/\.md$/, ''); // Remove .md extension
+      outputFile = `${parameters.prefix}_${baseOutputName || templateName}.md`;
+    } else {
+      // Use template's output pattern with variable substitution
+      outputFile = Mustache.render(template.output, templateVariables);
+    }
+
+    const outputPath = path.join(collection.path, outputFile);
+
+    // Check if file already exists
+    if (this.systemInterface.existsSync(outputPath)) {
+      throw new Error(
+        `File already exists: ${outputFile}. Use a different prefix or remove the existing file.`,
+      );
+    }
+
+    // Write the file
+    this.systemInterface.writeFileSync(outputPath, processedContent);
+    console.log(`Created: ${outputFile}`);
+  }
+
+  /**
    * Execute notes action (create notes from template)
    * Creates interview notes or other note types from templates with variable substitution
+   * @deprecated Use executeAddAction with template parameter instead
    */
   private async executeNotesAction(
     workflow: WorkflowFile,
