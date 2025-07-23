@@ -277,7 +277,7 @@ describe('ConfigDiscovery', () => {
         projectDir: path.join(projectRoot, '.markdown-workflow'),
         configFile: path.join(projectRoot, '.markdown-workflow', 'config.yml'),
         workflowsDir: path.join(projectRoot, '.markdown-workflow', 'workflows'),
-        collectionsDir: path.join(projectRoot, '.markdown-workflow', 'collections'),
+        collectionsDir: projectRoot, // Collections at project root (job/, blog/, etc.)
       });
     });
   });

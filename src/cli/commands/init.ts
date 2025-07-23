@@ -68,7 +68,7 @@ async function createProjectStructure(projectRoot: string, workflows: string[]):
 
   // Create subdirectories
   fs.mkdirSync(projectPaths.workflowsDir, { recursive: true });
-  fs.mkdirSync(projectPaths.collectionsDir, { recursive: true });
+  // Note: collectionsDir is now the project root, so no need to create it
 
   // Create default config file
   await createDefaultConfig(projectPaths.configFile);
