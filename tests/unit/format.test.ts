@@ -1,15 +1,12 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { formatCommand, formatAllCommand } from '../../src/cli/commands/format.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
 import { WorkflowEngine } from '../../src/core/WorkflowEngine.js';
 
 // Mock dependencies
-jest.mock('fs');
 jest.mock('path');
 jest.mock('../../src/core/WorkflowEngine.js');
 
-const _mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
 const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
 
