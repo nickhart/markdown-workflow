@@ -60,10 +60,10 @@ workflow:
       output: "cover_letter_{{user.preferred_name}}.md"
       description: "Cover letter for this application"
     
-    - name: "interview_notes"
+    - name: "notes"
       file: "templates/notes/default.md"
-      output: "{{note_type}}_notes.md"
-      description: "Interview notes template"
+      output: "{{prefix}}_notes.md"
+      description: "Notes template for interviews, meetings, or general notes"
 
   # Define static files (no variable substitution)
   statics:
@@ -113,8 +113,8 @@ workflow:
           description: "Output format"
     
     - name: "notes"
-      description: "Create interview notes"
-      templates: ["interview_notes"]
+      description: "Create interview notes (legacy - use 'add' action instead)"
+      templates: ["notes"]
       parameters:
         - name: "note_type"
           type: "enum"
@@ -125,6 +125,19 @@ workflow:
           type: "string"
           required: false
           description: "Interviewer name"
+    
+    - name: "add"
+      description: "Add new item from template to collection"
+      parameters:
+        - name: "template"
+          type: "enum"
+          options: ["notes"]
+          required: true
+          description: "Template to use for creating the new item"
+        - name: "prefix"
+          type: "string"
+          required: false
+          description: "Optional prefix for the output filename"
     
     - name: "scrape"
       description: "Archive job description from URL"

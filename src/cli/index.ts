@@ -6,6 +6,7 @@ import createWithHelpCommand from './commands/createWithHelp.js';
 import availableCommand from './commands/available.js';
 import formatCommand from './commands/format.js';
 import { statusCommand, showStatusesCommand } from './commands/status.js';
+import { addCommand, listTemplatesCommand } from './commands/add.js';
 import listCommand from './commands/list.js';
 
 const program = new Command();
@@ -105,6 +106,33 @@ program
       } else {
         // Update collection status
         await statusCommand(workflow, collectionId, newStatus);
+      }
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-add command
+program
+  .command('add')
+  .description('Add new item from template to an existing collection')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('[collection_id]', 'Collection ID to add item to (omit to list available templates)')
+  .argument('[template]', 'Template name to use')
+  .argument('[prefix]', 'Optional prefix for the output filename')
+  .action(async (workflow, collectionId, template, prefix) => {
+    try {
+      if (!collectionId) {
+        // Show available templates for workflow
+        await listTemplatesCommand(workflow);
+      } else if (!template) {
+        throw new Error(
+          'Please provide a template name or omit collection_id to see available templates',
+        );
+      } else {
+        // Add item to collection
+        await addCommand(workflow, collectionId, template, prefix);
       }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
