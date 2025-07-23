@@ -2,243 +2,327 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { formatCommand, formatAllCommand } from '../../src/cli/commands/format.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import { createEnhancedMockFileSystem } from '../helpers/FileSystemHelpers.js';
+import { WorkflowEngine } from '../../src/core/WorkflowEngine.js';
 
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
+jest.mock('../../src/core/WorkflowEngine.js');
 
-const mockFs = fs as jest.Mocked<typeof fs>;
+const _mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
+const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
 
 describe('formatCommand', () => {
-  let mockSystemInterface: MockSystemInterface;
-  let configDiscovery: ConfigDiscovery;
+  let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
+  let mockEngine: jest.Mocked<WorkflowEngine>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Setup path mocks
-    mockPath.join.mockImplementation((...args) => args.join('/'));
-    mockPath.resolve.mockImplementation((...args) => args.join('/'));
-    mockPath.dirname.mockImplementation((p) => {
-      const parts = p.split('/');
-      return parts.slice(0, -1).join('/') || '/';
-    });
-    mockPath.parse.mockImplementation((p) => ({
-      root: '/',
-      dir: p.substring(0, p.lastIndexOf('/')),
-      base: p.substring(p.lastIndexOf('/') + 1),
-      ext: p.substring(p.lastIndexOf('.')),
-      name: p.substring(p.lastIndexOf('/') + 1, p.lastIndexOf('.')),
-    }));
 
     // Setup console mocks
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
 
-    // Create mock file system
-    mockSystemInterface = createEnhancedMockFileSystem();
-    configDiscovery = new ConfigDiscovery(mockSystemInterface);
+    // Setup path mocks
+    mockPath.join.mockImplementation((...args) => args.join('/'));
 
-    // Add project structure
-    const projectPath = '/mock/project';
-    mockSystemInterface.addMockDirectory(projectPath);
-    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
-    mockSystemInterface.addMockFile(
-      `${projectPath}/config.yml`,
-      `user:
-  name: "Test User"
-  preferred_name: "Test"
-  phone: "(555) 123-4567"
-  address: "123 Test St"
-  city: "Test City"
-  state: "TS"
-  zip: "12345"
-  linkedin: "linkedin.com/in/testuser"
-  github: "github.com/testuser"
-  website: "testuser.com"
+    // Mock ConfigDiscovery
+    mockConfigDiscovery = {
+      requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+    } as jest.Mocked<ConfigDiscovery>;
 
-system:
-  scraper: "wget"
-  web_download:
-    timeout: 30
-    add_utf8_bom: true
-    html_cleanup: "scripts"
-  output_formats:
-    - "docx"
-    - "html"
-    - "pdf"
-  git:
-    auto_commit: false
-    commit_message_template: "Update {{workflow}} collection {{collection_id}}"
-  collection_id:
-    date_format: "YYYYMMDD"
-    sanitize_spaces: "_"
-    max_length: 50
+    // Mock WorkflowEngine
+    mockEngine = {
+      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
+      getCollection: jest.fn(),
+      executeAction: jest.fn(),
+      getCollections: jest.fn(),
+    } as jest.Mocked<WorkflowEngine>;
 
-workflows: {}`,
-    );
-
-    // Add collection structure
-    const collectionPath = `${projectPath}/collections/job/test_company_developer_20250122`;
-    mockSystemInterface.addMockDirectory(collectionPath);
-    mockSystemInterface.addMockFile(
-      `${collectionPath}/collection.yml`,
-      'workflow: "job"\ncollection_id: "test_company_developer_20250122"\ncompany: "Test Company"\nrole: "Developer"\nstatus: "active"\ncreated_date: "2025-01-22"',
-    );
-    mockSystemInterface.addMockFile(
-      `${collectionPath}/resume_test.md`,
-      '# Resume\n## Test User\nSoftware Developer',
-    );
-
-    // Setup filesystem mocks
-    mockFs.existsSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.existsSync(filePath as string),
-    );
-    mockFs.readFileSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readFileSync(filePath as string),
-    );
-    mockFs.statSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.statSync(filePath as string),
-    );
-    mockFs.readdirSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readdirSync(filePath as string),
-    );
-    mockFs.mkdirSync.mockImplementation(() => {});
-    mockFs.writeFileSync.mockImplementation(() => {});
-    mockFs.copyFileSync.mockImplementation(() => {});
+    MockedWorkflowEngine.mockImplementation(() => mockEngine);
   });
 
-  it('should format documents in a collection', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+  it('should format all documents in a collection when no artifacts specified', async () => {
+    const mockCollection = {
+      metadata: { collection_id: 'test_collection' },
+      artifacts: ['resume_test.md', 'cover_letter_test.md'],
+      path: '/mock/project/.markdown-workflow/collections/job/test_collection',
+    };
 
-    await expect(formatCommand('job', 'test_company_developer_20250122', options)).rejects.toThrow(
-      'System root not found',
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Formatting collection: test_collection');
+    expect(console.log).toHaveBeenCalledWith('Format: docx');
+    expect(console.log).toHaveBeenCalledWith('Artifacts: all available');
+    expect(console.log).toHaveBeenCalledWith(
+      'Location: /mock/project/.markdown-workflow/collections/job/test_collection',
     );
+    expect(console.log).toHaveBeenCalledWith('✅ Formatting completed successfully!');
+
+    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
+      format: 'docx',
+      artifacts: undefined,
+    });
   });
 
-  it('should handle missing collection', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+  it('should format specific artifacts when specified', async () => {
+    const mockCollection = {
+      metadata: { collection_id: 'test_collection' },
+      artifacts: ['resume_test.md', 'cover_letter_test.md'],
+      path: '/mock/project/.markdown-workflow/collections/job/test_collection',
+    };
 
-    await expect(formatCommand('job', 'nonexistent_collection', options)).rejects.toThrow();
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = {
+      cwd: '/mock/project',
+      configDiscovery: mockConfigDiscovery,
+      artifacts: ['resume'],
+    };
+
+    await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Artifacts: resume');
+    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
+      format: 'docx',
+      artifacts: ['resume'],
+    });
   });
 
-  it('should handle missing workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+  it('should format multiple specific artifacts', async () => {
+    const mockCollection = {
+      metadata: { collection_id: 'test_collection' },
+      artifacts: ['resume_test.md', 'cover_letter_test.md'],
+      path: '/mock/project/.markdown-workflow/collections/job/test_collection',
+    };
 
-    await expect(
-      formatCommand('nonexistent', 'test_company_developer_20250122', options),
-    ).rejects.toThrow();
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = {
+      cwd: '/mock/project',
+      configDiscovery: mockConfigDiscovery,
+      artifacts: ['resume', 'cover_letter'],
+    };
+
+    await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Artifacts: resume, cover_letter');
+    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
+      format: 'docx',
+      artifacts: ['resume', 'cover_letter'],
+    });
+  });
+
+  it('should handle execution errors from WorkflowEngine', async () => {
+    const mockCollection = {
+      metadata: { collection_id: 'test_collection' },
+      artifacts: ['resume_test.md'],
+      path: '/mock/project/.markdown-workflow/collections/job/test_collection',
+    };
+
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.executeAction.mockRejectedValue(
+      new Error('No files found for requested artifacts: unknown_artifact'),
+    );
+
+    const options = {
+      cwd: '/mock/project',
+      configDiscovery: mockConfigDiscovery,
+      artifacts: ['unknown_artifact'],
+    };
+
+    await expect(formatCommand('job', 'test_collection', options)).rejects.toThrow(
+      'No files found for requested artifacts: unknown_artifact',
+    );
   });
 
   it('should handle different output formats', async () => {
-    const options = { cwd: '/mock/project', configDiscovery, format: 'html' as const };
+    const mockCollection = {
+      metadata: { collection_id: 'test_collection' },
+      artifacts: ['resume_test.md'],
+      path: '/mock/project/.markdown-workflow/collections/job/test_collection',
+    };
 
-    await expect(formatCommand('job', 'test_company_developer_20250122', options)).rejects.toThrow(
-      'System root not found',
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = {
+      cwd: '/mock/project',
+      configDiscovery: mockConfigDiscovery,
+      format: 'html' as const,
+    };
+
+    await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Format: html');
+    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
+      format: 'html',
+      artifacts: undefined,
+    });
+  });
+
+  it('should handle missing collection', async () => {
+    mockEngine.getCollection.mockResolvedValue(null);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatCommand('job', 'nonexistent_collection', options)).rejects.toThrow(
+      'Collection not found: nonexistent_collection',
+    );
+  });
+
+  it('should handle missing workflow', async () => {
+    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatCommand('nonexistent', 'test_collection', options)).rejects.toThrow(
+      'Unknown workflow: nonexistent. Available: job, blog',
     );
   });
 });
 
 describe('formatAllCommand', () => {
-  let mockSystemInterface: MockSystemInterface;
-  let configDiscovery: ConfigDiscovery;
+  let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
+  let mockEngine: jest.Mocked<WorkflowEngine>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Setup path mocks
-    mockPath.join.mockImplementation((...args) => args.join('/'));
-    mockPath.resolve.mockImplementation((...args) => args.join('/'));
-    mockPath.dirname.mockImplementation((p) => {
-      const parts = p.split('/');
-      return parts.slice(0, -1).join('/') || '/';
-    });
 
     // Setup console mocks
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
 
-    // Create mock file system
-    mockSystemInterface = createEnhancedMockFileSystem();
-    configDiscovery = new ConfigDiscovery(mockSystemInterface);
+    // Mock ConfigDiscovery
+    mockConfigDiscovery = {
+      requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+    } as jest.Mocked<ConfigDiscovery>;
 
-    // Add project structure
-    const projectPath = '/mock/project';
-    mockSystemInterface.addMockDirectory(projectPath);
-    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
-    mockSystemInterface.addMockFile(
-      `${projectPath}/config.yml`,
-      `user:
-  name: "Test User"
-  preferred_name: "Test"
-  phone: "(555) 123-4567"
-  address: "123 Test St"
-  city: "Test City"
-  state: "TS"
-  zip: "12345"
-  linkedin: "linkedin.com/in/testuser"
-  github: "github.com/testuser"
-  website: "testuser.com"
+    // Mock WorkflowEngine
+    mockEngine = {
+      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
+      getCollections: jest.fn(),
+      executeAction: jest.fn(),
+    } as jest.Mocked<WorkflowEngine>;
 
-system:
-  scraper: "wget"
-  web_download:
-    timeout: 30
-    add_utf8_bom: true
-    html_cleanup: "scripts"
-  output_formats:
-    - "docx"
-    - "html"
-    - "pdf"
-  git:
-    auto_commit: false
-    commit_message_template: "Update {{workflow}} collection {{collection_id}}"
-  collection_id:
-    date_format: "YYYYMMDD"
-    sanitize_spaces: "_"
-    max_length: 50
-
-workflows: {}`,
-    );
-
-    // Setup filesystem mocks
-    mockFs.existsSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.existsSync(filePath as string),
-    );
-    mockFs.readFileSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readFileSync(filePath as string),
-    );
-    mockFs.statSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.statSync(filePath as string),
-    );
-    mockFs.readdirSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readdirSync(filePath as string),
-    );
-    mockFs.mkdirSync.mockImplementation(() => {});
-    mockFs.writeFileSync.mockImplementation(() => {});
-    mockFs.copyFileSync.mockImplementation(() => {});
+    MockedWorkflowEngine.mockImplementation(() => mockEngine);
   });
 
   it('should format all collections in a workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    const mockCollections = [
+      {
+        metadata: { collection_id: 'collection1' },
+        artifacts: ['resume.md'],
+        path: '/mock/collections/collection1',
+      },
+      {
+        metadata: { collection_id: 'collection2' },
+        artifacts: ['resume.md'],
+        path: '/mock/collections/collection2',
+      },
+    ];
 
-    await expect(formatAllCommand('job', options)).rejects.toThrow('System root not found');
+    mockEngine.getCollections.mockResolvedValue(mockCollections);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatAllCommand('job', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith("Formatting 2 collections in workflow 'job'");
+    expect(console.log).toHaveBeenCalledWith('Format: docx');
+    expect(console.log).toHaveBeenCalledWith('\nFormatting: collection1');
+    expect(console.log).toHaveBeenCalledWith('\nFormatting: collection2');
+    expect(console.log).toHaveBeenCalledWith('\n✅ Formatting completed!');
+    expect(console.log).toHaveBeenCalledWith('Success: 2, Errors: 0');
+
+    expect(mockEngine.executeAction).toHaveBeenCalledTimes(2);
+  });
+
+  it('should handle workflow with no collections', async () => {
+    mockEngine.getCollections.mockResolvedValue([]);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatAllCommand('blog', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith("No collections found for workflow 'blog'");
   });
 
   it('should handle missing workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
-    await expect(formatAllCommand('nonexistent', options)).rejects.toThrow();
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatAllCommand('nonexistent', options)).rejects.toThrow(
+      'Unknown workflow: nonexistent. Available: job, blog',
+    );
   });
 
   it('should handle different output formats for all collections', async () => {
-    const options = { cwd: '/mock/project', configDiscovery, format: 'pdf' as const };
+    const mockCollections = [
+      {
+        metadata: { collection_id: 'collection1' },
+        artifacts: ['resume.md'],
+        path: '/mock/collections/collection1',
+      },
+    ];
 
-    await expect(formatAllCommand('job', options)).rejects.toThrow('System root not found');
+    mockEngine.getCollections.mockResolvedValue(mockCollections);
+    mockEngine.executeAction.mockResolvedValue(undefined);
+
+    const options = {
+      cwd: '/mock/project',
+      configDiscovery: mockConfigDiscovery,
+      format: 'html' as const,
+    };
+
+    await expect(formatAllCommand('job', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Format: html');
+    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'collection1', 'format', {
+      format: 'html',
+    });
+  });
+
+  it('should continue processing other collections if one fails', async () => {
+    const mockCollections = [
+      {
+        metadata: { collection_id: 'collection1' },
+        artifacts: ['resume.md'],
+        path: '/mock/collections/collection1',
+      },
+      {
+        metadata: { collection_id: 'collection2' },
+        artifacts: ['resume.md'],
+        path: '/mock/collections/collection2',
+      },
+    ];
+
+    mockEngine.getCollections.mockResolvedValue(mockCollections);
+    mockEngine.executeAction
+      .mockRejectedValueOnce(new Error('Mock formatting error'))
+      .mockResolvedValueOnce(undefined);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(formatAllCommand('job', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Success: 1, Errors: 1');
+    expect(console.error).toHaveBeenCalledWith(
+      expect.stringContaining('❌ Failed to format collection1: Mock formatting error'),
+    );
+
+    expect(mockEngine.executeAction).toHaveBeenCalledTimes(2);
   });
 });

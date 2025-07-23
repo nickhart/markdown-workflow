@@ -37,17 +37,21 @@ export class WorkflowEngine {
     }
     this.systemRoot = foundSystemRoot;
     this.projectRoot = projectRoot || this.configDiscovery.requireProjectRoot();
-    this.initializeEngine();
+
+    // Initialize synchronously using system config
+    const systemConfig = this.configDiscovery.discoverSystemConfiguration();
+    this.availableWorkflows = systemConfig.availableWorkflows;
   }
 
   /**
-   * Initialize the workflow engine
-   * Loads user configuration and discovers available workflows
+   * Initialize the workflow engine (async parts)
+   * Loads user configuration - should be called when project config is needed
    */
-  private async initializeEngine(): Promise<void> {
-    const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
-    this.projectConfig = config.projectConfig || null;
-    this.availableWorkflows = config.availableWorkflows;
+  private async ensureProjectConfigLoaded(): Promise<void> {
+    if (this.projectConfig === null) {
+      const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
+      this.projectConfig = config.projectConfig || null;
+    }
   }
 
   /**
@@ -161,6 +165,8 @@ export class WorkflowEngine {
     collectionId: string,
     newStatus: string,
   ): Promise<void> {
+    await this.ensureProjectConfigLoaded();
+
     const workflow = await this.loadWorkflow(workflowName);
     const collection = await this.getCollection(workflowName, collectionId);
 
@@ -239,16 +245,45 @@ export class WorkflowEngine {
     parameters: Record<string, unknown>,
   ): Promise<void> {
     const formatType = parameters.format || 'docx';
+    const requestedArtifacts = parameters.artifacts as string[] | undefined;
     const outputDir = path.join(collection.path, 'formatted');
 
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
+    // Get all markdown files in collection
     const markdownFiles = collection.artifacts.filter((file) => file.endsWith('.md'));
 
-    // TODO: allow the user to specify which files to convert (all, or specific ones)
-    for (const file of markdownFiles) {
+    // Filter files based on requested artifacts (template names)
+    let filesToConvert = markdownFiles;
+
+    if (requestedArtifacts && requestedArtifacts.length > 0) {
+      // Map template names to their expected output files
+      const templateToFileMap = await this.getTemplateArtifactMap(workflow, collection);
+
+      // Filter to only requested artifacts
+      const requestedFiles = new Set<string>();
+      for (const artifact of requestedArtifacts) {
+        const files = templateToFileMap.get(artifact);
+        if (files) {
+          files.forEach((file) => requestedFiles.add(file));
+        } else {
+          console.warn(
+            `Warning: Unknown artifact '${artifact}'. Available artifacts: ${Array.from(templateToFileMap.keys()).join(', ')}`,
+          );
+        }
+      }
+
+      filesToConvert = markdownFiles.filter((file) => requestedFiles.has(file));
+
+      if (filesToConvert.length === 0) {
+        throw new Error(`No files found for requested artifacts: ${requestedArtifacts.join(', ')}`);
+      }
+    }
+
+    // Convert the filtered files
+    for (const file of filesToConvert) {
       const inputPath = path.join(collection.path, file);
       const baseName = path.basename(file, '.md');
       const outputPath = path.join(outputDir, `${baseName}.${formatType}`);
@@ -275,6 +310,8 @@ export class WorkflowEngine {
     action: WorkflowAction,
     parameters: Record<string, unknown>,
   ): Promise<void> {
+    await this.ensureProjectConfigLoaded();
+
     const noteType = parameters.note_type;
     if (!noteType) {
       throw new Error('note_type parameter is required for notes action');
@@ -333,6 +370,74 @@ export class WorkflowEngine {
       // Return empty array if directory can't be read
       return [];
     }
+  }
+
+  /**
+   * Map template names to their output artifact files in a collection
+   * This allows users to reference artifacts by their template names (e.g., "resume", "cover_letter")
+   */
+  private async getTemplateArtifactMap(
+    workflow: WorkflowFile,
+    collection: Collection,
+  ): Promise<Map<string, string[]>> {
+    await this.ensureProjectConfigLoaded();
+    const templateMap = new Map<string, string[]>();
+
+    // For each template in the workflow, resolve its output filename
+    for (const template of workflow.workflow.templates) {
+      // Template variables are used in the pattern matching logic below
+      const _templateVariables = {
+        user: this.projectConfig?.user || this.getDefaultUserConfig(),
+        company: collection.metadata.company,
+        role: collection.metadata.role,
+        application_name: collection.metadata.collection_id,
+        date: formatDate(
+          getCurrentDate(this.projectConfig || undefined),
+          'YYYY-MM-DD',
+          this.projectConfig || undefined,
+        ),
+        // Add any other variables that might be used in output patterns
+        note_type: '{{note_type}}', // Placeholder for dynamic templates
+      };
+
+      try {
+        // Find all collection artifacts that match this template pattern
+        const matchingFiles = collection.artifacts.filter((artifact) => {
+          // For dynamic templates (like notes), we need pattern matching
+          if (template.output.includes('{{note_type}}')) {
+            // Match any file that could have been generated from this template
+            const basePattern = template.output.replace('{{note_type}}', '(.+)');
+            const regex = new RegExp(
+              basePattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)'),
+            );
+            return regex.test(artifact);
+          } else {
+            // For user variable templates, match the pattern more flexibly
+            let pattern = template.output;
+
+            // Replace user variables with wildcards for matching
+            pattern = pattern.replace(/\{\{user\.preferred_name\}\}/g, '(.+)');
+            pattern = pattern.replace(/\{\{user\.name\}\}/g, '(.+)');
+
+            // Create regex from pattern
+            const regex = new RegExp(
+              '^' +
+                pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)') +
+                '$',
+            );
+            return regex.test(artifact);
+          }
+        });
+
+        if (matchingFiles.length > 0) {
+          templateMap.set(template.name, matchingFiles);
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not resolve output for template ${template.name}:`, error);
+      }
+    }
+
+    return templateMap;
   }
 
   /**

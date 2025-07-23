@@ -56,8 +56,13 @@ export async function createCommand(
   // Generate collection ID
   const collectionId = generateCollectionId(company, role, systemConfig.projectConfig);
 
-  // Create collection directory
-  const collectionPath = path.join(projectPaths.collectionsDir, collectionId);
+  // Create collection directory organized by workflow
+  const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
+  if (!fs.existsSync(workflowCollectionsDir)) {
+    fs.mkdirSync(workflowCollectionsDir, { recursive: true });
+  }
+
+  const collectionPath = path.join(workflowCollectionsDir, collectionId);
   if (fs.existsSync(collectionPath)) {
     throw new Error(`Collection already exists: ${collectionId}`);
   }
