@@ -34,10 +34,12 @@ TESTS_FAILED=0
 # Helper functions
 normalize_timestamps() {
     local directory="$1"
-    local fixed_time="202501210000.00"  # YYYYMMDDHHMM.SS format for touch
     
     # Set all files and directories to a fixed timestamp for consistent testing
-    find "$directory" -exec touch -t "$fixed_time" {} \; 2>/dev/null || true
+    # Use epoch timestamp for 2025-01-21 00:00:00 UTC
+    local epoch_timestamp="1737417600"  # 2025-01-21 00:00:00 UTC
+    
+    find "$directory" -exec touch -t "$(date -r $epoch_timestamp -u '+%Y%m%d%H%M.%S')" {} \; 2>/dev/null || true
 }
 
 log_info() {
