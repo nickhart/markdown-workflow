@@ -107,6 +107,7 @@ export const SystemConfigSchema = z.object({
       override_timezone: z.string().optional(),
       deterministic_ids: z.boolean().optional(),
     })
+    .nullable()
     .optional(),
 });
 

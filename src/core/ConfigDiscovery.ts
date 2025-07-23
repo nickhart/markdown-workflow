@@ -218,7 +218,7 @@ export class ConfigDiscovery {
       projectDir, // .markdown-workflow/
       configFile: path.join(projectDir, ConfigDiscovery.CONFIG_FILE), // .markdown-workflow/config.yml
       workflowsDir: path.join(projectDir, 'workflows'), // .markdown-workflow/workflows/
-      collectionsDir: path.join(projectDir, 'collections'), // .markdown-workflow/collections/
+      collectionsDir: projectRoot, // Collections at project root (job/, blog/, etc.)
     };
   }
 }
