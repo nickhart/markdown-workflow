@@ -5,6 +5,7 @@ import initCommand from './commands/init.js';
 import createWithHelpCommand from './commands/createWithHelp.js';
 import availableCommand from './commands/available.js';
 import formatCommand from './commands/format.js';
+import { statusCommand, showStatusesCommand } from './commands/status.js';
 
 const program = new Command();
 
@@ -78,6 +79,32 @@ program
         format: options.format,
         artifacts: artifacts.length > 0 ? artifacts : undefined,
       });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-status command
+program
+  .command('status')
+  .description('Update collection status or show available statuses')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('[collection_id]', 'Collection ID to update (omit to show available statuses)')
+  .argument('[new_status]', 'New status to set')
+  .action(async (workflow, collectionId, newStatus) => {
+    try {
+      if (!collectionId) {
+        // Show available statuses for workflow
+        await showStatusesCommand(workflow);
+      } else if (!newStatus) {
+        throw new Error(
+          'Please provide a new status or omit collection_id to show available statuses',
+        );
+      } else {
+        // Update collection status
+        await statusCommand(workflow, collectionId, newStatus);
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);

@@ -1,232 +1,298 @@
-import * as fs from 'fs';
 import * as path from 'path';
 import { statusCommand, showStatusesCommand } from '../../src/cli/commands/status.js';
 import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import { createEnhancedMockFileSystem } from '../helpers/FileSystemHelpers.js';
+import { WorkflowEngine } from '../../src/core/WorkflowEngine.js';
 
 // Mock dependencies
-jest.mock('fs');
 jest.mock('path');
+jest.mock('../../src/core/WorkflowEngine.js');
 
-const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
+const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
 
 describe('statusCommand', () => {
-  let mockSystemInterface: MockSystemInterface;
-  let configDiscovery: ConfigDiscovery;
+  let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
+  let mockEngine: jest.Mocked<WorkflowEngine>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Setup path mocks
-    mockPath.join.mockImplementation((...args) => args.join('/'));
-    mockPath.resolve.mockImplementation((...args) => args.join('/'));
-    mockPath.dirname.mockImplementation((p) => {
-      const parts = p.split('/');
-      return parts.slice(0, -1).join('/') || '/';
-    });
-    mockPath.parse.mockImplementation((p) => ({
-      root: '/',
-      dir: p.substring(0, p.lastIndexOf('/')),
-      base: p.substring(p.lastIndexOf('/') + 1),
-      ext: p.substring(p.lastIndexOf('.')),
-      name: p.substring(p.lastIndexOf('/') + 1, p.lastIndexOf('.')),
-    }));
 
     // Setup console mocks
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
 
-    // Create mock file system
-    mockSystemInterface = createEnhancedMockFileSystem();
-    configDiscovery = new ConfigDiscovery(mockSystemInterface);
+    // Setup path mocks
+    mockPath.join.mockImplementation((...args) => args.join('/'));
 
-    // Add project structure
-    const projectPath = '/mock/project';
-    mockSystemInterface.addMockDirectory(projectPath);
-    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
-    mockSystemInterface.addMockFile(
-      `${projectPath}/config.yml`,
-      `user:
-  name: "Test User"
-  preferred_name: "Test"
-  phone: "(555) 123-4567"
-  address: "123 Test St"
-  city: "Test City"
-  state: "TS"
-  zip: "12345"
-  linkedin: "linkedin.com/in/testuser"
-  github: "github.com/testuser"
-  website: "testuser.com"
+    // Mock ConfigDiscovery
+    mockConfigDiscovery = {
+      requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+    } as jest.Mocked<ConfigDiscovery>;
 
-system:
-  scraper: "wget"
-  web_download:
-    timeout: 30
-    add_utf8_bom: true
-    html_cleanup: "scripts"
-  output_formats:
-    - "docx"
-    - "html"
-    - "pdf"
-  git:
-    auto_commit: false
-    commit_message_template: "Update {{workflow}} collection {{collection_id}}"
-  collection_id:
-    date_format: "YYYYMMDD"
-    sanitize_spaces: "_"
-    max_length: 50
+    // Mock WorkflowEngine
+    mockEngine = {
+      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
+      loadWorkflow: jest.fn(),
+      getCollection: jest.fn(),
+      updateCollectionStatus: jest.fn(),
+    } as jest.Mocked<WorkflowEngine>;
 
-workflows: {}`,
-    );
-
-    // Add collection structure
-    const collectionPath = `${projectPath}/collections/job/test_company_developer_20250122`;
-    mockSystemInterface.addMockDirectory(collectionPath);
-    mockSystemInterface.addMockFile(
-      `${collectionPath}/collection.yml`,
-      'workflow: "job"\ncollection_id: "test_company_developer_20250122"\ncompany: "Test Company"\nrole: "Developer"\nstatus: "active"\ncreated_date: "2025-01-22"',
-    );
-
-    // Setup filesystem mocks
-    mockFs.existsSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.existsSync(filePath as string),
-    );
-    mockFs.readFileSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readFileSync(filePath as string),
-    );
-    mockFs.statSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.statSync(filePath as string),
-    );
-    mockFs.readdirSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readdirSync(filePath as string),
-    );
-    mockFs.mkdirSync.mockImplementation(() => {});
-    mockFs.writeFileSync.mockImplementation(() => {});
+    MockedWorkflowEngine.mockImplementation(() => mockEngine);
   });
 
-  it('should update collection status', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+  it('should update collection status successfully', async () => {
+    const mockWorkflow = {
+      workflow: {
+        stages: [
+          { name: 'active', description: 'New applications', next: ['submitted', 'rejected'] },
+          {
+            name: 'submitted',
+            description: 'Submitted applications',
+            next: ['interview', 'rejected'],
+          },
+          { name: 'interview', description: 'Interview scheduled', next: ['offered', 'rejected'] },
+          { name: 'rejected', description: 'Rejected applications', terminal: true },
+        ],
+      },
+    };
+
+    const mockCollection = {
+      metadata: {
+        collection_id: 'test_collection',
+        status: 'active',
+        workflow: 'job',
+      },
+      artifacts: ['resume.md', 'cover_letter.md'],
+      path: '/mock/project/job/active/test_collection',
+    };
+
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.updateCollectionStatus.mockResolvedValue(undefined);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
     await expect(
-      statusCommand('job', 'test_company_developer_20250122', 'submitted', options),
-    ).rejects.toThrow('System root not found');
+      statusCommand('job', 'test_collection', 'submitted', options),
+    ).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith('Current status: active');
+    expect(console.log).toHaveBeenCalledWith('Requested status: submitted');
+    expect(console.log).toHaveBeenCalledWith(
+      "Valid transitions from 'active': submitted, rejected",
+    );
+    expect(console.log).toHaveBeenCalledWith('✅ Status updated: active → submitted');
+
+    expect(mockEngine.updateCollectionStatus).toHaveBeenCalledWith(
+      'job',
+      'test_collection',
+      'submitted',
+    );
   });
 
   it('should handle missing collection', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    const mockWorkflow = {
+      workflow: {
+        stages: [{ name: 'active', description: 'New applications', next: ['submitted'] }],
+      },
+    };
+
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockEngine.getCollection.mockResolvedValue(null);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
     await expect(
       statusCommand('job', 'nonexistent_collection', 'submitted', options),
-    ).rejects.toThrow();
+    ).rejects.toThrow('Collection not found: nonexistent_collection');
   });
 
   it('should handle missing workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
     await expect(
-      statusCommand('nonexistent', 'test_company_developer_20250122', 'submitted', options),
-    ).rejects.toThrow();
+      statusCommand('nonexistent', 'test_collection', 'submitted', options),
+    ).rejects.toThrow('Unknown workflow: nonexistent. Available: job, blog');
   });
 
-  it('should validate status transitions', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+  it('should validate invalid status', async () => {
+    const mockWorkflow = {
+      workflow: {
+        stages: [
+          { name: 'active', description: 'New applications', next: ['submitted'] },
+          { name: 'submitted', description: 'Submitted applications', next: ['interview'] },
+        ],
+      },
+    };
+
+    const mockCollection = {
+      metadata: {
+        collection_id: 'test_collection',
+        status: 'active',
+        workflow: 'job',
+      },
+      artifacts: ['resume.md'],
+      path: '/mock/project/job/active/test_collection',
+    };
+
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
     await expect(
-      statusCommand('job', 'test_company_developer_20250122', 'invalid_status', options),
-    ).rejects.toThrow();
+      statusCommand('job', 'test_collection', 'invalid_status', options),
+    ).rejects.toThrow('Invalid status');
+
+    expect(console.error).toHaveBeenCalledWith('Invalid status: invalid_status');
+    expect(console.error).toHaveBeenCalledWith('Valid statuses: active, submitted');
+  });
+
+  it('should handle WorkflowEngine errors', async () => {
+    const mockWorkflow = {
+      workflow: {
+        stages: [
+          { name: 'active', description: 'New applications', next: ['submitted'] },
+          { name: 'submitted', description: 'Submitted applications', next: ['interview'] },
+        ],
+      },
+    };
+
+    const mockCollection = {
+      metadata: {
+        collection_id: 'test_collection',
+        status: 'active',
+        workflow: 'job',
+      },
+      artifacts: ['resume.md'],
+      path: '/mock/project/job/active/test_collection',
+    };
+
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.updateCollectionStatus.mockRejectedValue(
+      new Error('Invalid status transition: active → interview'),
+    );
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(statusCommand('job', 'test_collection', 'submitted', options)).rejects.toThrow(
+      'Invalid status transition: active → interview',
+    );
+
+    expect(console.error).toHaveBeenCalledWith(
+      '❌ Status update failed: Invalid status transition: active → interview',
+    );
+  });
+
+  it('should show transitions for current status', async () => {
+    const mockWorkflow = {
+      workflow: {
+        stages: [
+          { name: 'active', description: 'New applications', next: ['submitted', 'rejected'] },
+          {
+            name: 'submitted',
+            description: 'Submitted applications',
+            next: ['interview', 'rejected'],
+          },
+          { name: 'interview', description: 'Interview scheduled', next: ['offered', 'rejected'] },
+          { name: 'rejected', description: 'Rejected applications', terminal: true },
+        ],
+      },
+    };
+
+    const mockCollection = {
+      metadata: {
+        collection_id: 'test_collection',
+        status: 'submitted',
+        workflow: 'job',
+      },
+      artifacts: ['resume.md'],
+      path: '/mock/project/job/submitted/test_collection',
+    };
+
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.updateCollectionStatus.mockResolvedValue(undefined);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await statusCommand('job', 'test_collection', 'interview', options);
+
+    expect(console.log).toHaveBeenCalledWith(
+      "Valid transitions from 'submitted': interview, rejected",
+    );
   });
 });
 
 describe('showStatusesCommand', () => {
-  let mockSystemInterface: MockSystemInterface;
-  let configDiscovery: ConfigDiscovery;
+  let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
+  let mockEngine: jest.Mocked<WorkflowEngine>;
 
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Setup path mocks
-    mockPath.join.mockImplementation((...args) => args.join('/'));
-    mockPath.resolve.mockImplementation((...args) => args.join('/'));
-    mockPath.dirname.mockImplementation((p) => {
-      const parts = p.split('/');
-      return parts.slice(0, -1).join('/') || '/';
-    });
 
     // Setup console mocks
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
 
-    // Create mock file system
-    mockSystemInterface = createEnhancedMockFileSystem();
-    configDiscovery = new ConfigDiscovery(mockSystemInterface);
+    // Mock ConfigDiscovery
+    mockConfigDiscovery = {
+      requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+    } as jest.Mocked<ConfigDiscovery>;
 
-    // Add project structure
-    const projectPath = '/mock/project';
-    mockSystemInterface.addMockDirectory(projectPath);
-    mockSystemInterface.addMockDirectory(`${projectPath}/.markdown-workflow`);
-    mockSystemInterface.addMockFile(
-      `${projectPath}/config.yml`,
-      `user:
-  name: "Test User"
-  preferred_name: "Test"
-  phone: "(555) 123-4567"
-  address: "123 Test St"
-  city: "Test City"
-  state: "TS"
-  zip: "12345"
-  linkedin: "linkedin.com/in/testuser"
-  github: "github.com/testuser"
-  website: "testuser.com"
+    // Mock WorkflowEngine
+    mockEngine = {
+      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
+      loadWorkflow: jest.fn(),
+    } as jest.Mocked<WorkflowEngine>;
 
-system:
-  scraper: "wget"
-  web_download:
-    timeout: 30
-    add_utf8_bom: true
-    html_cleanup: "scripts"
-  output_formats:
-    - "docx"
-    - "html"
-    - "pdf"
-  git:
-    auto_commit: false
-    commit_message_template: "Update {{workflow}} collection {{collection_id}}"
-  collection_id:
-    date_format: "YYYYMMDD"
-    sanitize_spaces: "_"
-    max_length: 50
-
-workflows: {}`,
-    );
-
-    // Setup filesystem mocks
-    mockFs.existsSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.existsSync(filePath as string),
-    );
-    mockFs.readFileSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readFileSync(filePath as string),
-    );
-    mockFs.statSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.statSync(filePath as string),
-    );
-    mockFs.readdirSync.mockImplementation((filePath: string) =>
-      mockSystemInterface.readdirSync(filePath as string),
-    );
+    MockedWorkflowEngine.mockImplementation(() => mockEngine);
   });
 
   it('should show available statuses for a workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    const mockWorkflow = {
+      workflow: {
+        stages: [
+          { name: 'active', description: 'New applications', next: ['submitted', 'rejected'] },
+          {
+            name: 'submitted',
+            description: 'Submitted applications',
+            next: ['interview', 'rejected'],
+          },
+          { name: 'interview', description: 'Interview scheduled', next: ['offered', 'rejected'] },
+          { name: 'offered', description: 'Job offers received', next: ['accepted', 'declined'] },
+          { name: 'rejected', description: 'Rejected applications', terminal: true },
+        ],
+      },
+    };
 
-    await expect(showStatusesCommand('job', options)).rejects.toThrow('System root not found');
+    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(showStatusesCommand('job', options)).resolves.not.toThrow();
+
+    expect(console.log).toHaveBeenCalledWith("\nSTATUS STAGES FOR 'JOB' WORKFLOW\n");
+    expect(console.log).toHaveBeenCalledWith('1. active');
+    expect(console.log).toHaveBeenCalledWith('   New applications → submitted, rejected');
+    expect(console.log).toHaveBeenCalledWith('2. submitted');
+    expect(console.log).toHaveBeenCalledWith('   Submitted applications → interview, rejected');
+    expect(console.log).toHaveBeenCalledWith('5. rejected (terminal)');
+    expect(console.log).toHaveBeenCalledWith('   Rejected applications');
   });
 
   it('should handle missing workflow', async () => {
-    const options = { cwd: '/mock/project', configDiscovery };
+    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
-    await expect(showStatusesCommand('nonexistent', options)).rejects.toThrow();
+    const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
+
+    await expect(showStatusesCommand('nonexistent', options)).rejects.toThrow(
+      'Unknown workflow: nonexistent. Available: job, blog',
+    );
   });
 });

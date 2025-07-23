@@ -32,6 +32,12 @@ export class MockSystemInterface implements SystemInterface {
   private mockDirectories: Set<string>;
   private mockStats: Map<string, fs.Stats>;
 
+  // Jest spies for tracking method calls
+  public writeFileSync = jest.fn();
+  public mkdirSync = jest.fn();
+  public renameSync = jest.fn();
+  public copyFileSync = jest.fn();
+
   constructor(
     currentPath: string = '/mock/system/root',
     files: Record<string, string> = {},
@@ -56,6 +62,70 @@ export class MockSystemInterface implements SystemInterface {
         isDirectory: () => false,
         isFile: () => true,
       } as fs.Stats);
+    });
+
+    // Setup mock implementations for new methods
+    this.writeFileSync.mockImplementation((path: string, data: string) => {
+      this.addMockFile(path, data);
+    });
+
+    this.mkdirSync.mockImplementation((path: string, options?: { recursive?: boolean }) => {
+      this.addMockDirectory(path);
+      // If recursive, create all parent directories
+      if (options?.recursive) {
+        const parts = path.split('/').filter(Boolean);
+        let currentPath = '';
+        for (const part of parts) {
+          currentPath += '/' + part;
+          if (!this.mockDirectories.has(currentPath)) {
+            this.addMockDirectory(currentPath);
+          }
+        }
+      }
+    });
+
+    this.renameSync.mockImplementation((oldPath: string, newPath: string) => {
+      // Handle file moves
+      if (this.mockFiles.has(oldPath)) {
+        const content = this.mockFiles.get(oldPath)!;
+        this.mockFiles.delete(oldPath);
+        this.addMockFile(newPath, content);
+      }
+      // Handle directory moves
+      if (this.mockDirectories.has(oldPath)) {
+        this.mockDirectories.delete(oldPath);
+        this.addMockDirectory(newPath);
+
+        // Move all files and subdirectories
+        const filesToMove = Array.from(this.mockFiles.keys()).filter((p) =>
+          p.startsWith(oldPath + '/'),
+        );
+        const dirsToMove = Array.from(this.mockDirectories).filter((p) =>
+          p.startsWith(oldPath + '/'),
+        );
+
+        filesToMove.forEach((filePath) => {
+          const content = this.mockFiles.get(filePath)!;
+          const newFilePath = filePath.replace(oldPath, newPath);
+          this.mockFiles.delete(filePath);
+          this.addMockFile(newFilePath, content);
+        });
+
+        dirsToMove.forEach((dirPath) => {
+          const newDirPath = dirPath.replace(oldPath, newPath);
+          this.mockDirectories.delete(dirPath);
+          this.addMockDirectory(newDirPath);
+        });
+      }
+    });
+
+    this.copyFileSync.mockImplementation((src: string, dest: string) => {
+      const content = this.mockFiles.get(src);
+      if (content !== undefined) {
+        this.addMockFile(dest, content);
+      } else {
+        throw new Error(`ENOENT: no such file or directory, open '${src}'`);
+      }
     });
   }
 
