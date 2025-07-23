@@ -4,6 +4,7 @@ import { Command } from 'commander';
 import initCommand from './commands/init.js';
 import createWithHelpCommand from './commands/createWithHelp.js';
 import availableCommand from './commands/available.js';
+import formatCommand from './commands/format.js';
 
 const program = new Command();
 
@@ -57,6 +58,26 @@ program
   .action(async () => {
     try {
       await availableCommand();
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-format command
+program
+  .command('format')
+  .description('Format documents in a collection')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('<collection_id>', 'Collection ID to format')
+  .argument('[artifacts...]', 'Optional artifact names to format (e.g., resume, cover_letter)')
+  .option('-f, --format <format>', 'Output format (docx, html, pdf)', 'docx')
+  .action(async (workflow, collectionId, artifacts, options) => {
+    try {
+      await formatCommand(workflow, collectionId, {
+        format: options.format,
+        artifacts: artifacts.length > 0 ? artifacts : undefined,
+      });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);

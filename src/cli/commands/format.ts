@@ -3,6 +3,7 @@ import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
 
 interface FormatOptions {
   format?: 'docx' | 'html' | 'pdf';
+  artifacts?: string[];
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
 }
@@ -43,11 +44,19 @@ export async function formatCommand(
 
   console.log(`Formatting collection: ${collectionId}`);
   console.log(`Format: ${format}`);
+  if (options.artifacts && options.artifacts.length > 0) {
+    console.log(`Artifacts: ${options.artifacts.join(', ')}`);
+  } else {
+    console.log(`Artifacts: all available`);
+  }
   console.log(`Location: ${collection.path}`);
 
   try {
-    // Execute format action
-    await engine.executeAction(workflowName, collectionId, 'format', { format });
+    // Execute format action with optional artifact filtering
+    await engine.executeAction(workflowName, collectionId, 'format', {
+      format,
+      artifacts: options.artifacts,
+    });
     console.log(`✅ Formatting completed successfully!`);
     console.log(`Check the 'formatted' directory in the collection for output files.`);
   } catch (error) {
