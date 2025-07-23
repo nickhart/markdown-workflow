@@ -93,30 +93,42 @@ export class WorkflowEngine {
     }
 
     const collections: Collection[] = [];
-    const collectionDirs = fs
+    
+    // Scan through status directories (active, submitted, interview, etc.)
+    const statusDirs = fs
       .readdirSync(workflowCollectionsDir, { withFileTypes: true })
       .filter((dirent) => dirent.isDirectory())
       .map((dirent) => dirent.name);
 
-    for (const collectionId of collectionDirs) {
-      const collectionPath = path.join(workflowCollectionsDir, collectionId);
-      const metadataPath = path.join(collectionPath, 'collection.yml');
+    for (const statusDir of statusDirs) {
+      const statusPath = path.join(workflowCollectionsDir, statusDir);
+      
+      // Get collections within this status directory
+      const collectionDirs = fs
+        .readdirSync(statusPath, { withFileTypes: true })
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => dirent.name);
 
-      if (fs.existsSync(metadataPath)) {
-        try {
-          const metadataContent = fs.readFileSync(metadataPath, 'utf8');
-          const parsedMetadata = YAML.parse(metadataContent);
-          const metadata = parsedMetadata as CollectionMetadata;
+      for (const collectionId of collectionDirs) {
+        const collectionPath = path.join(statusPath, collectionId);
+        const metadataPath = path.join(collectionPath, 'collection.yml');
 
-          const artifacts = this.getCollectionArtifacts(collectionPath);
+        if (fs.existsSync(metadataPath)) {
+          try {
+            const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+            const parsedMetadata = YAML.parse(metadataContent);
+            const metadata = parsedMetadata as CollectionMetadata;
 
-          collections.push({
-            metadata,
-            artifacts,
-            path: collectionPath,
-          });
-        } catch (error) {
-          console.warn(`Failed to load collection metadata for ${collectionId}:`, error);
+            const artifacts = this.getCollectionArtifacts(collectionPath);
+
+            collections.push({
+              metadata,
+              artifacts,
+              path: collectionPath,
+            });
+          } catch (error) {
+            console.warn(`Failed to load collection metadata for ${collectionId}:`, error);
+          }
         }
       }
     }
@@ -129,31 +141,41 @@ export class WorkflowEngine {
    */
   async getCollection(workflowName: string, collectionId: string): Promise<Collection | null> {
     const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
-    const collectionPath = path.join(projectPaths.collectionsDir, workflowName, collectionId);
+    const workflowCollectionsDir = path.join(projectPaths.collectionsDir, workflowName);
 
-    if (!fs.existsSync(collectionPath)) {
+    if (!fs.existsSync(workflowCollectionsDir)) {
       return null;
     }
 
-    const metadataPath = path.join(collectionPath, 'collection.yml');
-    if (!fs.existsSync(metadataPath)) {
-      return null;
+    // Search through all status directories to find the collection
+    const statusDirs = fs
+      .readdirSync(workflowCollectionsDir, { withFileTypes: true })
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
+
+    for (const statusDir of statusDirs) {
+      const collectionPath = path.join(workflowCollectionsDir, statusDir, collectionId);
+      const metadataPath = path.join(collectionPath, 'collection.yml');
+
+      if (fs.existsSync(metadataPath)) {
+        try {
+          const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+          const parsedMetadata = YAML.parse(metadataContent);
+          const metadata = parsedMetadata as CollectionMetadata;
+          const artifacts = this.getCollectionArtifacts(collectionPath);
+
+          return {
+            metadata,
+            artifacts,
+            path: collectionPath,
+          };
+        } catch (error) {
+          throw new Error(`Failed to load collection ${collectionId}: ${error}`);
+        }
+      }
     }
 
-    try {
-      const metadataContent = fs.readFileSync(metadataPath, 'utf8');
-      const parsedMetadata = YAML.parse(metadataContent);
-      const metadata = parsedMetadata as CollectionMetadata;
-      const artifacts = this.getCollectionArtifacts(collectionPath);
-
-      return {
-        metadata,
-        artifacts,
-        path: collectionPath,
-      };
-    } catch (error) {
-      throw new Error(`Failed to load collection ${collectionId}: ${error}`);
-    }
+    return null;
   }
 
   /**
