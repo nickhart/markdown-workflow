@@ -184,16 +184,15 @@ function compareSnapshots(snapshot1, snapshot2) {
       // Check for modifications (files only)
       else if (item1.type === 'file') {
         const sizeChanged = item1.size !== item2.size;
-        const timeChanged = item1.modified !== item2.modified;
+        // Skip timestamp comparison for consistency across environments
         const contentChanged =
           item1.contentHash && item2.contentHash && item1.contentHash !== item2.contentHash;
 
-        if (sizeChanged || timeChanged || contentChanged) {
+        if (sizeChanged || contentChanged) {
           differences.modified.push({
             path,
             changes: {
               size: sizeChanged ? { from: item1.size, to: item2.size } : null,
-              modified: timeChanged ? { from: item1.modified, to: item2.modified } : null,
               content: contentChanged ? { from: item1.contentHash, to: item2.contentHash } : null,
             },
           });
@@ -231,9 +230,6 @@ function formatDifferences(differences) {
       lines.push(`  ~ ${item.path}`);
       if (item.changes.size) {
         lines.push(`    size: ${item.changes.size.from} → ${item.changes.size.to}`);
-      }
-      if (item.changes.modified) {
-        lines.push(`    modified: ${item.changes.modified.from} → ${item.changes.modified.to}`);
       }
       if (item.changes.content) {
         lines.push(`    content: ${item.changes.content.from} → ${item.changes.content.to}`);

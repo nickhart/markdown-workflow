@@ -33,13 +33,9 @@ TESTS_FAILED=0
 
 # Helper functions
 normalize_timestamps() {
-    local directory="$1"
-    
-    # Set all files and directories to a fixed timestamp for consistent testing
-    # Use epoch timestamp for 2025-01-21 00:00:00 UTC
-    local epoch_timestamp="1737417600"  # 2025-01-21 00:00:00 UTC
-    
-    find "$directory" -exec touch -t "$(date -r $epoch_timestamp -u '+%Y%m%d%H%M.%S')" {} \; 2>/dev/null || true
+    # Timestamp normalization no longer needed since snapshot comparison ignores timestamps
+    # Keeping this function as a no-op to avoid breaking existing calls
+    true
 }
 
 log_info() {
