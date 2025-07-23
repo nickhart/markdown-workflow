@@ -37,7 +37,9 @@ export class WorkflowEngine {
   ) {
     this.configDiscovery = configDiscovery || new ConfigDiscovery();
     this.systemInterface = systemInterface || new NodeSystemInterface();
-    const foundSystemRoot = this.configDiscovery.findSystemRoot();
+    const foundSystemRoot = this.configDiscovery.findSystemRoot(
+      this.systemInterface.getCurrentFilePath(),
+    );
     if (!foundSystemRoot) {
       throw new Error('System root not found. Ensure markdown-workflow is installed.');
     }
