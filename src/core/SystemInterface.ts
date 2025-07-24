@@ -51,6 +51,16 @@ export interface SystemInterface {
    * Copy a file
    */
   copyFileSync(src: string, dest: string): void;
+
+  /**
+   * Delete a file
+   */
+  unlinkSync(path: string): void;
+
+  /**
+   * Remove a directory
+   */
+  rmdirSync(path: string): void;
 }
 
 /**
@@ -99,5 +109,13 @@ export class NodeSystemInterface implements SystemInterface {
 
   copyFileSync(src: string, dest: string): void {
     fs.copyFileSync(src, dest);
+  }
+
+  unlinkSync(path: string): void {
+    fs.unlinkSync(path);
+  }
+
+  rmdirSync(path: string): void {
+    fs.rmdirSync(path);
   }
 }
