@@ -8,6 +8,7 @@ import formatCommand from './commands/format.js';
 import { statusCommand, showStatusesCommand } from './commands/status.js';
 import { addCommand, listTemplatesCommand } from './commands/add.js';
 import listCommand from './commands/list.js';
+import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
 
 const program = new Command();
 
@@ -153,6 +154,36 @@ program
         status: options.status,
         format: options.format,
       });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-migrate command
+program
+  .command('migrate')
+  .description('Migrate legacy workflow system to new format')
+  .argument('[workflow]', 'Workflow type to migrate (omit to show available workflows)')
+  .argument('[source_path]', 'Path to legacy workflow system')
+  .option('--dry-run', 'Preview changes without modifying files')
+  .option('--force', 'Overwrite existing collections with same ID')
+  .action(async (workflow, sourcePath, options) => {
+    try {
+      if (!workflow) {
+        // Show available workflows for migration
+        await listMigrationWorkflows();
+      } else if (!sourcePath) {
+        throw new Error(
+          'Please provide a source path or omit workflow to see available migration types',
+        );
+      } else {
+        // Perform migration
+        await migrateCommand(workflow, sourcePath, {
+          dryRun: options.dryRun,
+          force: options.force,
+        });
+      }
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
       process.exit(1);
