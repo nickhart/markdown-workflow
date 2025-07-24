@@ -11,6 +11,7 @@ import {
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
 import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/dateUtils.js';
+import { sanitizeForFilename, normalizeTemplateName } from '../shared/fileUtils.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -279,14 +280,6 @@ export class WorkflowEngine {
       case 'format':
         await this.executeFormatAction(workflow, collection, action, parameters);
         break;
-      case 'notes':
-        // Legacy support: map notes action to add action with notes template
-        await this.executeAddAction(workflow, collection, action, {
-          ...parameters,
-          template: 'notes',
-          prefix: parameters.note_type,
-        });
-        break;
       case 'add':
         await this.executeAddAction(workflow, collection, action, parameters);
         break;
@@ -417,12 +410,7 @@ export class WorkflowEngine {
       // Make sure prefix is available as template variable (capitalized for title)
       prefix: parameters.prefix
         ? String(parameters.prefix).charAt(0).toUpperCase() + String(parameters.prefix).slice(1)
-        : parameters.note_type
-          ? String(parameters.note_type).charAt(0).toUpperCase() +
-            String(parameters.note_type).slice(1)
-          : '',
-      // Legacy compatibility for notes
-      note_type: parameters.prefix || parameters.note_type || '',
+        : '',
       interviewer: parameters.interviewer || '',
     };
 
@@ -431,13 +419,19 @@ export class WorkflowEngine {
 
     // Generate output filename
     let outputFile: string;
-    if (parameters.prefix && typeof parameters.prefix === 'string') {
+    if (
+      parameters.prefix &&
+      typeof parameters.prefix === 'string' &&
+      parameters.prefix.trim() !== ''
+    ) {
       // If prefix is provided, use it: prefix_templatename.md
-      const baseOutputName = template.output
-        .replace(/\{\{[^}]+\}\}/g, '') // Remove template variables
-        .replace(/^_+|_+$/g, '') // Remove leading/trailing underscores
-        .replace(/\.md$/, ''); // Remove .md extension
-      outputFile = `${parameters.prefix}_${baseOutputName || templateName}.md`;
+      const sanitizedPrefix = sanitizeForFilename(parameters.prefix);
+      const baseOutputName = normalizeTemplateName(
+        template.output
+          .replace(/\{\{[^}]+\}\}/g, '') // Remove template variables
+          .replace(/\.md$/, ''), // Remove .md extension
+      );
+      outputFile = `${sanitizedPrefix}_${baseOutputName || normalizeTemplateName(templateName)}.md`;
     } else {
       // Use template's output pattern with variable substitution
       outputFile = Mustache.render(template.output, templateVariables);
@@ -453,63 +447,6 @@ export class WorkflowEngine {
     }
 
     // Write the file
-    this.systemInterface.writeFileSync(outputPath, processedContent);
-    console.log(`Created: ${outputFile}`);
-  }
-
-  /**
-   * Execute notes action (create notes from template)
-   * Creates interview notes or other note types from templates with variable substitution
-   * @deprecated Use executeAddAction with template parameter instead
-   */
-  private async executeNotesAction(
-    workflow: WorkflowFile,
-    collection: Collection,
-    action: WorkflowAction,
-    parameters: Record<string, unknown>,
-  ): Promise<void> {
-    await this.ensureProjectConfigLoaded();
-
-    const noteType = parameters.note_type;
-    if (!noteType) {
-      throw new Error('note_type parameter is required for notes action');
-    }
-
-    const notesTemplate = workflow.workflow.templates.find((t) => t.name === 'interview_notes');
-    if (!notesTemplate) {
-      throw new Error('Interview notes template not found');
-    }
-
-    const templatePath = path.join(
-      this.systemRoot,
-      'workflows',
-      workflow.workflow.name,
-      notesTemplate.file,
-    );
-    if (!this.systemInterface.existsSync(templatePath)) {
-      throw new Error(`Template not found: ${templatePath}`);
-    }
-
-    const templateContent = this.systemInterface.readFileSync(templatePath);
-
-    const templateVariables = {
-      note_type: noteType,
-      company: collection.metadata.company,
-      role: collection.metadata.role,
-      application_name: collection.metadata.collection_id,
-      date: formatDate(
-        getCurrentDate(this.projectConfig || undefined),
-        'YYYY-MM-DD',
-        this.projectConfig || undefined,
-      ),
-      interviewer: parameters.interviewer || '',
-      user: this.projectConfig?.user || this.getDefaultUserConfig(),
-    };
-
-    const processedContent = Mustache.render(templateContent, templateVariables);
-    const outputFile = Mustache.render(notesTemplate.output, templateVariables);
-    const outputPath = path.join(collection.path, outputFile);
-
     this.systemInterface.writeFileSync(outputPath, processedContent);
     console.log(`Created: ${outputFile}`);
   }
@@ -555,16 +492,16 @@ export class WorkflowEngine {
           this.projectConfig || undefined,
         ),
         // Add any other variables that might be used in output patterns
-        note_type: '{{note_type}}', // Placeholder for dynamic templates
+        prefix: '{{prefix}}', // Placeholder for dynamic templates
       };
 
       try {
         // Find all collection artifacts that match this template pattern
         const matchingFiles = collection.artifacts.filter((artifact) => {
           // For dynamic templates (like notes), we need pattern matching
-          if (template.output.includes('{{note_type}}')) {
+          if (template.output.includes('{{prefix}}')) {
             // Match any file that could have been generated from this template
-            const basePattern = template.output.replace('{{note_type}}', '(.+)');
+            const basePattern = template.output.replace('{{prefix}}', '(.+)');
             const regex = new RegExp(
               basePattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)'),
             );

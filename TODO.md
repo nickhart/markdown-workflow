@@ -66,7 +66,7 @@
   - [x] `wf-status` - Update collection status
   - [x] `wf-list` - List collections
   - [x] `wf-format` - Format collection documents
-  - [x] `wf-notes` - Create interview/meeting notes
+  - [x] `wf add` - Add items from templates to existing collections
   - [x] `wf-init` - Initialize project with workflows
 
 - [ ] **Advanced Features**

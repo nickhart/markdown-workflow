@@ -11,6 +11,7 @@ import {
   formatDate,
   getCurrentDate,
 } from '../../shared/dateUtils.js';
+import { sanitizeForFilename } from '../../shared/fileUtils.js';
 
 interface CreateOptions {
   url?: string;
@@ -227,18 +228,6 @@ async function processTemplate(
   } catch (error) {
     console.error(`Error processing template ${template.name}:`, error);
   }
-}
-
-/**
- * Sanitize string for use in filenames
- */
-function sanitizeForFilename(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '') // Remove special chars
-    .replace(/\s+/g, '_') // Replace spaces with underscores
-    .replace(/_+/g, '_') // Remove duplicate underscores
-    .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
 }
 
 /**
