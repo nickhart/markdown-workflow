@@ -42,7 +42,7 @@ wf-create job "Acme Corp" "Software Engineer"
 wf-status job acme_corp_software_engineer_20250121 submitted
 
 # Create notes
-wf-notes job acme_corp_software_engineer_20250121 recruiter
+wf add job acme_corp_software_engineer_20250121 notes recruiter
 
 # Validate final state
 pnpm snapshot compare "complete-job-workflow" "$TEST_DIR" --content
@@ -127,7 +127,7 @@ pnpm snapshot create "stage-2-submitted" "$TEST_DIR" --content
 
 # Move to interview
 wf-status job tech_startup_full_stack_dev_20250121 interview
-wf-notes job tech_startup_full_stack_dev_20250121 technical
+wf add job tech_startup_full_stack_dev_20250121 notes technical
 pnpm snapshot create "stage-3-interview" "$TEST_DIR" --content
 
 # Final validation

@@ -62,7 +62,7 @@ workflow:
     
     - name: "notes"
       file: "templates/notes/default.md"
-      output: "{{prefix}}_notes.md"
+      output: "{{#prefix}}{{prefix}}_{{/prefix}}notes.md"
       description: "Notes template for interviews, meetings, or general notes"
 
   # Define static files (no variable substitution)
@@ -111,20 +111,6 @@ workflow:
           options: ["docx", "html", "pdf", "all"]
           default: "docx"
           description: "Output format"
-    
-    - name: "notes"
-      description: "Create interview notes (legacy - use 'add' action instead)"
-      templates: ["notes"]
-      parameters:
-        - name: "note_type"
-          type: "enum"
-          options: ["recruiter", "phone", "technical", "panel", "final"]
-          required: true
-          description: "Type of interview notes"
-        - name: "interviewer"
-          type: "string"
-          required: false
-          description: "Interviewer name"
     
     - name: "add"
       description: "Add new item from template to collection"

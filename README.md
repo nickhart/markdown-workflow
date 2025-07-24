@@ -105,8 +105,8 @@ node dist/cli/index.js create job "Meta" "Product Manager" --url "https://job-ur
 ### Job Applications
 
 - **Stages**: active → submitted → interview → offered → accepted/rejected
-- **Templates**: resume, cover letter, interview notes
-- **Actions**: create, format, notes, scrape
+- **Templates**: resume, cover letter, notes (interview notes, meeting notes, etc.)
+- **Actions**: create, format, add, scrape
 
 ### Blog Posts
 
@@ -150,9 +150,9 @@ wf status job company_role_20240101 interview    # Move to interview stage
 wf format job company_role_20240101              # Format to DOCX (default)
 wf format job company_role_20240101 --format pdf # Format to PDF
 
-# Create interview notes
-wf notes job company_role_20240101 recruiter     # Create recruiter notes
-wf notes job company_role_20240101 technical --interviewer "John Doe"
+# Add interview notes to existing collection
+wf add job company_role_20240101 notes recruiter     # Create recruiter notes
+wf add job company_role_20240101 notes technical     # Create technical interview notes
 ```
 
 ## Development
