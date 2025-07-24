@@ -49,6 +49,7 @@ CLAUDE.md
 test-*
 .markdown-workflow
 tmp/
+migrate-reference/
 
 # turbo
 .turbo/
