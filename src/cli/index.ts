@@ -9,6 +9,7 @@ import { statusCommand, showStatusesCommand } from './commands/status.js';
 import { addCommand, listTemplatesCommand } from './commands/add.js';
 import listCommand from './commands/list.js';
 import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
+import updateCommand from './commands/update.js';
 
 const program = new Command();
 
@@ -43,11 +44,13 @@ program
   .argument('[args...]', 'Workflow-specific arguments')
   .option('-u, --url <url>', 'Job posting URL')
   .option('-t, --template-variant <variant>', 'Template variant to use')
+  .option('--force', 'Force recreate existing collection (destructive: regenerates all files)')
   .action(async (workflow, args, options) => {
     try {
       await createWithHelpCommand([workflow, ...args], {
         url: options.url,
         template_variant: options.templateVariant,
+        force: options.force,
       });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);
@@ -153,6 +156,30 @@ program
       await listCommand(workflow, {
         status: options.status,
         format: options.format,
+      });
+    } catch (error) {
+      console.error('Error:', error instanceof Error ? error.message : error);
+      process.exit(1);
+    }
+  });
+
+// wf-update command
+program
+  .command('update')
+  .description('Update existing collection metadata and optionally scrape new URL')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('<collection_id>', 'Collection ID to update')
+  .option('-u, --url <url>', 'Update job posting URL and scrape content')
+  .option('-c, --company <company>', 'Update company name')
+  .option('-r, --role <role>', 'Update role/position')
+  .option('-n, --notes <notes>', 'Update notes')
+  .action(async (workflow, collectionId, options) => {
+    try {
+      await updateCommand(workflow, collectionId, {
+        url: options.url,
+        company: options.company,
+        role: options.role,
+        notes: options.notes,
       });
     } catch (error) {
       console.error('Error:', error instanceof Error ? error.message : error);

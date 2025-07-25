@@ -12,10 +12,12 @@ import {
   getCurrentDate,
 } from '../../shared/dateUtils.js';
 import { sanitizeForFilename } from '../../shared/fileUtils.js';
+import { scrapeUrl, getWebScrapingConfig, generateFilenameFromUrl } from '../../shared/webScraper.js';
 
 interface CreateOptions {
   url?: string;
   template_variant?: string;
+  force?: boolean;
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
 }
@@ -65,14 +67,32 @@ export async function createCommand(
   }
 
   const collectionPath = path.join(workflowStatusDir, collectionId);
-  if (fs.existsSync(collectionPath)) {
-    throw new Error(`Collection already exists: ${collectionId}`);
+  const collectionExists = fs.existsSync(collectionPath);
+
+  // Handle existing collections
+  if (collectionExists) {
+    if (options.force) {
+      console.log(`Force recreating collection: ${collectionId}`);
+      console.log(`Location: ${collectionPath}`);
+      
+      // Remove existing collection directory
+      fs.rmSync(collectionPath, { recursive: true, force: true });
+    } else {
+      throw new Error(`Collection already exists: ${collectionId}. Use 'wf update ${workflowName} ${collectionId}' to modify or --force to recreate.`);
+    }
   }
 
-  fs.mkdirSync(collectionPath, { recursive: true });
-
-  console.log(`Creating collection: ${collectionId}`);
-  console.log(`Location: ${collectionPath}`);
+  // Create collection directory (for new collections or after force removal)
+  if (!collectionExists || options.force) {
+    fs.mkdirSync(collectionPath, { recursive: true });
+    
+    if (options.force) {
+      console.log(`Collection recreated successfully!`);
+    } else {
+      console.log(`Creating collection: ${collectionId}`);
+      console.log(`Location: ${collectionPath}`);
+    }
+  }
 
   // Create collection metadata
   const metadata: CollectionMetadata = {
@@ -122,9 +142,20 @@ export async function createCommand(
           workflowName,
           templateVariables,
           systemConfig.projectConfig,
+          projectPaths,
         );
       }
     }
+  }
+
+  // Scrape URL if provided
+  if (options.url) {
+    await scrapeUrlForCollection(
+      collectionPath,
+      options.url,
+      workflowDefinition,
+      systemConfig.projectConfig || undefined,
+    );
   }
 
   console.log('✅ Collection created successfully!');
@@ -166,7 +197,67 @@ async function loadWorkflowDefinition(
 }
 
 /**
+ * Resolve template path with inheritance and variant support
+ * Priority: project templates (with variant) > project templates (default) > system templates
+ */
+function resolveTemplatePath(
+  template: WorkflowTemplate,
+  systemRoot: string,
+  workflowName: string,
+  templateVariant?: string,
+  projectPaths?: { workflowsDir: string } | null,
+): string | null {
+  const templatePaths: string[] = [];
+
+  // If project has workflows directory, check project templates first
+  if (projectPaths?.workflowsDir) {
+    const projectWorkflowDir = path.join(projectPaths.workflowsDir, workflowName);
+    
+    if (templateVariant) {
+      // Try project template with variant (e.g., .markdown-workflow/workflows/job/templates/resume/ai-frontend.md)
+      const variantPath = getVariantTemplatePath(projectWorkflowDir, template, templateVariant);
+      if (variantPath) templatePaths.push(variantPath);
+    }
+    
+    // Try project template default (e.g., .markdown-workflow/workflows/job/templates/resume/default.md)
+    const projectTemplatePath = path.join(projectWorkflowDir, template.file);
+    templatePaths.push(projectTemplatePath);
+  }
+
+  // Always add system template as fallback
+  const systemTemplatePath = path.join(systemRoot, 'workflows', workflowName, template.file);
+  templatePaths.push(systemTemplatePath);
+
+  // Return first existing template
+  for (const templatePath of templatePaths) {
+    if (fs.existsSync(templatePath)) {
+      return templatePath;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Build variant template path by replacing filename with variant
+ * e.g., templates/resume/default.md + variant "ai-frontend" -> templates/resume/ai-frontend.md
+ */
+function getVariantTemplatePath(
+  workflowDir: string,
+  template: WorkflowTemplate,
+  variant: string,
+): string | null {
+  const templateFile = template.file;
+  const parsedPath = path.parse(templateFile);
+  
+  // Replace filename with variant, keep extension
+  const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
+  return path.join(workflowDir, variantFile);
+}
+
+/**
  * Process a template file with variable substitution
+ * Implements template inheritance: project templates override system templates
  */
 async function processTemplate(
   template: WorkflowTemplate,
@@ -175,29 +266,39 @@ async function processTemplate(
   workflowName: string,
   variables: Record<string, string>,
   projectConfig?: ProjectConfig | null,
+  projectPaths?: { workflowsDir: string; configFile: string } | null,
 ): Promise<void> {
-  const templatePath = path.join(systemRoot, 'workflows', workflowName, template.file);
+  // Load user configuration if project paths are available
+  let userConfig = null;
+  if (projectPaths?.configFile && fs.existsSync(projectPaths.configFile)) {
+    const configDiscovery = new ConfigDiscovery();
+    const config = await configDiscovery.loadProjectConfig(projectPaths.configFile);
+    userConfig = config?.user;
+  }
 
-  if (!fs.existsSync(templatePath)) {
-    console.warn(`Template not found: ${templatePath}`);
+  // Resolve template path with inheritance: project templates override system templates
+  const resolvedTemplatePath = resolveTemplatePath(
+    template,
+    systemRoot,
+    workflowName,
+    variables.template_variant,
+    projectPaths,
+  );
+
+  if (!resolvedTemplatePath) {
+    console.warn(`Template not found: ${template.name} (checked project and system locations)`);
+    return;
+  }
+
+  console.log(`Using template: ${resolvedTemplatePath}`);
+
+  if (!fs.existsSync(resolvedTemplatePath)) {
+    console.warn(`Template file not found: ${resolvedTemplatePath}`);
     return;
   }
 
   try {
-    const templateContent = fs.readFileSync(templatePath, 'utf8');
-
-    // Load user configuration for template variables
-    const configDiscovery = new ConfigDiscovery();
-    const projectRoot = configDiscovery.findProjectRoot();
-    let userConfig = null;
-
-    if (projectRoot) {
-      const projectPaths = configDiscovery.getProjectPaths(projectRoot);
-      if (fs.existsSync(projectPaths.configFile)) {
-        const config = await configDiscovery.loadProjectConfig(projectPaths.configFile);
-        userConfig = config?.user;
-      }
-    }
+    const templateContent = fs.readFileSync(resolvedTemplatePath, 'utf8');
 
     // Prepare template variables for Mustache
     const userConfigForTemplate = userConfig || getDefaultUserConfig();
@@ -253,6 +354,8 @@ function getDefaultUserConfig() {
  * Generate YAML content for collection metadata
  */
 function generateMetadataYaml(metadata: CollectionMetadata): string {
+  const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
+  
   return `# Collection Metadata
 collection_id: "${metadata.collection_id}"
 workflow: "${metadata.workflow}"
@@ -262,8 +365,7 @@ date_modified: "${metadata.date_modified}"
 
 # Application Details
 company: "${metadata.company}"
-role: "${metadata.role}"
-${metadata.url ? `url: "${metadata.url}"` : ''}
+role: "${metadata.role}"${urlLine ? `\n${urlLine}` : ''}
 
 # Status History
 status_history:
@@ -273,6 +375,109 @@ status_history:
 # Additional Fields
 # Add custom fields here as needed
 `;
+}
+
+
+/**
+ * Scrape URL for collection using workflow configuration
+ */
+async function scrapeUrlForCollection(
+  collectionPath: string,
+  url: string,
+  workflowDefinition: WorkflowFile,
+  projectConfig?: ProjectConfig,
+): Promise<void> {
+  console.log(`Scraping job description from: ${url}`);
+
+  // Find scrape action in workflow definition
+  const scrapeAction = workflowDefinition.workflow.actions.find(
+    (action) => action.name === 'scrape',
+  );
+
+  // Determine output filename from workflow config or generate from URL
+  let outputFile = 'job_description.html'; // default fallback
+  
+  if (scrapeAction?.parameters) {
+    const outputParam = scrapeAction.parameters.find(p => p.name === 'output_file');
+    if (outputParam?.default && typeof outputParam.default === 'string') {
+      outputFile = outputParam.default;
+    }
+  }
+
+  // If no workflow config, try to generate a reasonable filename
+  if (outputFile === 'job_description.html') {
+    outputFile = generateFilenameFromUrl(url, outputFile);
+  }
+
+  // Get web scraping configuration
+  const scrapingConfig = getWebScrapingConfig(projectConfig);
+
+  try {
+    // Perform the scraping
+    const result = await scrapeUrl(url, {
+      outputFile,
+      outputDir: collectionPath,
+      config: scrapingConfig,
+    });
+
+    if (result.success) {
+      console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
+      if (result.fileSize) {
+        console.log(`   File size: ${Math.round(result.fileSize / 1024)} KB`);
+      }
+    } else {
+      console.error(`❌ Failed to scrape URL: ${result.error}`);
+      
+      // Create a fallback placeholder file with the URL
+      const fallbackPath = path.join(collectionPath, outputFile);
+      const fallbackContent = createFallbackHtml(url, result.error || 'Unknown error');
+      fs.writeFileSync(fallbackPath, fallbackContent);
+      console.log(`📄 Created placeholder file: ${outputFile}`);
+    }
+  } catch (error) {
+    console.error(`❌ Scraping error: ${error}`);
+    
+    // Create fallback placeholder
+    const fallbackPath = path.join(collectionPath, outputFile);
+    const fallbackContent = createFallbackHtml(url, String(error));
+    fs.writeFileSync(fallbackPath, fallbackContent);
+    console.log(`📄 Created placeholder file: ${outputFile}`);
+  }
+}
+
+/**
+ * Create fallback HTML content when scraping fails
+ */
+function createFallbackHtml(url: string, error: string): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+    <title>Job Description - Scraping Failed</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; }
+        .error { color: #d73a49; background: #ffeef0; padding: 1em; border-radius: 4px; }
+        .url { word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h1>Job Description</h1>
+    <p><strong>Source URL:</strong> <a href="${url}" class="url">${url}</a></p>
+    
+    <div class="error">
+        <h3>⚠️ Scraping Failed</h3>
+        <p><strong>Error:</strong> ${error}</p>
+        <p>Please visit the URL above to view the job description manually.</p>
+    </div>
+    
+    <h3>Manual Steps:</h3>
+    <ol>
+        <li>Click the URL above to open the job posting</li>
+        <li>Copy the job description content</li>
+        <li>Replace this file with the actual content</li>
+    </ol>
+</body>
+</html>`;
 }
 
 export default createCommand;

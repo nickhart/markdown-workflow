@@ -128,14 +128,16 @@ export function generateCollectionId(
   const sanitizedCompany = company
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
+    .trim()
     .replace(/\s+/g, sanitizeSpaces)
-    .trim();
+    .replace(/_+/g, '_'); // Collapse multiple underscores to single
 
   const sanitizedRole = role
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
+    .trim()
     .replace(/\s+/g, sanitizeSpaces)
-    .trim();
+    .replace(/_+/g, '_'); // Collapse multiple underscores to single
 
   // Get date component
   let dateComponent: string;
@@ -157,13 +159,20 @@ export function generateCollectionId(
     const companyLength = Math.floor(availableLength * 0.6);
     const roleLength = availableLength - companyLength;
 
-    const truncatedCompany = sanitizedCompany.substring(0, companyLength);
-    const truncatedRole = sanitizedRole.substring(0, roleLength);
+    let truncatedCompany = sanitizedCompany.substring(0, companyLength);
+    let truncatedRole = sanitizedRole.substring(0, roleLength);
 
-    return `${truncatedCompany}_${truncatedRole}_${dateComponent}`;
+    // Remove trailing underscores from truncated parts
+    truncatedCompany = truncatedCompany.replace(/_+$/, '');
+    truncatedRole = truncatedRole.replace(/_+$/, '');
+
+    const truncatedId = `${truncatedCompany}_${truncatedRole}_${dateComponent}`;
+    // Collapse any multiple underscores that might have been created
+    return truncatedId.replace(/_+/g, '_');
   }
 
-  return baseId;
+  // Ensure no multiple underscores in the final result
+  return baseId.replace(/_+/g, '_');
 }
 
 /**

@@ -58,6 +58,8 @@
   - [x] Collection state management
   - [x] Workflow execution engine
   - [x] Action and converter system
+  - [ ] Add migrate command
+  - [ ] add import command? could make future migrations easier, or allow custom migrations
 
 ### CLI Commands
 

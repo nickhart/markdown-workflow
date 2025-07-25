@@ -8,6 +8,7 @@ import { createCommand } from './create.js';
 interface CreateWithHelpOptions {
   url?: string;
   template_variant?: string;
+  force?: boolean;
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
 }
