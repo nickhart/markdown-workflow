@@ -1,24 +1,23 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createCommand } from '../../src/cli/commands/create.js';
-import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
+import { ConfigDiscovery } from '../../src/core/config-discovery.js';
+import { MockSystemInterface } from '../mocks/mock-system-interface.js';
 import {
   createMockFileSystem,
   createEnhancedMockFileSystem,
-} from '../helpers/FileSystemHelpers.js';
+} from '../helpers/file-system-helpers.js';
 
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
-jest.mock('../../src/shared/webScraper.js', () => ({
+jest.mock('../../src/shared/web-scraper.js', () => ({
   scrapeUrl: jest.fn().mockResolvedValue({
     success: true,
     outputFile: 'job_description.html',
     method: 'wget',
   }),
   generateFilenameFromUrl: jest.fn().mockReturnValue('job_description.html'),
-  getWebScrapingConfig: jest.fn().mockReturnValue({ timeout: 30 }),
 }));
 
 const mockFs = fs as jest.Mocked<typeof fs>;

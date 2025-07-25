@@ -1,8 +1,8 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Mustache from 'mustache';
-import { ConfigDiscovery } from './ConfigDiscovery.js';
-import { SystemInterface, NodeSystemInterface } from './SystemInterface.js';
+import { ConfigDiscovery } from './config-discovery.js';
+import { SystemInterface, NodeSystemInterface } from './system-interface.js';
 import {
   WorkflowFileSchema,
   type WorkflowFile,
@@ -10,8 +10,8 @@ import {
   type WorkflowAction,
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
-import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/dateUtils.js';
-import { sanitizeForFilename, normalizeTemplateName } from '../shared/fileUtils.js';
+import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/date-utils.js';
+import { sanitizeForFilename, normalizeTemplateName } from '../shared/file-utils.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions

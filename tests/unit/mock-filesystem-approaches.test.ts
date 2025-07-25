@@ -3,8 +3,8 @@ import {
   createEnhancedMockFileSystem,
   createProjectFileSystemFromPaths,
   FileSystemPaths,
-} from '../helpers/FileSystemHelpers.js';
-import { FileSystemBuilder, createCompleteTestSystem } from '../helpers/FileSystemBuilder.js';
+} from '../helpers/file-system-helpers.js';
+import { FileSystemBuilder, createCompleteTestSystem } from '../helpers/file-system-builder.js';
 
 describe('Mock File System Approaches', () => {
   describe('Path-Based Approach', () => {

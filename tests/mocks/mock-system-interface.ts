@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { SystemInterface } from '../../src/core/SystemInterface';
+import { SystemInterface } from '../../src/core/system-interface';
 
 type _FileSystemContent = {
   name: string;
@@ -127,6 +127,12 @@ export class MockSystemInterface implements SystemInterface {
         throw new Error(`ENOENT: no such file or directory, open '${src}'`);
       }
     });
+  }
+  unlinkSync(_path: string): void {
+    throw new Error('Method not implemented.');
+  }
+  rmdirSync(_path: string): void {
+    throw new Error('Method not implemented.');
   }
 
   getCurrentFilePath(): string {

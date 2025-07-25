@@ -14,6 +14,6 @@
     "resolveJsonModule": true,
     "isolatedModules": true
   },
-  "include": ["src/cli/**/*", "src/core/**/*"],
+  "include": ["src/cli/**/*", "src/core/**/*", "src/shared/**/*"],
   "exclude": ["src/app/**/*", "src/api/**/*", "tests/**/*", "node_modules"]
 }

@@ -1,4 +1,4 @@
-import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
+import { MockSystemInterface } from '../mocks/mock-system-interface.js';
 
 /**
  * Fluent builder for creating mock file systems

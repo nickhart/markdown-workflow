@@ -5,15 +5,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
+import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { CollectionMetadata } from '../../core/types.js';
-import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
-import { getCurrentISODate } from '../../shared/dateUtils.js';
-import {
-  scrapeUrl,
-  getWebScrapingConfig,
-  generateFilenameFromUrl,
-} from '../../shared/webScraper.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
+import { getCurrentISODate } from '../../shared/date-utils.js';
+import { scrapeUrl, generateFilenameFromUrl } from '../../shared/web-scraper.js';
 
 interface UpdateOptions {
   url?: string;
@@ -108,12 +104,7 @@ export async function updateCommand(
 
   // Scrape URL if provided
   if (options.url) {
-    await scrapeUrlForCollection(
-      collectionPath,
-      options.url,
-      workflowDefinition,
-      systemConfig.projectConfig || undefined,
-    );
+    await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
   }
 
   console.log('');
@@ -188,7 +179,6 @@ async function scrapeUrlForCollection(
   collectionPath: string,
   url: string,
   workflowDefinition: WorkflowFile,
-  projectConfig?: ProjectConfig,
 ): Promise<void> {
   console.log(`Scraping job description from: ${url}`);
 
@@ -211,9 +201,6 @@ async function scrapeUrlForCollection(
   if (outputFile === 'job_description.html') {
     outputFile = generateFilenameFromUrl(url, outputFile);
   }
-
-  // Get web scraping configuration
-  const scrapingConfig = getWebScrapingConfig(projectConfig);
 
   try {
     // Perform the scraping

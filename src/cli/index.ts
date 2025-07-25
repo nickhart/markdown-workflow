@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import initCommand from './commands/init.js';
-import createWithHelpCommand from './commands/createWithHelp.js';
+import createWithHelpCommand from './commands/create-with-help.js';
 import availableCommand from './commands/available.js';
 import formatCommand from './commands/format.js';
 import { statusCommand, showStatusesCommand } from './commands/status.js';

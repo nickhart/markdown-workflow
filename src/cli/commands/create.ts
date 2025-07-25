@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Mustache from 'mustache';
-import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
+import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
 import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
 import {
@@ -10,13 +10,9 @@ import {
   getCurrentISODate,
   formatDate,
   getCurrentDate,
-} from '../../shared/dateUtils.js';
-import { sanitizeForFilename } from '../../shared/fileUtils.js';
-import {
-  scrapeUrl,
-  getWebScrapingConfig,
-  generateFilenameFromUrl,
-} from '../../shared/webScraper.js';
+} from '../../shared/date-utils.js';
+import { sanitizeForFilename } from '../../shared/file-utils.js';
+import { scrapeUrl, generateFilenameFromUrl } from '../../shared/web-scraper.js';
 
 interface CreateOptions {
   url?: string;
@@ -156,12 +152,7 @@ export async function createCommand(
 
   // Scrape URL if provided
   if (options.url) {
-    await scrapeUrlForCollection(
-      collectionPath,
-      options.url,
-      workflowDefinition,
-      systemConfig.projectConfig || undefined,
-    );
+    await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
   }
 
   console.log('✅ Collection created successfully!');
@@ -390,7 +381,6 @@ async function scrapeUrlForCollection(
   collectionPath: string,
   url: string,
   workflowDefinition: WorkflowFile,
-  projectConfig?: ProjectConfig,
 ): Promise<void> {
   console.log(`Scraping job description from: ${url}`);
 
@@ -413,9 +403,6 @@ async function scrapeUrlForCollection(
   if (outputFile === 'job_description.html') {
     outputFile = generateFilenameFromUrl(url, outputFile);
   }
-
-  // Get web scraping configuration
-  const scrapingConfig = getWebScrapingConfig(projectConfig);
 
   try {
     // Perform the scraping
@@ -464,13 +451,13 @@ function createFallbackHtml(url: string, error: string): string {
 <body>
     <h1>Job Description</h1>
     <p><strong>Source URL:</strong> <a href="${url}" class="url">${url}</a></p>
-    
+
     <div class="error">
         <h3>⚠️ Scraping Failed</h3>
         <p><strong>Error:</strong> ${error}</p>
         <p>Please visit the URL above to view the job description manually.</p>
     </div>
-    
+
     <h3>Manual Steps:</h3>
     <ol>
         <li>Click the URL above to open the job posting</li>

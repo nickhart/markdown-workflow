@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { JobApplicationMigrator } from '../../../src/core/JobApplicationMigrator.js';
-import { SystemInterface } from '../../../src/core/SystemInterface.js';
-import { ConfigDiscovery } from '../../../src/core/ConfigDiscovery.js';
+import { JobApplicationMigrator } from '../../../src/core/job-application-migrator.js';
+import { SystemInterface } from '../../../src/core/system-interface.js';
+import { ConfigDiscovery } from '../../../src/core/config-discovery.js';
 import * as YAML from 'yaml';
 
 // Mock SystemInterface
