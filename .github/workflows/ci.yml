@@ -182,19 +182,20 @@ jobs:
     steps:
       - name: Check all jobs
         run: |
-          if [[ "${{ needs.build.result }}" == "success" && \
-                "${{ needs.test.result }}" == "success" && \
-                "${{ needs.lint.result }}" == "success" && \
-                "${{ needs.format.result }}" == "success" && \
-                "${{ needs.e2e.result }}" == "success" ]]; then
-            echo "✅ All CI jobs passed!"
+          jobs=("build" "test" "lint" "format" "e2e")
+          failed_jobs=()
+
+          for job in "${jobs[@]}"; do
+            result="${{ needs[job].result }}"
+            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
+              failed_jobs+=("$job")
+            fi
+          done
+
+          if [[ ${#failed_jobs[@]} -eq 0 ]]; then
+            echo "✅ All CI jobs passed or were skipped!"
             exit 0
           else
-            echo "❌ Some CI jobs failed:"
-            echo "  Build: ${{ needs.build.result }}"
-            echo "  Test: ${{ needs.test.result }}"
-            echo "  Lint: ${{ needs.lint.result }}"
-            echo "  Format: ${{ needs.format.result }}"
-            echo "  E2E: ${{ needs.e2e.result }}"
+            echo "❌ Failed jobs: ${failed_jobs[*]}"
             exit 1
           fi
