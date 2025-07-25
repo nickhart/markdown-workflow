@@ -3,6 +3,7 @@
 ## Current State Assessment
 
 ✅ **Working Core Features:**
+
 - ✅ CLI initialization (`wf init`)
 - ✅ Job application workflow (`wf create job`, `wf status`, `wf list`, `wf format`, `wf add`, `wf update`)
 - ✅ Template system with project-specific overrides
@@ -54,6 +55,7 @@
 ## v1.0.0 Feature Scope
 
 ### ✅ Included
+
 - **Core Workflow Engine** - Template processing, status management, collection tracking
 - **Job Application Workflow** - Full lifecycle from creation to archival
 - **CLI Interface** - All essential commands (init, create, status, list, format, add, update, migrate)
@@ -64,6 +66,7 @@
 - **Project Structure** - Repository-agnostic design like git
 
 ### ❌ Deferred to Future Versions
+
 - **Blog workflow** (templates exist but CLI integration incomplete)
 - **REST API** (code exists but not tested/documented)
 - **Web interface** (Next.js scaffold exists but not implemented)
@@ -74,16 +77,19 @@
 ## Post-v1.0 Roadmap
 
 ### v1.1.0 - Blog Workflow
+
 - Complete blog workflow CLI integration
 - Blog-specific commands and status management
 - HTML generation and publishing workflow
 
 ### v1.2.0 - API & Web Demo
+
 - Stabilize REST API
 - Create minimal web demo for blog post
 - Basic web interface for workflow demonstration
 
 ### v2.0.0 - Distribution System
+
 - Workflow creation and packaging
 - Import/export workflows
 - Community workflow sharing
@@ -91,9 +97,11 @@
 ## Web Demo MVP Concept
 
 ### Minimal Demo Scope
+
 **Goal:** Demonstrate the workflow concept in a browser for blog post
 
 **Features:**
+
 - ✅ **Template Preview** - Show how templates work with variable substitution
 - ✅ **Workflow Visualization** - Show status transitions for job applications
 - ✅ **Interactive Example** - Let users fill out a form and see generated documents
@@ -102,6 +110,7 @@
 - ❌ **No Web Scraping** - Skip URL features for web demo
 
 ### Technical Approach
+
 - **Reuse Core Logic** - Import TypeScript modules from `src/core/`
 - **Simple React Interface** - Basic form + preview panes
 - **Mock File System** - Use existing mock utilities from tests
@@ -109,6 +118,7 @@
 - **Template Playground** - Let users edit templates and see results
 
 ### Implementation Estimate
+
 - **Time:** 1-2 days for basic demo
 - **Dependencies:** React, existing core modules, CSS framework
 - **Deployment:** Static site (Vercel, Netlify, GitHub Pages)
@@ -116,18 +126,21 @@
 ## Success Metrics for v1.0
 
 ### User Experience
+
 - [ ] New user can get productive in < 5 minutes
 - [ ] Installation works on macOS, Linux, Windows
 - [ ] Common workflows (create job application, update status) feel natural
 - [ ] Error messages are helpful and actionable
 
 ### Technical Quality
+
 - [ ] All tests pass consistently
 - [ ] CLI performance feels snappy (< 1s for common operations)
 - [ ] No known critical bugs
 - [ ] Documentation covers all user-facing features
 
 ### Blog Post Demo
+
 - [ ] Web demo effectively demonstrates the concept
 - [ ] Shows off TypeScript/workflow architecture
 - [ ] Provides interactive way to understand the system
