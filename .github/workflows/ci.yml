@@ -182,22 +182,8 @@ jobs:
     if: always()
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Check all jobs
-        run: |
-          jobs=("build" "test" "lint" "format" "e2e")
-          failed_jobs=()
-
-          for job in "${jobs[@]}"; do
-            result="${{ needs[job].result }}"
-            if [[ "$result" != "success" && "$result" != "skipped" ]]; then
-              failed_jobs+=("$job")
-            fi
-          done
-
-          if [[ ${#failed_jobs[@]} -eq 0 ]]; then
-            echo "✅ All CI jobs passed or were skipped!"
-            exit 0
-          else
-            echo "❌ Failed jobs: ${failed_jobs[*]}"
-            exit 1
-          fi
+        run: .github/scripts/check-ci-status.sh '${{ toJSON(needs) }}'
