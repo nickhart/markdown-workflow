@@ -5,6 +5,7 @@
 ## 🚀 v1.0.0 Release Tasks (High Priority)
 
 ### Documentation & Polish
+
 - [ ] **Update README.md**
   - [ ] Reflect current working features accurately
   - [ ] Remove references to unimplemented features
@@ -24,6 +25,7 @@
   - [ ] Verify CLI works from any directory
 
 ### Code Quality
+
 - [ ] **Final Code Cleanup**
   - [ ] Remove commented-out code
   - [ ] Update package.json to version 1.0.0
@@ -39,6 +41,7 @@
 ## 🌐 Web Demo (Nice-to-Have)
 
 ### Minimal MVP for Blog Post
+
 - [ ] **Template Playground**
   - [ ] Interactive form to edit templates
   - [ ] Live preview of generated markdown
@@ -59,6 +62,7 @@
 ## 📋 Currently Working Features ✅
 
 ### Core System
+
 - ✅ **CLI Commands**
   - `wf init` - Initialize project with workflows
   - `wf create job` - Create job applications with templates
@@ -96,16 +100,19 @@
 ## 🔮 Future Versions (Post-v1.0)
 
 ### v1.1.0 - Blog Workflow Completion
+
 - [ ] Complete blog workflow CLI integration
 - [ ] Blog-specific commands (`wf create blog`, status management)
 - [ ] HTML generation and publishing workflow
 
 ### v1.2.0 - API & Web Interface
+
 - [ ] Stabilize REST API endpoints
 - [ ] Web interface for collection management
 - [ ] API documentation and testing
 
 ### v2.0.0 - Workflow Distribution
+
 - [ ] `wf create-workflow` - Create custom workflows
 - [ ] `wf pack-workflow` - Package workflows for sharing
 - [ ] `wf import-workflow` - Import community workflows
@@ -114,6 +121,7 @@
 ### Future Ideas
 
 #### Third-Party Integrations
+
 - [ ] **GitJournal Integration**
   - [ ] REST API endpoints for mobile/external clients
   - [ ] GitJournal plugin for creating workflow collections
@@ -136,8 +144,9 @@
   - [ ] Calendar integration for interview scheduling
 
 #### Advanced Features
+
 - [ ] Advanced search and filtering
-- [ ] Team collaboration features  
+- [ ] Team collaboration features
 - [ ] AI-powered template suggestions
 - [ ] Mobile app interface
 - [ ] Cross-platform desktop app (Electron)
@@ -145,6 +154,7 @@
 ## 🎯 Design Principles
 
 Following **ADR 002: Simplicity Over Completeness**:
+
 - ✅ Solve the common case well (80% of use cases)
 - ✅ Keep code simple and maintainable
 - ✅ Accept manual intervention for edge cases

@@ -14,13 +14,15 @@ A TypeScript-based workflow system for managing document templates and collectio
 ## 🎯 What It Does
 
 Transform this manual process:
+
 1. Copy-paste resume template
-2. Manually fill in company/role details  
+2. Manually fill in company/role details
 3. Customize cover letter for each application
 4. Keep track of application status in spreadsheet
 5. Generate formatted documents for submission
 
 Into this automated workflow:
+
 ```bash
 wf create job "Google" "Staff Engineer" --url "https://job-posting-url"
 wf status job google_staff_engineer_20241125 submitted
@@ -30,6 +32,7 @@ wf format job google_staff_engineer_20241125  # Generates DOCX files
 ## ✅ Current Features
 
 ### Core Workflow System
+
 - 📝 **Template-driven document generation** - Mustache templates with variable substitution
 - 🔄 **Status tracking** - Move collections through workflow stages (active → submitted → interview → offered)
 - 📁 **Project-specific customization** - Override templates and workflows per project
@@ -38,6 +41,7 @@ wf format job google_staff_engineer_20241125  # Generates DOCX files
 - 🔧 **Repository-agnostic** - Works from any directory, like git
 
 ### Job Application Workflow (Fully Implemented)
+
 - **Create applications:** `wf create job "Company" "Role"`
 - **Track status:** `wf status job collection_id submitted`
 - **List applications:** `wf list job` or `wf list job active`
@@ -47,6 +51,7 @@ wf format job google_staff_engineer_20241125  # Generates DOCX files
 - **Migration tool:** `wf migrate` (from legacy bash-based system)
 
 ### Template System
+
 - **Inheritance:** Project templates override system defaults
 - **Variables:** `{{user.name}}`, `{{company}}`, `{{role}}`, `{{date}}`, etc.
 - **Multiple variants:** Default, mobile-focused, frontend-specific templates
@@ -55,6 +60,7 @@ wf format job google_staff_engineer_20241125  # Generates DOCX files
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 20+
 - pnpm (recommended) or npm
 - pandoc (for document formatting)
@@ -62,6 +68,7 @@ wf format job google_staff_engineer_20241125  # Generates DOCX files
 ### Installation
 
 **Option 1: Development Setup**
+
 ```bash
 git clone https://github.com/yourusername/markdown-workflow.git
 cd markdown-workflow
@@ -73,6 +80,7 @@ pnpm cli:build
 ```
 
 **Option 2: Global Installation (Recommended)**
+
 ```bash
 ./setup.sh  # Creates global 'wf' command
 ```
@@ -91,16 +99,17 @@ nano .markdown-workflow/config.yml
 ```
 
 Sample configuration:
+
 ```yaml
 user:
-  name: "John Doe"
-  preferred_name: "john_doe"
-  email: "john@example.com"
-  phone: "(555) 123-4567"
-  city: "San Francisco"
-  state: "CA"
-  linkedin: "linkedin.com/in/johndoe"
-  github: "github.com/johndoe"
+  name: 'John Doe'
+  preferred_name: 'john_doe'
+  email: 'john@example.com'
+  phone: '(555) 123-4567'
+  city: 'San Francisco'
+  state: 'CA'
+  linkedin: 'linkedin.com/in/johndoe'
+  github: 'github.com/johndoe'
 ```
 
 ### Create Your First Job Application
@@ -118,6 +127,7 @@ ls .markdown-workflow/collections/job/active/
 ```
 
 This creates:
+
 - `resume_john_doe.md` - Your resume tailored for this role
 - `cover_letter_john_doe.md` - Customized cover letter
 - `collection.yml` - Metadata and status tracking
@@ -143,12 +153,14 @@ ls .markdown-workflow/collections/job/submitted/google_software_engineer_2024112
 ## 📚 Complete Command Reference
 
 ### Project Management
+
 ```bash
 wf init                    # Initialize project with default workflows
 wf init --force           # Force initialization (overwrites existing)
 ```
 
 ### Collection Management
+
 ```bash
 # Create new collections
 wf create job "Company" "Role"
@@ -175,6 +187,7 @@ wf update job collection_id --url "https://new-job-url"
 ```
 
 ### Document Generation
+
 ```bash
 # Format to DOCX (default)
 wf format job collection_id
@@ -185,6 +198,7 @@ wf format job collection_id --format html
 ```
 
 ### Migration & Utilities
+
 ```bash
 wf migrate                 # Migrate from legacy bash-based system
 wf --help                  # Show available commands
@@ -196,7 +210,7 @@ wf create --help           # Command-specific help
 ```
 src/
 ├── core/          # Workflow engine, template processing, schemas
-├── cli/           # Command-line interface implementation  
+├── cli/           # Command-line interface implementation
 ├── shared/        # Utilities (web scraping, file operations)
 └── api/           # REST API (experimental)
 
@@ -213,6 +227,7 @@ tests/             # Comprehensive test suite
 ## 🎨 Customization
 
 ### Override Templates
+
 Create `.markdown-workflow/workflows/job/templates/` in your project:
 
 ```
@@ -231,7 +246,9 @@ Create `.markdown-workflow/workflows/job/templates/` in your project:
 ```
 
 ### Template Variables
+
 Available in all templates:
+
 - `{{user.*}}` - All user config fields (name, email, phone, etc.)
 - `{{company}}` - Target company name
 - `{{role}}` - Position title
@@ -239,6 +256,7 @@ Available in all templates:
 - `{{collection_id}}` - Unique collection identifier
 
 ### Workflow Status Flow
+
 ```
 active → submitted → interview → offered → accepted
    ↓         ↓          ↓          ↓         ↓
@@ -248,6 +266,7 @@ rejected  rejected   rejected   rejected  declined
 ## 🧪 Development
 
 ### Local Development
+
 ```bash
 pnpm install                    # Install dependencies
 pnpm cli:build                  # Build CLI (cached with TurboRepo)
@@ -256,6 +275,7 @@ pnpm test:e2e:snapshots         # Run E2E snapshot tests
 ```
 
 ### Testing
+
 - **Unit tests:** Comprehensive mocking with in-memory filesystems
 - **E2E tests:** Snapshot-based regression testing with real CLI operations
 - **Fast builds:** TurboRepo caching makes rebuilds instant
@@ -263,14 +283,17 @@ pnpm test:e2e:snapshots         # Run E2E snapshot tests
 ## 🔮 Roadmap
 
 ### v1.1.0 - Blog Workflow
+
 - Complete blog workflow CLI integration
 - Publishing and content management features
 
-### v1.2.0 - Web Interface  
+### v1.2.0 - Web Interface
+
 - Simple web demo for showcasing the system
 - Template playground and workflow visualization
 
 ### v2.0.0 - Workflow Distribution
+
 - Create and share custom workflows
 - Community workflow repository
 
