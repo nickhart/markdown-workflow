@@ -21,6 +21,7 @@ The system must handle both simple document generation and complex multi-step wo
 We will implement a layered architecture with the following components:
 
 ### Core Layer (`src/core/`)
+
 - **WorkflowEngine**: Central orchestrator for workflow operations
 - **CollectionManager**: Handles collection lifecycle and status transitions
 - **TemplateProcessor**: Processes markdown templates with variable substitution
@@ -28,15 +29,18 @@ We will implement a layered architecture with the following components:
 - **ConfigManager**: Manages user configuration and workflow definitions
 
 ### Interface Layer
+
 - **CLI (`src/cli/`)**: Command-line interface using Commander.js
 - **API (`src/api/`)**: REST API server using Express.js
 
 ### Shared Layer (`src/shared/`)
+
 - **Types**: TypeScript interfaces and types
 - **Utils**: Common utilities and helpers
 - **Validation**: Schema validation for configurations
 
 ### Data Model
+
 - **Workflows**: YAML-defined templates with co-located template files
 - **Collections**: User instances of workflows with unique identifiers
 - **Items**: Files within collections categorized as:
@@ -45,6 +49,7 @@ We will implement a layered architecture with the following components:
   - Artifacts: User-generated files (protected from overwrite)
 
 ### Key Design Principles
+
 1. **Repository Independence**: Core system is globally installed, user content stays in user repositories
 2. **Template Inheritance**: User templates can override system defaults
 3. **Artifact Protection**: User-generated files are protected from accidental overwrite
@@ -54,6 +59,7 @@ We will implement a layered architecture with the following components:
 ## Consequences
 
 ### Positive
+
 - **Consistent Business Logic**: Core layer ensures both CLI and API behave identically
 - **Separation of Concerns**: Clear boundaries between workflow logic and interface code
 - **Testability**: Each layer can be tested independently
@@ -62,17 +68,20 @@ We will implement a layered architecture with the following components:
 - **Repository Independence**: Users maintain full control over their content
 
 ### Negative
+
 - **Complexity**: Layered architecture adds initial development overhead
 - **Abstraction**: May be over-engineered for simple use cases
 - **Learning Curve**: Developers need to understand the layer boundaries
 
 ### Mitigations
+
 - Comprehensive documentation and examples
 - Clear interfaces between layers
 - Gradual migration path from simpler implementations
 - Integration tests that validate cross-layer functionality
 
 ### Future Considerations
+
 - Plugin system for custom workflow actions
 - Distributed workflow execution
 - Real-time collaboration features

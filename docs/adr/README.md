@@ -45,9 +45,9 @@ Each ADR should follow this structure:
 
 ## Index of ADRs
 
-| Number | Title | Status |
-|--------|-------|--------|
-| 001 | [Workflow Engine Architecture](001-workflow-engine-architecture.md) | Accepted |
+| Number | Title                                                               | Status   |
+| ------ | ------------------------------------------------------------------- | -------- |
+| 001    | [Workflow Engine Architecture](001-workflow-engine-architecture.md) | Accepted |
 
 ## Creating New ADRs
 

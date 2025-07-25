@@ -85,7 +85,7 @@ export const UserConfigSchema = z.object({
 });
 
 export const SystemConfigSchema = z.object({
-  scraper: z.enum(['wget', 'curl', 'chrome']),
+  scraper: z.enum(['wget', 'curl', 'native']),
   web_download: z.object({
     timeout: z.number(),
     add_utf8_bom: z.boolean(),
