@@ -9,7 +9,7 @@
 
 A TypeScript-based workflow system for managing document templates and collections. Automate your job applications, blog posts, and other document workflows with customizable templates and status tracking.
 
-**Status:** v1.0.0 Release Candidate - Job application workflow is fully functional and battle-tested.
+**Status:** v1.0.0 Release Candidate - Job application workflow is fully functional and tested.
 
 ## 🎯 What It Does
 
@@ -25,9 +25,13 @@ Into this automated workflow:
 
 ```bash
 wf create job "Google" "Staff Engineer" --url "https://job-posting-url"
-wf status job google_staff_engineer_20241125 submitted
+# edit 'job/active/google_staff_engineer_20241125/cover_letter.md'
 wf format job google_staff_engineer_20241125  # Generates DOCX files
+# submit job application with DOCX files in 'job/active/google_staff_engineer_20241125/formatted'
+wf status job google_staff_engineer_20241125 submitted
 ```
+
+And if you're using Git to track your repository (recommended!) you can commit changes to your repo as you go.
 
 ## ✅ Current Features
 
@@ -207,7 +211,7 @@ wf create --help           # Command-specific help
 
 ## 🏗️ Architecture
 
-```
+```text
 src/
 ├── core/          # Workflow engine, template processing, schemas
 ├── cli/           # Command-line interface implementation
@@ -230,7 +234,7 @@ tests/             # Comprehensive test suite
 
 Create `.markdown-workflow/workflows/job/templates/` in your project:
 
-```
+```text
 .markdown-workflow/
 ├── config.yml
 ├── workflows/
@@ -257,9 +261,9 @@ Available in all templates:
 
 ### Workflow Status Flow
 
-```
+```text
 active → submitted → interview → offered → accepted
-   ↓         ↓          ↓          ↓         ↓
+   ↓         ↓          ↓          ↓     ↳   ↓
 rejected  rejected   rejected   rejected  declined
 ```
 

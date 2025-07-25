@@ -1,6 +1,7 @@
 # Filesystem Snapshot Testing
 
-This project includes a Jest-like filesystem snapshot testing tool that allows you to capture directory structures and compare them over time. This is perfect for testing CLI commands that create, modify, or organize files and directories.
+This project includes a Jest-like filesystem snapshot testing tool that allows you to capture directory structures and compare them over time.
+This is perfect for testing CLI commands that create, modify, or organize files and directories.
 
 ## 🎯 **Use Cases**
 
@@ -108,7 +109,22 @@ pnpm test:e2e
 pnpm test:e2e:snapshots
 ```
 
+#### Update Snapshots
+
+If you make changes which alter the file or directory structure used by any of the `wf` commands it will be necessary to regenerate the snapshots.
+The updated snapshots should be committed with your code changes in order for e2e tests to pass.
+
+```bash
+# 1. Regenerate snapshots
+pnpm test:e2e:snapshots:update
+
+# 2. Stage snapshot changes for commit
+git add __fs_snapshots__
+```
+
 ### Example Test Workflow
+
+If you wish to do some customized snapshot testing or use the `snapshot.js` command in another project, below are some useful commands.
 
 ```bash
 # 1. Create baseline snapshot of clean directory
@@ -191,7 +207,8 @@ git commit -m "Add baseline snapshots for CLI testing"
 
 ## 🕐 **Testing with Predictable Dates**
 
-One of the biggest challenges with filesystem snapshots is that CLI commands often include dates in their output, causing tests to fail when run on different days. We solve this with testing overrides in `config.yml`:
+One of the biggest challenges with filesystem snapshots is that CLI commands often include dates in their output, causing tests to fail when run on different days.
+We solve this with testing overrides in `config.yml`:
 
 ### **Configuration for Predictable Testing**
 

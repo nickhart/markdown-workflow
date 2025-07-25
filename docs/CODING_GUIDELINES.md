@@ -47,7 +47,9 @@ function processData(data: UserData): string {
 
 ### File Structure
 
-- Use kebab-case for file names: `workflow-engine.ts`
+- Use kebab-case for folders: `api-clients/`
+- Use kebab-case for utilities/services: `workflow-engine.ts`
+- Use PascalCase for React file names: `MyComponent.tsx`
 - Use PascalCase for class names: `WorkflowEngine`
 - Use camelCase for functions and variables: `processTemplate`
 - Group related functionality in modules
@@ -103,6 +105,7 @@ function processTemplate(template: string, variables: Record<string, string>): s
 - Use meaningful test data, avoid generic names like "foo" and "bar"
 - Test both success and failure scenarios
 - Mock external dependencies
+- use dependency injection/mocking for network calls
 
 ```typescript
 describe('WorkflowEngine', () => {
@@ -142,9 +145,9 @@ describe('WorkflowEngine', () => {
 
 ### Input Validation
 
-- Validate all external inputs
+- Validate all external inputs (use Zod!)
 - Sanitize file paths to prevent directory traversal
-- Use schema validation for configuration files
+- Use schema validation for configuration files (convert to JSON and use Zod!)
 - Never trust user-provided template content without validation
 
 ### File Operations
@@ -186,7 +189,7 @@ describe('WorkflowEngine', () => {
 - Keep first line under 50 characters
 - Include body for complex changes
 
-```
+```text
 feat(cli): add migrate command for workflow transitions
 
 - Implement collection migration between workflows
