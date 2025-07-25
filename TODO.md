@@ -1,196 +1,168 @@
-# TODO - Markdown Workflow Project
+# TODO - Markdown Workflow v1.0.0
 
-## 🚀 Core Features (High Priority)
+> **Status:** Project is ~80% complete for primary use case. Focus is on polishing for v1.0 release.
 
-### Workflow Distribution System
+## 🚀 v1.0.0 Release Tasks (High Priority)
 
-- [ ] **Workflow Creation Commands**
-  - [ ] `wf create-workflow <name>` - Create a new workflow from scratch
-  - [ ] `wf pack-workflow <name>` - Package a workflow for distribution
-  - [ ] `wf publish-workflow <name>` - Publish workflow to repository
-  - [ ] Interactive workflow creation wizard
+### Documentation & Polish
+- [ ] **Update README.md**
+  - [ ] Reflect current working features accurately
+  - [ ] Remove references to unimplemented features
+  - [ ] Add clear installation instructions
+  - [ ] Include realistic examples and use cases
 
-- [ ] **Workflow Import/Export**
-  - [ ] `wf import <workflow-name>` - Import workflow from repository
-  - [ ] `wf init <workflow-name>` - Initialize project with specific workflow
-  - [ ] `wf export <workflow-name>` - Export local workflow for sharing
-  - [ ] Support for workflow dependencies and versioning
+- [ ] **Create Release Documentation**
+  - [ ] Write CHANGELOG.md for v1.0.0
+  - [ ] Create "Getting Started" tutorial
+  - [ ] Document all CLI commands with examples
+  - [ ] Include troubleshooting guide
 
-- [ ] **Public Workflow Repository**
-  - [ ] Central repository for community workflows
-  - [ ] Workflow search and discovery
-  - [ ] Rating and review system
-  - [ ] Workflow categories and tags
-  - [ ] Version management and updates
+- [ ] **Installation Experience**
+  - [ ] Create/fix `setup.sh` for global installation
+  - [ ] Test installation on clean systems
+  - [ ] Document system requirements (Node.js, pandoc, etc.)
+  - [ ] Verify CLI works from any directory
 
-### Workflow Management
+### Code Quality
+- [ ] **Final Code Cleanup**
+  - [ ] Remove commented-out code
+  - [ ] Update package.json to version 1.0.0
+  - [ ] Ensure all dependencies are properly declared
+  - [ ] Run final lint/format pass
 
-- [ ] **Local Workflow Operations**
-  - [ ] `wf list-workflows` - List available workflows
-  - [ ] `wf update-workflow <name>` - Update workflow from repository
-  - [ ] `wf remove-workflow <name>` - Remove workflow from local system
-  - [ ] `wf workflow-info <name>` - Show workflow details and metadata
+- [ ] **CLI Polish**
+  - [ ] Review all help text and error messages
+  - [ ] Ensure consistent command naming and options
+  - [ ] Add progress indicators for slow operations
+  - [ ] Improve error handling for common edge cases
 
-- [ ] **Workflow Validation**
-  - [ ] Schema validation for workflow.yml files
-  - [ ] Template validation and linting
-  - [ ] Dependency checking
-  - [ ] Breaking change detection
+## 🌐 Web Demo (Nice-to-Have)
 
-## 🔧 Technical Implementation (Medium Priority)
+### Minimal MVP for Blog Post
+- [ ] **Template Playground**
+  - [ ] Interactive form to edit templates
+  - [ ] Live preview of generated markdown
+  - [ ] Show variable substitution in real-time
 
-### Core System Improvements
+- [ ] **Workflow Visualization**
+  - [ ] Show job application status flow
+  - [ ] Interactive status transitions
+  - [ ] Collection listing example
 
-- [x] **YAML Configuration**
-  - [x] Implement proper YAML parsing for config files
-  - [x] Support for YAML workflow definitions
-  - [x] Configuration validation and error handling (with Zod)
-  - [x] Migration from JSON to YAML
+- [ ] **Implementation Notes**
+  - Use existing `src/core/` TypeScript modules
+  - Client-side only (no backend required)
+  - Mock file system using test utilities
+  - Simple React/Next.js interface
+  - Deploy to static hosting (Vercel/Netlify)
 
-- [x] **Template Engine**
-  - [x] Implement TemplateProcessor.ts (integrated into create.ts)
-  - [x] Advanced template variable substitution (with Mustache)
-  - [x] Conditional template rendering
-  - [x] Template inheritance and composition
+## 📋 Currently Working Features ✅
 
-- [x] **Workflow Engine**
-  - [x] Implement WorkflowEngine.ts
-  - [x] Collection state management
-  - [x] Workflow execution engine
-  - [x] Action and converter system
-  - [ ] Add migrate command
-  - [ ] add import command? could make future migrations easier, or allow custom migrations
+### Core System
+- ✅ **CLI Commands**
+  - `wf init` - Initialize project with workflows
+  - `wf create job` - Create job applications with templates
+  - `wf status` - Update collection status (active → submitted → interview → etc.)
+  - `wf list` - List collections with filtering
+  - `wf format` - Convert markdown to DOCX via pandoc
+  - `wf add` - Add items (like interview notes) to existing collections
+  - `wf update` - Update collection metadata and scrape URLs
+  - `wf migrate` - Migrate from legacy bash-based system
 
-### CLI Commands
+- ✅ **Template System**
+  - Mustache-based variable substitution
+  - Project-specific template overrides
+  - Template inheritance (project → system fallback)
+  - Support for multiple template variants
 
-- [x] **Collection Management**
-  - [x] `wf-create` - Create new collection
-  - [x] `wf-status` - Update collection status
-  - [x] `wf-list` - List collections
-  - [x] `wf-format` - Format collection documents
-  - [x] `wf add` - Add items from templates to existing collections
-  - [x] `wf-init` - Initialize project with workflows
+- ✅ **Web Scraping**
+  - Reliable fallback chain: wget → curl → native HTTP
+  - URL scraping for job descriptions
+  - Proper filename generation from URLs
+  - No complex compression handling (keeps it simple)
 
-- [ ] **Advanced Features**
-  - [ ] `wf-search` - Search collections and workflows
-  - [ ] `wf-migrate` - Migrate between workflow versions
+- ✅ **Configuration**
+  - YAML-based configuration files
+  - Schema validation with Zod
+  - User information management
+  - System settings and preferences
 
-## 📦 Repository Structure (Low Priority)
+- ✅ **Testing & Quality**
+  - Comprehensive unit test suite
+  - E2E snapshot testing with filesystem mocking
+  - TypeScript strict mode with "no any" rule
+  - TurboRepo build caching for fast development
 
-### Workflow Package Format
+## 🔮 Future Versions (Post-v1.0)
 
-- [ ] **Package Definition**
-  - [ ] Workflow manifest format
-  - [ ] Template organization standards
-  - [ ] Asset bundling (images, styles, etc.)
-  - [ ] Dependency declaration
+### v1.1.0 - Blog Workflow Completion
+- [ ] Complete blog workflow CLI integration
+- [ ] Blog-specific commands (`wf create blog`, status management)
+- [ ] HTML generation and publishing workflow
 
-- [ ] **Distribution Format**
-  - [ ] Compressed workflow packages (.wf files)
-  - [ ] Digital signing and verification
-  - [ ] Incremental updates
-  - [ ] Cross-platform compatibility
+### v1.2.0 - API & Web Interface
+- [ ] Stabilize REST API endpoints
+- [ ] Web interface for collection management
+- [ ] API documentation and testing
 
-### Repository Infrastructure
+### v2.0.0 - Workflow Distribution
+- [ ] `wf create-workflow` - Create custom workflows
+- [ ] `wf pack-workflow` - Package workflows for sharing
+- [ ] `wf import-workflow` - Import community workflows
+- [ ] Public workflow repository
 
-- [ ] **Backend Services**
-  - [ ] Workflow repository API
-  - [ ] User authentication and authorization
-  - [ ] Package storage and CDN
-  - [ ] Search and indexing service
+### Future Ideas
 
-- [ ] **Frontend Interface**
-  - [ ] Web portal for workflow browsing
-  - [ ] Workflow documentation generator
-  - [ ] Community features (comments, ratings)
-  - [ ] Analytics and usage tracking
+#### Third-Party Integrations
+- [ ] **GitJournal Integration**
+  - [ ] REST API endpoints for mobile/external clients
+  - [ ] GitJournal plugin for creating workflow collections
+  - [ ] Sync collections between CLI and mobile apps
 
-## 🧪 Testing & Quality (Ongoing)
+- [ ] **GitHub Integration**
+  - [ ] OAuth integration with GitHub accounts
+  - [ ] Auto-commit generated files to repository
+  - [ ] Branch management strategies:
+    - [ ] Auto-create feature branches (`job-applications/company-role-date`)
+    - [ ] Push directly to main (user configurable)
+    - [ ] Create PR with generated files
+  - [ ] Handle merge conflicts and repository state
+  - [ ] Git hooks for workflow status updates
 
-### Test Coverage
+- [ ] **External Tool APIs**
+  - [ ] REST API for workflow operations
+  - [ ] Webhook notifications for status changes
+  - [ ] Integration with job boards (LinkedIn, Indeed)
+  - [ ] Calendar integration for interview scheduling
 
-- [x] **Unit Tests**
-  - [x] TemplateProcessor tests
-  - [x] WorkflowEngine tests
-  - [x] CLI command tests
-  - [x] Configuration tests
-  - [x] Mock filesystem utilities
+#### Advanced Features
+- [ ] Advanced search and filtering
+- [ ] Team collaboration features  
+- [ ] AI-powered template suggestions
+- [ ] Mobile app interface
+- [ ] Cross-platform desktop app (Electron)
 
-- [x] **Integration Tests**
-  - [x] End-to-end workflow execution
-  - [x] Snapshot-based regression testing
-  - [x] TurboRepo build caching
-  - [ ] Cross-platform compatibility tests
-  - [ ] Performance benchmarks
+## 🎯 Design Principles
 
-### Documentation
+Following **ADR 002: Simplicity Over Completeness**:
+- ✅ Solve the common case well (80% of use cases)
+- ✅ Keep code simple and maintainable
+- ✅ Accept manual intervention for edge cases
+- ✅ Optimize for developer productivity
+- ✅ Less code = less tests = less maintenance
 
-- [ ] **User Documentation**
-  - [ ] Complete user guide
-  - [ ] Workflow creation tutorial
-  - [ ] API documentation
-  - [ ] Migration guides
+## 📊 Success Metrics for v1.0
 
-- [ ] **Developer Documentation**
-  - [ ] Architecture documentation
-  - [ ] Plugin development guide
-  - [ ] Contributing guidelines
-  - [ ] API reference
-
-## 🎯 Future Enhancements (Ideas)
-
-### Advanced Features
-
-- [ ] **Plugin System**
-  - [ ] Custom converters (pandoc alternatives)
-  - [ ] Custom actions and workflows
-  - [ ] Third-party integrations
-
-- [ ] **Collaboration Features**
-  - [ ] Shared collections
-  - [ ] Real-time collaboration
-  - [ ] Version control integration
-    - `wf commit artifact_id` will commit the artifact, and just the artifact.
-    - with a default message? (eg: 'moved from submitted to interview')
-  - [ ] Team workflows
-
-- [ ] **AI Integration**
-  - [ ] AI-powered template suggestions
-  - [ ] Content generation assistance
-  - [ ] Workflow optimization recommendations
-  - [ ] Intelligent template matching
-
-### Platform Expansion
-
-- [ ] **Web Interface**
-  - [ ] Browser-based workflow editor
-  - [ ] Online collection management
-  - [ ] Mobile-responsive design
-  - [ ] Offline synchronization
-
-## 📝 Implementation Notes
-
-### Development Phases
-
-1. **Phase 1**: Core workflow distribution (create, pack, import)
-2. **Phase 2**: Public repository infrastructure
-3. **Phase 3**: Advanced features and UI
-4. **Phase 4**: Community and collaboration features
-
-### Technical Decisions
-
-- Use semantic versioning for workflows
-- Support both local and remote workflow repositories
-- Ensure backward compatibility during updates
-- Implement proper error handling and recovery
-
-### Community Considerations
-
-- Open source workflow repository
-- Clear licensing for community workflows
-- Moderation and quality control
-- Documentation standards for workflows
+- [ ] New user productive in < 5 minutes
+- [ ] Installation works on macOS, Linux, Windows
+- [ ] Common workflows feel natural and fast
+- [ ] All tests pass consistently
+- [ ] CLI operations feel snappy (< 1s for common tasks)
+- [ ] Documentation covers all user-facing features
+- [ ] Zero known critical bugs
 
 ---
 
-_This TODO list represents the future vision for the markdown-workflow project. Items are prioritized based on user value and technical feasibility._
+**Target Release:** Within 1 week  
+**Focus:** Polish existing features rather than adding new ones  
+**Philosophy:** Ship v1.0 with solid, working features that solve the primary use case well
