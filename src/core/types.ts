@@ -103,7 +103,7 @@ export interface SystemConfig {
     override_current_date?: string;
     override_timezone?: string;
     deterministic_ids?: boolean;
-  };
+  } | null;
 }
 
 export interface WorkflowCustomField {
@@ -141,7 +141,7 @@ export interface ConfigPaths {
 
 export interface ResolvedConfig {
   paths: ConfigPaths;
-  projectConfig?: import('./schemas.js').ProjectConfig;
+  projectConfig?: ProjectConfig;
   availableWorkflows: string[];
 }
 

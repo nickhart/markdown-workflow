@@ -7,7 +7,6 @@ import * as path from 'path';
 import * as https from 'https';
 import * as http from 'http';
 import { spawn } from 'child_process';
-import { ProjectConfig } from '../core/schemas.js';
 
 export interface ScrapingResult {
   success: boolean;
@@ -128,13 +127,6 @@ async function tryBasicHttp(url: string, outputPath: string): Promise<ScrapingRe
       });
     });
   });
-}
-
-/**
- * Get default scraping config (simplified)
- */
-export function getWebScrapingConfig(_projectConfig?: ProjectConfig): { timeout: number } {
-  return { timeout: 30 };
 }
 
 /**

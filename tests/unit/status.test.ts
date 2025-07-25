@@ -1,11 +1,11 @@
 import * as path from 'path';
 import { statusCommand, showStatusesCommand } from '../../src/cli/commands/status.js';
-import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { WorkflowEngine } from '../../src/core/WorkflowEngine.js';
+import { ConfigDiscovery } from '../../src/core/config-discovery.js';
+import { WorkflowEngine } from '../../src/core/workflow-engine.js';
 
 // Mock dependencies
 jest.mock('path');
-jest.mock('../../src/core/WorkflowEngine.js');
+jest.mock('../../src/core/workflow-engine.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
 const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;

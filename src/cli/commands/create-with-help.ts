@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
+import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { WorkflowFileSchema } from '../../core/schemas.js';
 import { createCommand } from './create.js';
 

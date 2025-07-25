@@ -60,6 +60,10 @@ function processData(data: UserData): string {
 - Group imports: external libraries first, then internal modules
 - Use absolute imports with path mapping when possible
 
+#### For Web/Bundled Code (Next.js, Vite, etc.)
+
+Use absolute imports with path mapping when possible:
+
 ```typescript
 // External imports
 import { readFile } from 'fs/promises';
@@ -69,6 +73,27 @@ import { join } from 'path';
 import { WorkflowConfig } from '@/shared/types';
 import { logger } from '@/shared/utils';
 ```
+
+#### For Node.js/CLI Code
+
+Use relative imports for Node.js runtime compatibility:
+
+```typescript
+// External imports
+import { readFile } from 'fs/promises';
+import { join } from 'path';
+
+// Internal imports (required for Node.js)
+import { WorkflowConfig } from '../../shared/types.js';
+import { logger } from '../utils/logger.js';
+```
+
+**Important Notes**
+
+- Path mapping (@/) only works with bundlers - Node.js cannot resolve these paths at runtime
+- Always include .js extensions for ES modules compatibility
+- CLI and server code must use relative imports unless using transformation tools like tsc-alias
+- Shared modules that need to work in both environments should use relative imports
 
 ### Functions
 

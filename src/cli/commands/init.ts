@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
+import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { ProjectConfig } from '../../core/types.js';
 
 interface InitOptions {

@@ -1,5 +1,5 @@
-import { WorkflowEngine } from '../../core/WorkflowEngine.js';
-import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
+import { WorkflowEngine } from '../../core/workflow-engine.js';
+import { ConfigDiscovery } from '../../core/config-discovery.js';
 
 interface FormatOptions {
   format?: 'docx' | 'html' | 'pdf';

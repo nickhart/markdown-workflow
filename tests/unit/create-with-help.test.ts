@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { createWithHelpCommand } from '../../src/cli/commands/createWithHelp.js';
-import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
-import { MockSystemInterface } from '../mocks/MockSystemInterface.js';
-import { createEnhancedMockFileSystem } from '../helpers/FileSystemHelpers.js';
+import { createWithHelpCommand } from '../../src/cli/commands/create-with-help.js';
+import { ConfigDiscovery } from '../../src/core/config-discovery.js';
+import { MockSystemInterface } from '../mocks/mock-system-interface.js';
+import { createEnhancedMockFileSystem } from '../helpers/file-system-helpers.js';
 
 // Mock dependencies
 jest.mock('fs');

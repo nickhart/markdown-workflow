@@ -2,7 +2,7 @@ import * as path from 'path';
 import * as YAML from 'yaml';
 import { ConfigPaths, ResolvedConfig } from './types.js';
 import { ProjectConfigSchema, type ProjectConfig } from './schemas.js';
-import { SystemInterface, NodeSystemInterface } from './SystemInterface.js';
+import { SystemInterface, NodeSystemInterface } from './system-interface.js';
 
 /**
  * Configuration discovery system for markdown-workflow

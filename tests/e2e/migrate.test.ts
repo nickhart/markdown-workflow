@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as YAML from 'yaml';
 import { migrateCommand } from '../../src/cli/commands/migrate.js';
-import { ConfigDiscovery } from '../../src/core/ConfigDiscovery.js';
+import { ConfigDiscovery } from '../../src/core/config-discovery.js';
 
 /**
  * E2E tests for migration command using real filesystem operations
