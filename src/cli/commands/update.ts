@@ -6,10 +6,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import { ConfigDiscovery } from '../../core/ConfigDiscovery.js';
-import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
+import { CollectionMetadata } from '../../core/types.js';
 import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
 import { getCurrentISODate } from '../../shared/dateUtils.js';
-import { scrapeUrl, getWebScrapingConfig, generateFilenameFromUrl } from '../../shared/webScraper.js';
+import {
+  scrapeUrl,
+  getWebScrapingConfig,
+  generateFilenameFromUrl,
+} from '../../shared/webScraper.js';
 
 interface UpdateOptions {
   url?: string;
@@ -159,7 +163,7 @@ async function findCollectionPath(
   workflowDefinition: WorkflowFile,
 ): Promise<string | null> {
   const workflowDir = path.join(collectionsDir, workflowName);
-  
+
   if (!fs.existsSync(workflowDir)) {
     return null;
   }
@@ -168,7 +172,7 @@ async function findCollectionPath(
   for (const stage of workflowDefinition.workflow.stages) {
     const stageDir = path.join(workflowDir, stage.name);
     const collectionPath = path.join(stageDir, collectionId);
-    
+
     if (fs.existsSync(collectionPath)) {
       return collectionPath;
     }
@@ -195,9 +199,9 @@ async function scrapeUrlForCollection(
 
   // Determine output filename from workflow config or generate from URL
   let outputFile = 'job_description.html'; // default fallback
-  
+
   if (scrapeAction?.parameters) {
-    const outputParam = scrapeAction.parameters.find(p => p.name === 'output_file');
+    const outputParam = scrapeAction.parameters.find((p) => p.name === 'output_file');
     if (outputParam?.default && typeof outputParam.default === 'string') {
       outputFile = outputParam.default;
     }
@@ -216,17 +220,13 @@ async function scrapeUrlForCollection(
     const result = await scrapeUrl(url, {
       outputFile,
       outputDir: collectionPath,
-      config: scrapingConfig,
     });
 
     if (result.success) {
       console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
-      if (result.fileSize) {
-        console.log(`   File size: ${Math.round(result.fileSize / 1024)} KB`);
-      }
     } else {
       console.error(`❌ Failed to scrape URL: ${result.error}`);
-      
+
       // Create a fallback placeholder file with the URL
       const fallbackPath = path.join(collectionPath, outputFile);
       const fallbackContent = createFallbackHtml(url, result.error || 'Unknown error');
@@ -235,7 +235,7 @@ async function scrapeUrlForCollection(
     }
   } catch (error) {
     console.error(`❌ Scraping error: ${error}`);
-    
+
     // Create fallback placeholder
     const fallbackPath = path.join(collectionPath, outputFile);
     const fallbackContent = createFallbackHtml(url, String(error));
@@ -262,13 +262,13 @@ function createFallbackHtml(url: string, error: string): string {
 <body>
     <h1>Job Description</h1>
     <p><strong>Source URL:</strong> <a href="${url}" class="url">${url}</a></p>
-    
+
     <div class="error">
         <h3>⚠️ Scraping Failed</h3>
         <p><strong>Error:</strong> ${error}</p>
         <p>Please visit the URL above to view the job description manually.</p>
     </div>
-    
+
     <h3>Manual Steps:</h3>
     <ol>
         <li>Click the URL above to open the job posting</li>
@@ -285,7 +285,7 @@ function createFallbackHtml(url: string, error: string): string {
 function generateMetadataYaml(metadata: CollectionMetadata): string {
   const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
   const notesLine = metadata.notes ? `notes: "${metadata.notes}"` : '';
-  
+
   return `# Collection Metadata
 collection_id: "${metadata.collection_id}"
 workflow: "${metadata.workflow}"

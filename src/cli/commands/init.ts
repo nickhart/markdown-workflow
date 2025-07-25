@@ -205,7 +205,7 @@ user:
 
 # System Configuration
 system:
-  scraper: "wget"  # Options: "wget", "curl", "chrome"
+  scraper: "wget"  # Options: "wget", "curl", "native"
   web_download:
     timeout: 30
     add_utf8_bom: true

@@ -83,7 +83,7 @@ export interface UserConfig {
 }
 
 export interface SystemConfig {
-  scraper: 'wget' | 'curl' | 'chrome';
+  scraper: 'wget' | 'curl' | 'native';
   web_download: {
     timeout: number;
     add_utf8_bom: boolean;

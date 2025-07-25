@@ -12,7 +12,11 @@ import {
   getCurrentDate,
 } from '../../shared/dateUtils.js';
 import { sanitizeForFilename } from '../../shared/fileUtils.js';
-import { scrapeUrl, getWebScrapingConfig, generateFilenameFromUrl } from '../../shared/webScraper.js';
+import {
+  scrapeUrl,
+  getWebScrapingConfig,
+  generateFilenameFromUrl,
+} from '../../shared/webScraper.js';
 
 interface CreateOptions {
   url?: string;
@@ -74,18 +78,20 @@ export async function createCommand(
     if (options.force) {
       console.log(`Force recreating collection: ${collectionId}`);
       console.log(`Location: ${collectionPath}`);
-      
+
       // Remove existing collection directory
       fs.rmSync(collectionPath, { recursive: true, force: true });
     } else {
-      throw new Error(`Collection already exists: ${collectionId}. Use 'wf update ${workflowName} ${collectionId}' to modify or --force to recreate.`);
+      throw new Error(
+        `Collection already exists: ${collectionId}. Use 'wf update ${workflowName} ${collectionId}' to modify or --force to recreate.`,
+      );
     }
   }
 
   // Create collection directory (for new collections or after force removal)
   if (!collectionExists || options.force) {
     fs.mkdirSync(collectionPath, { recursive: true });
-    
+
     if (options.force) {
       console.log(`Collection recreated successfully!`);
     } else {
@@ -212,13 +218,13 @@ function resolveTemplatePath(
   // If project has workflows directory, check project templates first
   if (projectPaths?.workflowsDir) {
     const projectWorkflowDir = path.join(projectPaths.workflowsDir, workflowName);
-    
+
     if (templateVariant) {
       // Try project template with variant (e.g., .markdown-workflow/workflows/job/templates/resume/ai-frontend.md)
       const variantPath = getVariantTemplatePath(projectWorkflowDir, template, templateVariant);
       if (variantPath) templatePaths.push(variantPath);
     }
-    
+
     // Try project template default (e.g., .markdown-workflow/workflows/job/templates/resume/default.md)
     const projectTemplatePath = path.join(projectWorkflowDir, template.file);
     templatePaths.push(projectTemplatePath);
@@ -249,7 +255,7 @@ function getVariantTemplatePath(
 ): string | null {
   const templateFile = template.file;
   const parsedPath = path.parse(templateFile);
-  
+
   // Replace filename with variant, keep extension
   const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
   return path.join(workflowDir, variantFile);
@@ -355,7 +361,7 @@ function getDefaultUserConfig() {
  */
 function generateMetadataYaml(metadata: CollectionMetadata): string {
   const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
-  
+
   return `# Collection Metadata
 collection_id: "${metadata.collection_id}"
 workflow: "${metadata.workflow}"
@@ -377,7 +383,6 @@ status_history:
 `;
 }
 
-
 /**
  * Scrape URL for collection using workflow configuration
  */
@@ -396,9 +401,9 @@ async function scrapeUrlForCollection(
 
   // Determine output filename from workflow config or generate from URL
   let outputFile = 'job_description.html'; // default fallback
-  
+
   if (scrapeAction?.parameters) {
-    const outputParam = scrapeAction.parameters.find(p => p.name === 'output_file');
+    const outputParam = scrapeAction.parameters.find((p) => p.name === 'output_file');
     if (outputParam?.default && typeof outputParam.default === 'string') {
       outputFile = outputParam.default;
     }
@@ -417,17 +422,13 @@ async function scrapeUrlForCollection(
     const result = await scrapeUrl(url, {
       outputFile,
       outputDir: collectionPath,
-      config: scrapingConfig,
     });
 
     if (result.success) {
       console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
-      if (result.fileSize) {
-        console.log(`   File size: ${Math.round(result.fileSize / 1024)} KB`);
-      }
     } else {
       console.error(`❌ Failed to scrape URL: ${result.error}`);
-      
+
       // Create a fallback placeholder file with the URL
       const fallbackPath = path.join(collectionPath, outputFile);
       const fallbackContent = createFallbackHtml(url, result.error || 'Unknown error');
@@ -436,7 +437,7 @@ async function scrapeUrlForCollection(
     }
   } catch (error) {
     console.error(`❌ Scraping error: ${error}`);
-    
+
     // Create fallback placeholder
     const fallbackPath = path.join(collectionPath, outputFile);
     const fallbackContent = createFallbackHtml(url, String(error));

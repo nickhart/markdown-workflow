@@ -166,11 +166,11 @@ describe('Type Definitions', () => {
     it('should support different scraper types', () => {
       const wgetConfig: SystemConfig['scraper'] = 'wget';
       const curlConfig: SystemConfig['scraper'] = 'curl';
-      const chromeConfig: SystemConfig['scraper'] = 'chrome';
+      const nativeConfig: SystemConfig['scraper'] = 'native';
 
       expect(wgetConfig).toBe('wget');
       expect(curlConfig).toBe('curl');
-      expect(chromeConfig).toBe('chrome');
+      expect(nativeConfig).toBe('native');
     });
   });
 

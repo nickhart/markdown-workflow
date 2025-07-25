@@ -11,6 +11,15 @@ import {
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
+jest.mock('../../src/shared/webScraper.js', () => ({
+  scrapeUrl: jest.fn().mockResolvedValue({
+    success: true,
+    outputFile: 'job_description.html',
+    method: 'wget',
+  }),
+  generateFilenameFromUrl: jest.fn().mockReturnValue('job_description.html'),
+  getWebScrapingConfig: jest.fn().mockReturnValue({ timeout: 30 }),
+}));
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;

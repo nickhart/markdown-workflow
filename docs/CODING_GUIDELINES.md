@@ -5,6 +5,7 @@ This document defines the coding standards and best practices for the markdown-w
 ## TypeScript Standards
 
 ### Type Safety
+
 - **NO `any` types** - Always use specific types or `unknown` if type is truly unknown
 - Prefer `interface` over `type` for object definitions
 - Use strict TypeScript configuration (strict mode enabled)
@@ -30,11 +31,13 @@ function processData(data: UserData): string {
 ```
 
 ### Null Safety
+
 - Use optional chaining (`?.`) and nullish coalescing (`??`) operators
 - Prefer explicit null checks over truthy/falsy checks when dealing with nullable values
 - Use `NonNullable<T>` type when appropriate
 
 ### Error Handling
+
 - Use custom error classes that extend `Error`
 - Always include meaningful error messages
 - Prefer throwing errors over returning error objects
@@ -43,12 +46,14 @@ function processData(data: UserData): string {
 ## Code Organization
 
 ### File Structure
+
 - Use kebab-case for file names: `workflow-engine.ts`
 - Use PascalCase for class names: `WorkflowEngine`
 - Use camelCase for functions and variables: `processTemplate`
 - Group related functionality in modules
 
 ### Imports/Exports
+
 - Use named exports over default exports
 - Group imports: external libraries first, then internal modules
 - Use absolute imports with path mapping when possible
@@ -64,6 +69,7 @@ import { logger } from '@/shared/utils';
 ```
 
 ### Functions
+
 - Keep functions small and focused (max 20-30 lines)
 - Use descriptive names that explain what the function does
 - Prefer pure functions when possible
@@ -85,12 +91,14 @@ function processTemplate(template: string, variables: Record<string, string>): s
 ## Testing Standards
 
 ### Test Organization
+
 - Use `.test.ts` suffix for test files
 - Mirror source directory structure in tests
 - Group tests using `describe` blocks
 - Use descriptive test names that explain the scenario
 
 ### Test Quality
+
 - Follow AAA pattern: Arrange, Act, Assert
 - Use meaningful test data, avoid generic names like "foo" and "bar"
 - Test both success and failure scenarios
@@ -118,12 +126,14 @@ describe('WorkflowEngine', () => {
 ## Performance Guidelines
 
 ### Async Operations
+
 - Prefer `async/await` over Promise chains
 - Use `Promise.all()` for concurrent operations
 - Avoid blocking operations in the main thread
 - Use streams for large file operations
 
 ### Memory Management
+
 - Dispose of resources properly (close file handles, clear timers)
 - Use weak references when appropriate
 - Avoid memory leaks in event handlers
@@ -131,12 +141,14 @@ describe('WorkflowEngine', () => {
 ## Security Guidelines
 
 ### Input Validation
+
 - Validate all external inputs
 - Sanitize file paths to prevent directory traversal
 - Use schema validation for configuration files
 - Never trust user-provided template content without validation
 
 ### File Operations
+
 - Use safe file operations with proper error handling
 - Validate file extensions before processing
 - Implement size limits for file uploads
@@ -145,18 +157,21 @@ describe('WorkflowEngine', () => {
 ## Code Style
 
 ### Formatting
+
 - Use Prettier for consistent formatting
 - 2 spaces for indentation
 - Single quotes for strings
 - Trailing commas in multi-line objects/arrays
 
 ### Comments
+
 - Use JSDoc for public APIs
 - Add inline comments for complex business logic
 - Avoid obvious comments that restate the code
 - Keep comments up-to-date with code changes
 
 ### Naming Conventions
+
 - Use descriptive names that explain intent
 - Avoid abbreviations unless they're widely understood
 - Use consistent terminology throughout the codebase
@@ -165,6 +180,7 @@ describe('WorkflowEngine', () => {
 ## Git Commit Guidelines
 
 ### Commit Messages
+
 - Use conventional commit format: `type(scope): description`
 - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 - Keep first line under 50 characters
@@ -174,11 +190,12 @@ describe('WorkflowEngine', () => {
 feat(cli): add migrate command for workflow transitions
 
 - Implement collection migration between workflows
-- Add validation for compatible workflow schemas  
+- Add validation for compatible workflow schemas
 - Include unit tests and e2e test coverage
 ```
 
 ### Branch Naming
+
 - Use descriptive branch names: `feature/migrate-command`
 - Prefix with type: `feature/`, `bugfix/`, `hotfix/`
 - Use kebab-case for branch names
@@ -186,12 +203,14 @@ feat(cli): add migrate command for workflow transitions
 ## Dependencies
 
 ### Package Management
+
 - Use `pnpm` for package management
 - Pin exact versions for production dependencies
 - Use `devDependencies` for development-only packages
 - Regularly audit and update dependencies
 
 ### Third-party Libraries
+
 - Prefer well-maintained libraries with good TypeScript support
 - Evaluate bundle size impact for client-side code
 - Document any non-obvious library choices in ADRs
@@ -200,12 +219,14 @@ feat(cli): add migrate command for workflow transitions
 ## Documentation
 
 ### Code Documentation
+
 - Document all public APIs with JSDoc
 - Include examples in documentation
 - Keep README files up-to-date
 - Document breaking changes in CHANGELOG
 
 ### Architecture Documentation
+
 - Use ADRs for significant architectural decisions
 - Document design patterns and their rationale
 - Include diagrams for complex systems
