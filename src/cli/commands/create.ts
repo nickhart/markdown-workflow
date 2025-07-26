@@ -1,10 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as YAML from 'yaml';
 import Mustache from 'mustache';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
-import { WorkflowFileSchema, type WorkflowFile, type ProjectConfig } from '../../core/schemas.js';
+import { type ProjectConfig } from '../../core/schemas.js';
 import {
   generateCollectionId,
   getCurrentISODate,
@@ -12,7 +11,17 @@ import {
   getCurrentDate,
 } from '../../shared/date-utils.js';
 import { sanitizeForFilename } from '../../shared/file-utils.js';
-import { scrapeUrl } from '../../shared/web-scraper.js';
+import { initializeProject } from '../shared/cli-base.js';
+import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations.js';
+import { generateMetadataYaml } from '../shared/metadata-utils.js';
+import {
+  logCollectionCreation,
+  logSuccess,
+  logNextSteps,
+  logTemplateUsage,
+  logFileCreation,
+  logForceRecreation,
+} from '../shared/formatting-utils.js';
 
 interface CreateOptions {
   url?: string;
@@ -31,17 +40,8 @@ export async function createCommand(
   role: string,
   options: CreateOptions = {},
 ): Promise<void> {
-  const cwd = options.cwd || process.cwd();
-
-  // Use provided ConfigDiscovery instance or create new one
-  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
-
-  // Ensure we're in a project
-  const projectRoot = configDiscovery.requireProjectRoot(cwd);
-  const projectPaths = configDiscovery.getProjectPaths(projectRoot);
-
-  // Get system configuration
-  const systemConfig = await configDiscovery.resolveConfiguration(cwd);
+  // Initialize project context
+  const { systemConfig, projectPaths } = await initializeProject(options);
 
   // Validate workflow exists
   if (!systemConfig.availableWorkflows.includes(workflowName)) {
@@ -72,8 +72,7 @@ export async function createCommand(
   // Handle existing collections
   if (collectionExists) {
     if (options.force) {
-      console.log(`Force recreating collection: ${collectionId}`);
-      console.log(`Location: ${collectionPath}`);
+      logForceRecreation(collectionId, collectionPath);
 
       // Remove existing collection directory
       fs.rmSync(collectionPath, { recursive: true, force: true });
@@ -89,10 +88,9 @@ export async function createCommand(
     fs.mkdirSync(collectionPath, { recursive: true });
 
     if (options.force) {
-      console.log(`Collection recreated successfully!`);
+      logSuccess('Collection recreated successfully!');
     } else {
-      console.log(`Creating collection: ${collectionId}`);
-      console.log(`Location: ${collectionPath}`);
+      logCollectionCreation(collectionId, collectionPath);
     }
   }
 
@@ -155,42 +153,8 @@ export async function createCommand(
     await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
   }
 
-  console.log('✅ Collection created successfully!');
-  console.log('');
-  console.log('Next steps:');
-  console.log(`  1. Edit files in ${collectionPath}`);
-  console.log(`  2. Run wf format ${workflowName} ${collectionId} to convert to DOCX`);
-  console.log(`  3. Run wf status ${workflowName} ${collectionId} <status> to update status`);
-}
-
-/**
- * Load workflow definition from YAML file
- */
-async function loadWorkflowDefinition(
-  systemRoot: string,
-  workflowName: string,
-): Promise<WorkflowFile> {
-  const workflowPath = path.join(systemRoot, 'workflows', workflowName, 'workflow.yml');
-
-  if (!fs.existsSync(workflowPath)) {
-    throw new Error(`Workflow definition not found: ${workflowPath}`);
-  }
-
-  try {
-    const workflowContent = fs.readFileSync(workflowPath, 'utf8');
-    const parsedYaml = YAML.parse(workflowContent);
-
-    // Validate using Zod schema
-    const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
-
-    if (!validationResult.success) {
-      throw new Error(`Invalid workflow format: ${validationResult.error.message}`);
-    }
-
-    return validationResult.data;
-  } catch (error) {
-    throw new Error(`Failed to load workflow definition: ${error}`);
-  }
+  logSuccess('Collection created successfully!');
+  logNextSteps(workflowName, collectionId, collectionPath);
 }
 
 /**
@@ -287,7 +251,7 @@ async function processTemplate(
     return;
   }
 
-  console.log(`Using template: ${resolvedTemplatePath}`);
+  logTemplateUsage(resolvedTemplatePath);
 
   if (!fs.existsSync(resolvedTemplatePath)) {
     console.warn(`Template file not found: ${resolvedTemplatePath}`);
@@ -322,7 +286,7 @@ async function processTemplate(
     const outputPath = path.join(collectionPath, outputFile);
     fs.writeFileSync(outputPath, processedContent);
 
-    console.log(`Created: ${outputFile}`);
+    logFileCreation(outputFile);
   } catch (error) {
     console.error(`Error processing template ${template.name}:`, error);
   }
@@ -345,76 +309,6 @@ function getDefaultUserConfig() {
     github: 'github.com/yourusername',
     website: 'yourwebsite.com',
   };
-}
-
-/**
- * Generate YAML content for collection metadata
- */
-function generateMetadataYaml(metadata: CollectionMetadata): string {
-  const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
-
-  return `# Collection Metadata
-collection_id: "${metadata.collection_id}"
-workflow: "${metadata.workflow}"
-status: "${metadata.status}"
-date_created: "${metadata.date_created}"
-date_modified: "${metadata.date_modified}"
-
-# Application Details
-company: "${metadata.company}"
-role: "${metadata.role}"${urlLine ? `\n${urlLine}` : ''}
-
-# Status History
-status_history:
-  - status: "${metadata.status_history[0].status}"
-    date: "${metadata.status_history[0].date}"
-
-# Additional Fields
-# Add custom fields here as needed
-`;
-}
-
-/**
- * Scrape URL for collection using workflow configuration
- */
-async function scrapeUrlForCollection(
-  collectionPath: string,
-  url: string,
-  workflowDefinition: WorkflowFile,
-): Promise<void> {
-  console.log(`Scraping job description from: ${url}`);
-
-  // Find scrape action in workflow definition
-  const scrapeAction = workflowDefinition.workflow.actions.find(
-    (action) => action.name === 'scrape',
-  );
-
-  // Determine output filename from workflow config or generate from URL
-  // TODO: make this configurable in workflow definition
-  let outputFile = 'job_description.html'; // default fallback
-
-  if (scrapeAction?.parameters) {
-    const outputParam = scrapeAction.parameters.find((p) => p.name === 'output_file');
-    if (outputParam?.default && typeof outputParam.default === 'string') {
-      outputFile = outputParam.default;
-    }
-  }
-
-  try {
-    // Perform the scraping
-    const result = await scrapeUrl(url, {
-      outputFile,
-      outputDir: collectionPath,
-    });
-
-    if (result.success) {
-      console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
-    } else {
-      console.error(`❌ Failed to scrape URL: ${result.error}`);
-    }
-  } catch (error) {
-    console.error(`❌ Scraping error: ${error}`);
-  }
 }
 
 export default createCommand;
