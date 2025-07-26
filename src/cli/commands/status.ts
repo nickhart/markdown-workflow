@@ -1,5 +1,6 @@
 import { WorkflowEngine } from '../../core/workflow-engine.js';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
 
 interface StatusOptions {
   cwd?: string;
@@ -41,21 +42,21 @@ export async function statusCommand(
   }
 
   // Show current status
-  console.log(`Current status: ${collection.metadata.status}`);
-  console.log(`Requested status: ${newStatus}`);
+  logInfo(`Current status: ${collection.metadata.status}`);
+  logInfo(`Requested status: ${newStatus}`);
 
   // Validate new status exists
   const validStatuses = workflow.workflow.stages.map((stage) => stage.name);
   if (!validStatuses.includes(newStatus)) {
-    console.error(`Invalid status: ${newStatus}`);
-    console.error(`Valid statuses: ${validStatuses.join(', ')}`);
+    logError(`Invalid status: ${newStatus}`);
+    logError(`Valid statuses: ${validStatuses.join(', ')}`);
     throw new Error('Invalid status');
   }
 
   // Show transition rules
   const currentStage = workflow.workflow.stages.find((s) => s.name === collection.metadata.status);
   if (currentStage && currentStage.next) {
-    console.log(
+    logInfo(
       `Valid transitions from '${collection.metadata.status}': ${currentStage.next.join(', ')}`,
     );
   }
@@ -63,11 +64,9 @@ export async function statusCommand(
   try {
     // Update status
     await engine.updateCollectionStatus(workflowName, collectionId, newStatus);
-    console.log(`✅ Status updated: ${collection.metadata.status} → ${newStatus}`);
+    logSuccess(`Status updated: ${collection.metadata.status} → ${newStatus}`);
   } catch (error) {
-    console.error(
-      `❌ Status update failed: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    logError(`Status update failed: ${error instanceof Error ? error.message : String(error)}`);
     throw error;
   }
 }
@@ -99,15 +98,15 @@ export async function showStatusesCommand(
   // Load workflow definition
   const workflow = await engine.loadWorkflow(workflowName);
 
-  console.log(`\nSTATUS STAGES FOR '${workflowName.toUpperCase()}' WORKFLOW\n`);
+  logInfo(`\nSTATUS STAGES FOR '${workflowName.toUpperCase()}' WORKFLOW\n`);
 
   workflow.workflow.stages.forEach((stage, index) => {
     const isTerminal = stage.terminal ? ' (terminal)' : '';
     const nextStages = stage.next ? ` → ${stage.next.join(', ')}` : '';
 
-    console.log(`${index + 1}. ${stage.name}${isTerminal}`);
-    console.log(`   ${stage.description}${nextStages}`);
-    console.log();
+    logInfo(`${index + 1}. ${stage.name}${isTerminal}`);
+    logInfo(`   ${stage.description}${nextStages}`);
+    logInfo('');
   });
 }
 

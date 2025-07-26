@@ -160,7 +160,7 @@ describe('Workflow Operations', () => {
         outputDir: '/collection/path',
       });
       expect(console.log).toHaveBeenCalledWith(
-        'Scraping job description from: https://example.com',
+        'ℹ️ Scraping job description from: https://example.com',
       );
       expect(console.log).toHaveBeenCalledWith(
         '✅ Successfully scraped using wget: custom_job_description.html',
@@ -171,7 +171,7 @@ describe('Workflow Operations', () => {
       const workflowWithoutScrape: WorkflowDefinition = { workflow: { actions: [] } };
       mockScrapeUrl.mockResolvedValue({
         success: true,
-        outputFile: 'job_description.html',
+        outputFile: 'url-download.html',
         method: 'curl',
       });
 
@@ -182,7 +182,7 @@ describe('Workflow Operations', () => {
       );
 
       expect(mockScrapeUrl).toHaveBeenCalledWith('https://example.com', {
-        outputFile: 'job_description.html',
+        outputFile: 'url-download.html',
         outputDir: '/collection/path',
       });
     });

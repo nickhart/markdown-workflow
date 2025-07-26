@@ -21,6 +21,8 @@ import {
   logTemplateUsage,
   logFileCreation,
   logForceRecreation,
+  logWarning,
+  logError,
 } from '../shared/formatting-utils.js';
 
 interface CreateOptions {
@@ -247,14 +249,14 @@ async function processTemplate(
   );
 
   if (!resolvedTemplatePath) {
-    console.warn(`Template not found: ${template.name} (checked project and system locations)`);
+    logWarning(`Template not found: ${template.name} (checked project and system locations)`);
     return;
   }
 
   logTemplateUsage(resolvedTemplatePath);
 
   if (!fs.existsSync(resolvedTemplatePath)) {
-    console.warn(`Template file not found: ${resolvedTemplatePath}`);
+    logWarning(`Template file not found: ${resolvedTemplatePath}`);
     return;
   }
 
@@ -288,7 +290,9 @@ async function processTemplate(
 
     logFileCreation(outputFile);
   } catch (error) {
-    console.error(`Error processing template ${template.name}:`, error);
+    logError(
+      `Error processing template ${template.name}: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 

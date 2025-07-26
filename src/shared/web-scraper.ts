@@ -134,7 +134,7 @@ async function tryBasicHttp(url: string, outputPath: string): Promise<ScrapingRe
  */
 export function generateFilenameFromUrl(
   url: string,
-  defaultName: string = 'job_description.html',
+  defaultName: string = 'url-download.html',
 ): string {
   try {
     const parsedUrl = new URL(url);
