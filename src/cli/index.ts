@@ -10,6 +10,8 @@ import { addCommand, listTemplatesCommand } from './commands/add.js';
 import listCommand from './commands/list.js';
 import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
 import updateCommand from './commands/update.js';
+import { withErrorHandling } from './shared/error-handler.js';
+import { logError } from './shared/formatting-utils.js';
 
 const program = new Command();
 
@@ -21,8 +23,8 @@ program
   .description('Initialize a new markdown-workflow project')
   .option('-w, --workflows <workflows>', 'Comma-separated list of workflows to initialize')
   .option('-f, --force', 'Force initialization even if project already exists')
-  .action(async (options) => {
-    try {
+  .action(
+    withErrorHandling(async (options) => {
       const workflows = options.workflows
         ? options.workflows.split(',').map((w: string) => w.trim())
         : undefined;
@@ -30,11 +32,8 @@ program
         workflows,
         force: options.force,
       });
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-create command
 program
@@ -45,31 +44,25 @@ program
   .option('-u, --url <url>', 'Job posting URL')
   .option('-t, --template-variant <variant>', 'Template variant to use')
   .option('--force', 'Force recreate existing collection (destructive: regenerates all files)')
-  .action(async (workflow, args, options) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, args, options) => {
       await createWithHelpCommand([workflow, ...args], {
         url: options.url,
         template_variant: options.templateVariant,
         force: options.force,
       });
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-available command
 program
   .command('available')
   .description('List available workflows')
-  .action(async () => {
-    try {
+  .action(
+    withErrorHandling(async () => {
       await availableCommand();
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-format command
 program
@@ -79,17 +72,14 @@ program
   .argument('<collection_id>', 'Collection ID to format')
   .argument('[artifacts...]', 'Optional artifact names to format (e.g., resume, cover_letter)')
   .option('-f, --format <format>', 'Output format (docx, html, pdf)', 'docx')
-  .action(async (workflow, collectionId, artifacts, options) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, collectionId, artifacts, options) => {
       await formatCommand(workflow, collectionId, {
         format: options.format,
         artifacts: artifacts.length > 0 ? artifacts : undefined,
       });
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-status command
 program
@@ -98,8 +88,8 @@ program
   .argument('<workflow>', 'Workflow name (e.g., job, blog)')
   .argument('[collection_id]', 'Collection ID to update (omit to show available statuses)')
   .argument('[new_status]', 'New status to set')
-  .action(async (workflow, collectionId, newStatus) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, collectionId, newStatus) => {
       if (!collectionId) {
         // Show available statuses for workflow
         await showStatusesCommand(workflow);
@@ -111,11 +101,8 @@ program
         // Update collection status
         await statusCommand(workflow, collectionId, newStatus);
       }
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-add command
 program
@@ -125,8 +112,8 @@ program
   .argument('[collection_id]', 'Collection ID to add item to (omit to list available templates)')
   .argument('[template]', 'Template name to use')
   .argument('[prefix]', 'Optional prefix for the output filename')
-  .action(async (workflow, collectionId, template, prefix) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, collectionId, template, prefix) => {
       if (!collectionId) {
         // Show available templates for workflow
         await listTemplatesCommand(workflow);
@@ -138,11 +125,8 @@ program
         // Add item to collection
         await addCommand(workflow, collectionId, template, prefix);
       }
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-list command
 program
@@ -151,17 +135,14 @@ program
   .argument('<workflow>', 'Workflow name (e.g., job, blog)')
   .option('-s, --status <status>', 'Filter by status')
   .option('-f, --format <format>', 'Output format (table, json, yaml)', 'table')
-  .action(async (workflow, options) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, options) => {
       await listCommand(workflow, {
         status: options.status,
         format: options.format,
       });
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-update command
 program
@@ -173,19 +154,16 @@ program
   .option('-c, --company <company>', 'Update company name')
   .option('-r, --role <role>', 'Update role/position')
   .option('-n, --notes <notes>', 'Update notes')
-  .action(async (workflow, collectionId, options) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, collectionId, options) => {
       await updateCommand(workflow, collectionId, {
         url: options.url,
         company: options.company,
         role: options.role,
         notes: options.notes,
       });
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // wf-migrate command
 program
@@ -195,8 +173,8 @@ program
   .argument('[source_path]', 'Path to legacy workflow system')
   .option('--dry-run', 'Preview changes without modifying files')
   .option('--force', 'Overwrite existing collections with same ID')
-  .action(async (workflow, sourcePath, options) => {
-    try {
+  .action(
+    withErrorHandling(async (workflow, sourcePath, options) => {
       if (!workflow) {
         // Show available workflows for migration
         await listMigrationWorkflows();
@@ -211,17 +189,13 @@ program
           force: options.force,
         });
       }
-    } catch (error) {
-      console.error('Error:', error instanceof Error ? error.message : error);
-      process.exit(1);
-    }
-  });
+    }),
+  );
 
 // Handle unknown commands
 program.on('command:*', () => {
-  console.error(
-    'Invalid command: %s\nSee --help for a list of available commands.',
-    program.args.join(' '),
+  logError(
+    `Invalid command: ${program.args.join(' ')}\nSee --help for a list of available commands.`,
   );
   process.exit(1);
 });

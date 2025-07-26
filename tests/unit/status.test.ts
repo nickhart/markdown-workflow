@@ -77,10 +77,10 @@ describe('statusCommand', () => {
       statusCommand('job', 'test_collection', 'submitted', options),
     ).resolves.not.toThrow();
 
-    expect(console.log).toHaveBeenCalledWith('Current status: active');
-    expect(console.log).toHaveBeenCalledWith('Requested status: submitted');
+    expect(console.log).toHaveBeenCalledWith('ℹ️ Current status: active');
+    expect(console.log).toHaveBeenCalledWith('ℹ️ Requested status: submitted');
     expect(console.log).toHaveBeenCalledWith(
-      "Valid transitions from 'active': submitted, rejected",
+      "ℹ️ Valid transitions from 'active': submitted, rejected",
     );
     expect(console.log).toHaveBeenCalledWith('✅ Status updated: active → submitted');
 
@@ -147,8 +147,8 @@ describe('statusCommand', () => {
       statusCommand('job', 'test_collection', 'invalid_status', options),
     ).rejects.toThrow('Invalid status');
 
-    expect(console.error).toHaveBeenCalledWith('Invalid status: invalid_status');
-    expect(console.error).toHaveBeenCalledWith('Valid statuses: active, submitted');
+    expect(console.error).toHaveBeenCalledWith('❌ Invalid status: invalid_status');
+    expect(console.error).toHaveBeenCalledWith('❌ Valid statuses: active, submitted');
   });
 
   it('should handle WorkflowEngine errors', async () => {
@@ -223,7 +223,7 @@ describe('statusCommand', () => {
     await statusCommand('job', 'test_collection', 'interview', options);
 
     expect(console.log).toHaveBeenCalledWith(
-      "Valid transitions from 'submitted': interview, rejected",
+      "ℹ️ Valid transitions from 'submitted': interview, rejected",
     );
   });
 });
@@ -277,13 +277,13 @@ describe('showStatusesCommand', () => {
 
     await expect(showStatusesCommand('job', options)).resolves.not.toThrow();
 
-    expect(console.log).toHaveBeenCalledWith("\nSTATUS STAGES FOR 'JOB' WORKFLOW\n");
-    expect(console.log).toHaveBeenCalledWith('1. active');
-    expect(console.log).toHaveBeenCalledWith('   New applications → submitted, rejected');
-    expect(console.log).toHaveBeenCalledWith('2. submitted');
-    expect(console.log).toHaveBeenCalledWith('   Submitted applications → interview, rejected');
-    expect(console.log).toHaveBeenCalledWith('5. rejected (terminal)');
-    expect(console.log).toHaveBeenCalledWith('   Rejected applications');
+    expect(console.log).toHaveBeenCalledWith("ℹ️ \nSTATUS STAGES FOR 'JOB' WORKFLOW\n");
+    expect(console.log).toHaveBeenCalledWith('ℹ️ 1. active');
+    expect(console.log).toHaveBeenCalledWith('ℹ️    New applications → submitted, rejected');
+    expect(console.log).toHaveBeenCalledWith('ℹ️ 2. submitted');
+    expect(console.log).toHaveBeenCalledWith('ℹ️    Submitted applications → interview, rejected');
+    expect(console.log).toHaveBeenCalledWith('ℹ️ 5. rejected (terminal)');
+    expect(console.log).toHaveBeenCalledWith('ℹ️    Rejected applications');
   });
 
   it('should handle missing workflow', async () => {

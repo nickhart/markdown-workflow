@@ -7,6 +7,7 @@ import * as path from 'path';
 import * as YAML from 'yaml';
 import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
 import { scrapeUrl } from '../../shared/web-scraper.js';
+import { logInfo, logSuccess, logError } from './formatting-utils.js';
 
 /**
  * Load and validate a workflow definition from the system workflows directory
@@ -48,16 +49,15 @@ export async function scrapeUrlForCollection(
   url: string,
   workflowDefinition: WorkflowFile,
 ): Promise<void> {
-  console.log(`Scraping job description from: ${url}`);
+  logInfo(`Scraping job description from: ${url}`);
 
   // Find scrape action in workflow definition
   const scrapeAction = workflowDefinition.workflow.actions.find(
     (action) => action.name === 'scrape',
   );
 
-  // Determine output filename from workflow config or generate from URL
-  // TODO: make this configurable in workflow definition
-  let outputFile = 'job_description.html'; // default fallback
+  // Determine output filename from workflow config with generic fallback
+  let outputFile = 'url-download.html'; // generic fallback for workflows without scrape config
 
   if (scrapeAction?.parameters) {
     const outputParam = scrapeAction.parameters.find((p) => p.name === 'output_file');
@@ -74,12 +74,12 @@ export async function scrapeUrlForCollection(
     });
 
     if (result.success) {
-      console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
+      logSuccess(`Successfully scraped using ${result.method}: ${result.outputFile}`);
     } else {
-      console.error(`❌ Failed to scrape URL: ${result.error}`);
+      logError(`Failed to scrape URL: ${result.error}`);
     }
   } catch (error) {
-    console.error(`❌ Scraping error: ${error}`);
+    logError(`Scraping error: ${error}`);
   }
 }
 
