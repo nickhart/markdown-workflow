@@ -1,0 +1,96 @@
+/**
+ * Shared metadata handling utilities for CLI commands
+ */
+
+import * as fs from 'fs';
+import * as path from 'path';
+import * as YAML from 'yaml';
+import type { CollectionMetadata } from '../../core/types.js';
+
+/**
+ * Generate YAML content for collection metadata
+ * Merged from create.ts and update.ts (update.ts version includes notes support)
+ */
+export function generateMetadataYaml(metadata: CollectionMetadata): string {
+  const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
+  const notesLine = metadata.notes ? `notes: "${metadata.notes}"` : '';
+
+  return `# Collection Metadata
+collection_id: "${metadata.collection_id}"
+workflow: "${metadata.workflow}"
+status: "${metadata.status}"
+date_created: "${metadata.date_created}"
+date_modified: "${metadata.date_modified}"
+
+# Application Details
+company: "${metadata.company}"
+role: "${metadata.role}"${urlLine ? `\n${urlLine}` : ''}${notesLine ? `\n${notesLine}` : ''}
+
+# Status History
+status_history:
+  - status: "${metadata.status_history[0].status}"
+    date: "${metadata.status_history[0].date}"
+
+# Additional Fields
+# Add custom fields here as needed
+`;
+}
+
+/**
+ * Load collection metadata from collection.yml file
+ */
+export function loadCollectionMetadata(collectionPath: string): CollectionMetadata {
+  const metadataPath = path.join(collectionPath, 'collection.yml');
+
+  if (!fs.existsSync(metadataPath)) {
+    throw new Error(`Collection metadata not found: ${metadataPath}`);
+  }
+
+  try {
+    const metadataContent = fs.readFileSync(metadataPath, 'utf8');
+    const metadata = YAML.parse(metadataContent) as CollectionMetadata;
+
+    // Basic validation
+    if (!metadata.collection_id || !metadata.workflow || !metadata.status) {
+      throw new Error('Invalid metadata: missing required fields');
+    }
+
+    return metadata;
+  } catch (error) {
+    throw new Error(`Failed to load collection metadata: ${error}`);
+  }
+}
+
+/**
+ * Save collection metadata to collection.yml file
+ */
+export function saveCollectionMetadata(collectionPath: string, metadata: CollectionMetadata): void {
+  const metadataPath = path.join(collectionPath, 'collection.yml');
+  const content = generateMetadataYaml(metadata);
+
+  try {
+    fs.writeFileSync(metadataPath, content);
+  } catch (error) {
+    throw new Error(`Failed to save collection metadata: ${error}`);
+  }
+}
+
+/**
+ * Update collection metadata with new values and save
+ */
+export function updateCollectionMetadata(
+  collectionPath: string,
+  updates: Partial<CollectionMetadata>,
+): CollectionMetadata {
+  const metadata = loadCollectionMetadata(collectionPath);
+
+  // Apply updates
+  const updatedMetadata: CollectionMetadata = {
+    ...metadata,
+    ...updates,
+    date_modified: new Date().toISOString(),
+  };
+
+  saveCollectionMetadata(collectionPath, updatedMetadata);
+  return updatedMetadata;
+}
