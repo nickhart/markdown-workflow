@@ -9,13 +9,12 @@ import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { CollectionMetadata } from '../../core/types.js';
 import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
 import { getCurrentISODate } from '../../shared/date-utils.js';
-import { scrapeUrl, generateFilenameFromUrl } from '../../shared/web-scraper.js';
+import { scrapeUrl } from '../../shared/web-scraper.js';
 
 interface UpdateOptions {
   url?: string;
   company?: string;
   role?: string;
-  status?: string;
   notes?: string;
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
@@ -89,12 +88,6 @@ export async function updateCommand(
   if (options.role) updatedMetadata.role = options.role;
   if (options.url) updatedMetadata.url = options.url;
   if (options.notes) updatedMetadata.notes = options.notes;
-
-  // Handle status change (would need to move collection directory)
-  if (options.status) {
-    // TODO: Implement status change with directory move
-    console.warn('Status changes not yet implemented in update command. Use wf status instead.');
-  }
 
   // Write updated metadata
   const updatedContent = generateMetadataYaml(updatedMetadata);
@@ -197,11 +190,6 @@ async function scrapeUrlForCollection(
     }
   }
 
-  // If no workflow config, try to generate a reasonable filename
-  if (outputFile === 'job_description.html') {
-    outputFile = generateFilenameFromUrl(url, outputFile);
-  }
-
   try {
     // Perform the scraping
     const result = await scrapeUrl(url, {
@@ -213,57 +201,10 @@ async function scrapeUrlForCollection(
       console.log(`✅ Successfully scraped using ${result.method}: ${result.outputFile}`);
     } else {
       console.error(`❌ Failed to scrape URL: ${result.error}`);
-
-      // Create a fallback placeholder file with the URL
-      const fallbackPath = path.join(collectionPath, outputFile);
-      const fallbackContent = createFallbackHtml(url, result.error || 'Unknown error');
-      fs.writeFileSync(fallbackPath, fallbackContent);
-      console.log(`📄 Created placeholder file: ${outputFile}`);
     }
   } catch (error) {
     console.error(`❌ Scraping error: ${error}`);
-
-    // Create fallback placeholder
-    const fallbackPath = path.join(collectionPath, outputFile);
-    const fallbackContent = createFallbackHtml(url, String(error));
-    fs.writeFileSync(fallbackPath, fallbackContent);
-    console.log(`📄 Created placeholder file: ${outputFile}`);
   }
-}
-
-/**
- * Create fallback HTML content when scraping fails
- */
-function createFallbackHtml(url: string, error: string): string {
-  return `<!DOCTYPE html>
-<html>
-<head>
-    <title>Job Description - Scraping Failed</title>
-    <meta charset="UTF-8">
-    <style>
-        body { font-family: Arial, sans-serif; margin: 2em; }
-        .error { color: #d73a49; background: #ffeef0; padding: 1em; border-radius: 4px; }
-        .url { word-break: break-all; }
-    </style>
-</head>
-<body>
-    <h1>Job Description</h1>
-    <p><strong>Source URL:</strong> <a href="${url}" class="url">${url}</a></p>
-
-    <div class="error">
-        <h3>⚠️ Scraping Failed</h3>
-        <p><strong>Error:</strong> ${error}</p>
-        <p>Please visit the URL above to view the job description manually.</p>
-    </div>
-
-    <h3>Manual Steps:</h3>
-    <ol>
-        <li>Click the URL above to open the job posting</li>
-        <li>Copy the job description content</li>
-        <li>Replace this file with the actual content</li>
-    </ol>
-</body>
-</html>`;
 }
 
 /**

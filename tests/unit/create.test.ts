@@ -17,7 +17,6 @@ jest.mock('../../src/shared/web-scraper.js', () => ({
     outputFile: 'job_description.html',
     method: 'wget',
   }),
-  generateFilenameFromUrl: jest.fn().mockReturnValue('job_description.html'),
 }));
 
 const mockFs = fs as jest.Mocked<typeof fs>;
