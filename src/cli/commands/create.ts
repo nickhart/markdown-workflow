@@ -1,16 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import Mustache from 'mustache';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { CollectionMetadata, WorkflowTemplate } from '../../core/types.js';
-import { type ProjectConfig } from '../../core/schemas.js';
-import {
-  generateCollectionId,
-  getCurrentISODate,
-  formatDate,
-  getCurrentDate,
-} from '../../shared/date-utils.js';
-import { sanitizeForFilename } from '../../shared/file-utils.js';
+import { CollectionMetadata } from '../../core/types.js';
+import { generateCollectionId, getCurrentISODate } from '../../shared/date-utils.js';
 import { initializeProject } from '../shared/cli-base.js';
 import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations.js';
 import { generateMetadataYaml } from '../shared/metadata-utils.js';
@@ -18,12 +10,9 @@ import {
   logCollectionCreation,
   logSuccess,
   logNextSteps,
-  logTemplateUsage,
-  logFileCreation,
   logForceRecreation,
-  logWarning,
-  logError,
 } from '../shared/formatting-utils.js';
+import { TemplateProcessor } from '../shared/template-processor.js';
 
 interface CreateOptions {
   url?: string;
@@ -137,15 +126,13 @@ export async function createCommand(
           ...(options.template_variant && { template_variant: options.template_variant }),
         };
 
-        await processTemplate(
-          template,
-          collectionPath,
-          systemConfig.paths.systemRoot,
+        await TemplateProcessor.processTemplate(template, collectionPath, {
+          systemRoot: systemConfig.paths.systemRoot,
           workflowName,
-          templateVariables,
-          systemConfig.projectConfig,
+          variables: templateVariables,
+          projectConfig: systemConfig.projectConfig,
           projectPaths,
-        );
+        });
       }
     }
   }
@@ -157,162 +144,6 @@ export async function createCommand(
 
   logSuccess('Collection created successfully!');
   logNextSteps(workflowName, collectionId, collectionPath);
-}
-
-/**
- * Resolve template path with inheritance and variant support
- * Priority: project templates (with variant) > project templates (default) > system templates
- */
-function resolveTemplatePath(
-  template: WorkflowTemplate,
-  systemRoot: string,
-  workflowName: string,
-  templateVariant?: string,
-  projectPaths?: { workflowsDir: string } | null,
-): string | null {
-  const templatePaths: string[] = [];
-
-  // If project has workflows directory, check project templates first
-  if (projectPaths?.workflowsDir) {
-    const projectWorkflowDir = path.join(projectPaths.workflowsDir, workflowName);
-
-    if (templateVariant) {
-      // Try project template with variant (e.g., .markdown-workflow/workflows/job/templates/resume/ai-frontend.md)
-      const variantPath = getVariantTemplatePath(projectWorkflowDir, template, templateVariant);
-      if (variantPath) templatePaths.push(variantPath);
-    }
-
-    // Try project template default (e.g., .markdown-workflow/workflows/job/templates/resume/default.md)
-    const projectTemplatePath = path.join(projectWorkflowDir, template.file);
-    templatePaths.push(projectTemplatePath);
-  }
-
-  // Always add system template as fallback
-  const systemTemplatePath = path.join(systemRoot, 'workflows', workflowName, template.file);
-  templatePaths.push(systemTemplatePath);
-
-  // Return first existing template
-  for (const templatePath of templatePaths) {
-    if (fs.existsSync(templatePath)) {
-      return templatePath;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Build variant template path by replacing filename with variant
- * e.g., templates/resume/default.md + variant "ai-frontend" -> templates/resume/ai-frontend.md
- */
-function getVariantTemplatePath(
-  workflowDir: string,
-  template: WorkflowTemplate,
-  variant: string,
-): string | null {
-  const templateFile = template.file;
-  const parsedPath = path.parse(templateFile);
-
-  // Replace filename with variant, keep extension
-  const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
-  return path.join(workflowDir, variantFile);
-}
-
-/**
- * Process a template file with variable substitution
- * Implements template inheritance: project templates override system templates
- */
-async function processTemplate(
-  template: WorkflowTemplate,
-  collectionPath: string,
-  systemRoot: string,
-  workflowName: string,
-  variables: Record<string, string>,
-  projectConfig?: ProjectConfig | null,
-  projectPaths?: { workflowsDir: string; configFile: string } | null,
-): Promise<void> {
-  // Load user configuration if project paths are available
-  let userConfig = null;
-  if (projectPaths?.configFile && fs.existsSync(projectPaths.configFile)) {
-    const configDiscovery = new ConfigDiscovery();
-    const config = await configDiscovery.loadProjectConfig(projectPaths.configFile);
-    userConfig = config?.user;
-  }
-
-  // Resolve template path with inheritance: project templates override system templates
-  const resolvedTemplatePath = resolveTemplatePath(
-    template,
-    systemRoot,
-    workflowName,
-    variables.template_variant,
-    projectPaths,
-  );
-
-  if (!resolvedTemplatePath) {
-    logWarning(`Template not found: ${template.name} (checked project and system locations)`);
-    return;
-  }
-
-  logTemplateUsage(resolvedTemplatePath);
-
-  if (!fs.existsSync(resolvedTemplatePath)) {
-    logWarning(`Template file not found: ${resolvedTemplatePath}`);
-    return;
-  }
-
-  try {
-    const templateContent = fs.readFileSync(resolvedTemplatePath, 'utf8');
-
-    // Prepare template variables for Mustache
-    const userConfigForTemplate = userConfig || getDefaultUserConfig();
-    const templateVariables = {
-      ...variables,
-      date: formatDate(
-        getCurrentDate(projectConfig || undefined),
-        'YYYY-MM-DD',
-        projectConfig || undefined,
-      ),
-      user: {
-        ...userConfigForTemplate,
-        // Add sanitized version of preferred_name for filenames
-        preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name),
-      },
-    };
-
-    // Process template with Mustache
-    const processedContent = Mustache.render(templateContent, templateVariables);
-
-    // Generate output filename with Mustache
-    const outputFile = Mustache.render(template.output, templateVariables);
-
-    const outputPath = path.join(collectionPath, outputFile);
-    fs.writeFileSync(outputPath, processedContent);
-
-    logFileCreation(outputFile);
-  } catch (error) {
-    logError(
-      `Error processing template ${template.name}: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-}
-
-/**
- * Get default user configuration for fallback
- */
-function getDefaultUserConfig() {
-  return {
-    name: 'Your Name',
-    preferred_name: 'john_doe',
-    email: 'your.email@example.com',
-    phone: '(555) 123-4567',
-    address: '123 Main St',
-    city: 'Your City',
-    state: 'ST',
-    zip: '12345',
-    linkedin: 'linkedin.com/in/yourname',
-    github: 'github.com/yourusername',
-    website: 'yourwebsite.com',
-  };
 }
 
 export default createCommand;
