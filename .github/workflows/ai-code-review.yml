@@ -139,10 +139,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           # Make the script executable
-          chmod +x .github/scripts/claude-code-review.js
+          chmod +x .github/scripts/claude-code-review.cjs
           
           # Run the review with parsed options
-          node .github/scripts/claude-code-review.js \
+          node .github/scripts/claude-code-review.cjs \
             --diff pr_diff.txt \
             --config .github/claude-review-config.json \
             ${{ needs.trigger-review.outputs.review_options }} \
