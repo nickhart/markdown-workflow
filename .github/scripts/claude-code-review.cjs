@@ -244,7 +244,6 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       ];
 
       // Call Claude API
-      console.log('Calling Claude API for code review...');
       const response = await this.callClaude(messages, systemPrompt);
 
       // Format final comment
