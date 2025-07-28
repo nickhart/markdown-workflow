@@ -58,7 +58,23 @@ class ClaudeCodeReviewer {
       },
     };
 
+    // DEBUG: Log the full request without sending it
+    console.error(`DEBUG: Full HTTP request would be:`);
+    console.error(`POST /v1/messages HTTP/1.1`);
+    console.error(`Host: api.anthropic.com`);
+    console.error(`Content-Type: application/json`);
+    console.error(`Content-Length: ${data.length}`);
+    console.error(`x-api-key: ${this.apiKey.substring(0, 8)}...`);
+    console.error(`anthropic-version: 2023-06-01`);
+    console.error(`\nBody:`);
+    console.error(data);
+    console.error(`\nEND OF REQUEST`);
+
     return new Promise((resolve, reject) => {
+      // For debugging, don't actually send the request
+      reject(new Error('DEBUG: Request logging complete - not actually sending to Claude'));
+      
+      /* Original network request code (commented out for debugging):
       const req = https.request(options, (res) => {
         let responseData = '';
         
@@ -90,6 +106,7 @@ class ClaudeCodeReviewer {
 
       req.write(data);
       req.end();
+      */
     });
   }
 
