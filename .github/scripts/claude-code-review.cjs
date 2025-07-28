@@ -27,12 +27,14 @@ class ClaudeCodeReviewer {
    * Make a request to Claude API
    */
   async callClaude(messages, systemPrompt) {
-    const data = JSON.stringify({
+    const requestBody = {
       model: this.config.model,
       max_tokens: this.config.maxTokens,
       system: systemPrompt,
       messages: messages,
-    });
+    };
+    const data = JSON.stringify(requestBody);
+    console.error(`DEBUG: JSON request size: ${data.length} chars`);
 
     const options = {
       hostname: 'api.anthropic.com',
@@ -245,6 +247,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       ];
 
       // Call Claude API
+      console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${truncationInfo.truncatedTokens || truncationInfo.originalTokens}`);
       const response = await this.callClaude(messages, systemPrompt);
 
       // Format final comment

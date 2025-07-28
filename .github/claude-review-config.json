@@ -4,7 +4,7 @@
     "sonnet": "claude-3-5-sonnet-20241022"
   },
   "maxTokens": 4000,
-  "maxInputTokens": 2000,
+  "maxInputTokens": 500,
   "includePatterns": [
     "**/*.ts",
     "**/*.js",
