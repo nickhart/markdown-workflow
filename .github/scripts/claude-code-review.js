@@ -2,7 +2,7 @@
 
 /**
  * Claude AI Code Review Script
- * 
+ *
  * Analyzes PR diffs using Claude API and provides structured code review feedback.
  * Designed for GitHub Actions with manual triggering via PR comments.
  */
@@ -19,7 +19,7 @@ class ClaudeCodeReviewer {
       maxTokens: options.maxTokens || 4000,
       focus: options.focus || ['security', 'performance', 'maintainability', 'typescript'],
       brief: options.brief || false,
-      ...options
+      ...options,
     };
   }
 
@@ -31,7 +31,7 @@ class ClaudeCodeReviewer {
       model: this.config.model,
       max_tokens: this.config.maxTokens,
       system: systemPrompt,
-      messages: messages
+      messages: messages,
     });
 
     const options = {
@@ -43,18 +43,18 @@ class ClaudeCodeReviewer {
         'Content-Type': 'application/json',
         'Content-Length': data.length,
         'x-api-key': this.apiKey,
-        'anthropic-version': '2023-06-01'
-      }
+        'anthropic-version': '2023-06-01',
+      },
     };
 
     return new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let responseData = '';
-        
+
         res.on('data', (chunk) => {
           responseData += chunk;
         });
-        
+
         res.on('end', () => {
           try {
             const parsed = JSON.parse(responseData);
@@ -83,8 +83,10 @@ class ClaudeCodeReviewer {
    */
   generateSystemPrompt() {
     const focusAreas = this.config.focus.join(', ');
-    const briefness = this.config.brief ? 'Keep feedback concise and high-level.' : 'Provide detailed explanations for your suggestions.';
-    
+    const briefness = this.config.brief
+      ? 'Keep feedback concise and high-level.'
+      : 'Provide detailed explanations for your suggestions.';
+
     return `You are an expert code reviewer specializing in TypeScript/JavaScript. Review the provided code changes and focus on: ${focusAreas}.
 
 Guidelines:
@@ -162,22 +164,24 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
    */
   truncateDiff(diff, maxInputTokens = 6000) {
     const estimatedTokens = this.estimateTokens(diff);
-    
+
     if (estimatedTokens <= maxInputTokens) {
       return { diff, truncated: false, originalTokens: estimatedTokens };
     }
 
     // Keep first part of diff and add truncation notice
     const targetLength = maxInputTokens * 4 * 0.8; // Leave some buffer
-    const truncatedDiff = diff.substring(0, targetLength) + 
-      '\n\n[... diff truncated due to size limits. Review covers first ' + 
-      Math.round(targetLength / diff.length * 100) + '% of changes ...]';
-    
+    const truncatedDiff =
+      diff.substring(0, targetLength) +
+      '\n\n[... diff truncated due to size limits. Review covers first ' +
+      Math.round((targetLength / diff.length) * 100) +
+      '% of changes ...]';
+
     return {
       diff: truncatedDiff,
       truncated: true,
       originalTokens: estimatedTokens,
-      truncatedTokens: this.estimateTokens(truncatedDiff)
+      truncatedTokens: this.estimateTokens(truncatedDiff),
     };
   }
 
@@ -187,9 +191,9 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
   formatReviewComment(response, metadata) {
     const { model, focus, brief } = this.config;
     const { truncated, originalTokens, truncatedTokens } = metadata;
-    
+
     let comment = `## 🤖 Claude AI Code Review\n\n`;
-    
+
     // Add metadata
     comment += `<details>\n<summary>Review Details</summary>\n\n`;
     comment += `- **Model**: ${model}\n`;
@@ -200,13 +204,13 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       comment += `- **Note**: Diff truncated (original: ~${originalTokens} tokens)\n`;
     }
     comment += `\n</details>\n\n`;
-    
+
     // Add the actual review content
     comment += response.content[0].text;
-    
+
     // Add footer
     comment += `\n\n---\n*AI-generated review • May contain errors • Use human judgment*`;
-    
+
     return comment;
   }
 
@@ -217,48 +221,50 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
     try {
       // Process and filter diff
       const processedDiff = this.processDiff(diff, config);
-      
+
       if (!processedDiff.trim()) {
         return {
           success: true,
-          comment: '## 🤖 Claude AI Code Review\n\nNo reviewable code changes found in this PR (only excluded files or non-code changes).',
-          metadata: { tokens: 0 }
+          comment:
+            '## 🤖 Claude AI Code Review\n\nNo reviewable code changes found in this PR (only excluded files or non-code changes).',
+          metadata: { tokens: 0 },
         };
       }
 
       // Handle large diffs
       const { diff: finalDiff, ...truncationInfo } = this.truncateDiff(processedDiff);
-      
+
       // Generate prompts
       const systemPrompt = this.generateSystemPrompt();
-      const messages = [{
-        role: 'user',
-        content: `Please review these code changes:\n\n\`\`\`diff\n${finalDiff}\n\`\`\``
-      }];
+      const messages = [
+        {
+          role: 'user',
+          content: `Please review these code changes:\n\n\`\`\`diff\n${finalDiff}\n\`\`\``,
+        },
+      ];
 
       // Call Claude API
       console.log('Calling Claude API for code review...');
       const response = await this.callClaude(messages, systemPrompt);
-      
+
       // Format final comment
       const comment = this.formatReviewComment(response, truncationInfo);
-      
+
       return {
         success: true,
         comment,
         metadata: {
           tokens: response.usage?.input_tokens + response.usage?.output_tokens || 'unknown',
           model: this.config.model,
-          truncated: truncationInfo.truncated
-        }
+          truncated: truncationInfo.truncated,
+        },
       };
-      
     } catch (error) {
       console.error('Claude review failed:', error.message);
       return {
         success: false,
         error: error.message,
-        comment: `## 🤖 Claude AI Code Review - Error\n\n❌ **Review failed**: ${error.message}\n\nPlease try again or contact the repository maintainer if the issue persists.`
+        comment: `## 🤖 Claude AI Code Review - Error\n\n❌ **Review failed**: ${error.message}\n\nPlease try again or contact the repository maintainer if the issue persists.`,
       };
     }
   }
@@ -275,10 +281,12 @@ async function main() {
   // Parse command line arguments
   const args = process.argv.slice(2);
   const options = {};
-  
+
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--model' && args[i + 1]) {
-      options.model = args[i + 1].includes('sonnet') ? 'claude-3-5-sonnet-20241022' : 'claude-3-haiku-20240307';
+      options.model = args[i + 1].includes('sonnet')
+        ? 'claude-3-5-sonnet-20241022'
+        : 'claude-3-haiku-20240307';
       i++;
     } else if (args[i] === '--focus' && args[i + 1]) {
       options.focus = args[i + 1].split(',');
@@ -346,7 +354,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });
