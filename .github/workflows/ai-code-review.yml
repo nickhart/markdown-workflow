@@ -141,12 +141,11 @@ jobs:
           # Make the script executable
           chmod +x .github/scripts/claude-code-review.cjs
           
-          # Run the review with parsed options
+          # Run the review with parsed options (script writes directly to $GITHUB_OUTPUT)
           node .github/scripts/claude-code-review.cjs \
             --diff pr_diff.txt \
             --config .github/claude-review-config.json \
-            ${{ needs.trigger-review.outputs.review_options }} \
-            >> $GITHUB_OUTPUT
+            ${{ needs.trigger-review.outputs.review_options }}
 
       - name: Post review comment
         if: always() && steps.diff.outputs.has_changes == 'true'
@@ -188,7 +187,24 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const success = process.env.REVIEW_SUCCESS === 'true' || '${{ steps.diff.outputs.has_changes }}' === 'false';
+            const fs = require('fs');
+            let success = '${{ steps.diff.outputs.has_changes }}' === 'false'; // Default to true if no changes
+            
+            // Try to read success status from GITHUB_OUTPUT file
+            try {
+              const outputFile = process.env.GITHUB_OUTPUT;
+              if (outputFile && fs.existsSync(outputFile)) {
+                const outputContent = fs.readFileSync(outputFile, 'utf8');
+                const successMatch = outputContent.match(/^REVIEW_SUCCESS=(.*)$/m);
+                if (successMatch) {
+                  success = successMatch[1] === 'true';
+                }
+              }
+            } catch (error) {
+              console.log('Could not read output file:', error.message);
+            }
+            
+            console.log('Review success status:', success);
             
             // Remove reviewing label and add appropriate status label
             try {
@@ -235,7 +251,18 @@ jobs:
           echo "PR: #${{ github.event.issue.number }}"
           echo "Trigger: ${{ github.event.comment.user.login }}"
           echo "Options: ${{ needs.trigger-review.outputs.review_options }}"
-          echo "Success: ${REVIEW_SUCCESS:-unknown}"
-          echo "Tokens: ${REVIEW_TOKENS:-unknown}"
-          echo "Model: ${REVIEW_MODEL:-unknown}"
+          
+          # Extract values from GITHUB_OUTPUT file if it exists
+          if [ -f "$GITHUB_OUTPUT" ]; then
+            success=$(grep "^REVIEW_SUCCESS=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
+            tokens=$(grep "^REVIEW_TOKENS=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
+            model=$(grep "^REVIEW_MODEL=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
+            echo "Success: $success"
+            echo "Tokens: $tokens"
+            echo "Model: $model"
+          else
+            echo "Success: unknown"
+            echo "Tokens: unknown"
+            echo "Model: unknown"
+          fi
           echo "================================="

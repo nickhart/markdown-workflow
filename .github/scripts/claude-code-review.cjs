@@ -376,32 +376,56 @@ async function main() {
   console.error(`DEBUG: result.success: ${result.success}`);
   console.error(`DEBUG: result.comment type: ${typeof result.comment}`);
   console.error(`DEBUG: result.comment length: ${result.comment ? result.comment.length : 'undefined'}`);
-  if (result.success) {
-    console.error('DEBUG: Review successful, outputting success result');
-    console.error('DEBUG: About to output REVIEW_SUCCESS=true');
-    console.log('REVIEW_SUCCESS=true');
-    console.error('DEBUG: About to output REVIEW_COMMENT<<EOF');
-    console.log('REVIEW_COMMENT<<EOF');
-    console.error(`DEBUG: About to output comment (${result.comment.length} chars)`);
-    console.log(result.comment);
-    console.error('DEBUG: About to output EOF');
-    console.log('EOF');
-    if (result.metadata) {
-      console.error(`DEBUG: About to output tokens: ${result.metadata.tokens}`);
-      console.log(`REVIEW_TOKENS=${result.metadata.tokens}`);
-      console.error(`DEBUG: About to output model: ${result.metadata.model}`);
-      console.log(`REVIEW_MODEL=${result.metadata.model}`);
+  
+  // Write directly to GITHUB_OUTPUT file instead of using stdout redirection
+  const outputFile = process.env.GITHUB_OUTPUT;
+  if (outputFile) {
+    console.error(`DEBUG: Writing to GITHUB_OUTPUT file: ${outputFile}`);
+    const fs = require('fs');
+    
+    if (result.success) {
+      console.error('DEBUG: Review successful, writing success result to output file');
+      const outputContent = `REVIEW_SUCCESS=true
+REVIEW_COMMENT<<EOF
+${result.comment}
+EOF
+REVIEW_TOKENS=${result.metadata?.tokens || 'unknown'}
+REVIEW_MODEL=${result.metadata?.model || 'unknown'}
+`;
+      console.error(`DEBUG: Writing ${outputContent.length} characters to output file`);
+      fs.appendFileSync(outputFile, outputContent);
+      console.error('DEBUG: Successfully wrote to output file');
+    } else {
+      console.error(`DEBUG: Review failed with error: ${result.error}`);
+      const outputContent = `REVIEW_SUCCESS=false
+REVIEW_ERROR=${result.error}
+REVIEW_COMMENT<<EOF
+${result.comment}
+EOF
+`;
+      fs.appendFileSync(outputFile, outputContent);
+      console.error('DEBUG: Error output complete, exiting with code 1');
+      process.exit(1);
     }
-    console.error('DEBUG: Success output complete');
   } else {
-    console.error(`DEBUG: Review failed with error: ${result.error}`);
-    console.log('REVIEW_SUCCESS=false');
-    console.log('REVIEW_ERROR=' + result.error);
-    console.log('REVIEW_COMMENT<<EOF');
-    console.log(result.comment);
-    console.log('EOF');
-    console.error('DEBUG: Error output complete, exiting with code 1');
-    process.exit(1);
+    console.error('DEBUG: GITHUB_OUTPUT environment variable not set, falling back to stdout');
+    if (result.success) {
+      console.log('REVIEW_SUCCESS=true');
+      console.log('REVIEW_COMMENT<<EOF');
+      console.log(result.comment);
+      console.log('EOF');
+      if (result.metadata) {
+        console.log(`REVIEW_TOKENS=${result.metadata.tokens}`);
+        console.log(`REVIEW_MODEL=${result.metadata.model}`);
+      }
+    } else {
+      console.log('REVIEW_SUCCESS=false');
+      console.log('REVIEW_ERROR=' + result.error);
+      console.log('REVIEW_COMMENT<<EOF');
+      console.log(result.comment);
+      console.log('EOF');
+      process.exit(1);
+    }
   }
 }
 
