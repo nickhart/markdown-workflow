@@ -262,7 +262,11 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       console.error('DEBUG: Claude API call completed successfully');
 
       // Format final comment
+      console.error('DEBUG: About to format review comment...');
+      console.error(`DEBUG: response object keys: ${Object.keys(response)}`);
+      console.error(`DEBUG: response.content type: ${typeof response.content}`);
       const comment = this.formatReviewComment(response, sizeInfo);
+      console.error(`DEBUG: Formatted comment length: ${comment ? comment.length : 'undefined'}`);
 
       return {
         success: true,
@@ -368,6 +372,10 @@ async function main() {
 
   // Output results
   console.error('DEBUG: Formatting output...');
+  console.error(`DEBUG: result object keys: ${Object.keys(result)}`);
+  console.error(`DEBUG: result.success: ${result.success}`);
+  console.error(`DEBUG: result.comment type: ${typeof result.comment}`);
+  console.error(`DEBUG: result.comment length: ${result.comment ? result.comment.length : 'undefined'}`);
   if (result.success) {
     console.error('DEBUG: Review successful, outputting success result');
     console.log('REVIEW_SUCCESS=true');
