@@ -222,7 +222,7 @@ describe('listCommand', () => {
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
     await listCommand('job', options);
 
-    expect(console.log).toHaveBeenCalledWith("No collections found for workflow 'job'");
+    expect(console.log).toHaveBeenCalledWith("📭 No collections found for workflow 'job'");
   });
 
   it('should handle empty collections list with status filter', async () => {
@@ -236,7 +236,7 @@ describe('listCommand', () => {
     await listCommand('job', options);
 
     expect(console.log).toHaveBeenCalledWith(
-      "No collections found for workflow 'job' with status 'active'",
+      "📭 No collections found for workflow 'job' with status 'active'",
     );
   });
 
