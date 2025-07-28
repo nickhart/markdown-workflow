@@ -172,10 +172,27 @@ jobs:
       - name: Post review comment
         if: always() && steps.diff.outputs.has_changes == 'true'
         uses: actions/github-script@v7
+        env:
+          REVIEW_COMMENT: ${{ steps.review.outputs.comment }}
         with:
           script: |
-            // Get the review comment from step outputs
-            const reviewComment = `${{ steps.review.outputs.comment }}` || 'Review failed - no output generated';
+            const fs = require('fs');
+            
+            // Get the review comment from environment variable (more reliable for multiline)
+            let reviewComment = process.env.REVIEW_COMMENT || 'Review failed - no output generated';
+            
+            // If still empty, try to read from the review comment file
+            if (!reviewComment || reviewComment.trim() === '') {
+              try {
+                reviewComment = fs.readFileSync('review_comment.txt', 'utf8');
+              } catch (error) {
+                console.log('Could not read review comment file:', error.message);
+                reviewComment = 'Review failed - no output generated';
+              }
+            }
+            
+            console.log('Review comment length:', reviewComment.length);
+            console.log('Review comment preview:', reviewComment.substring(0, 200) + '...');
             
             // Post the review
             await github.rest.issues.createComment({
