@@ -141,26 +141,41 @@ jobs:
           # Make the script executable
           chmod +x .github/scripts/claude-code-review.cjs
           
-          # Run the review with parsed options (script writes directly to $GITHUB_OUTPUT)
+          # Run the review and capture outputs
           node .github/scripts/claude-code-review.cjs \
             --diff pr_diff.txt \
             --config .github/claude-review-config.json \
-            ${{ needs.trigger-review.outputs.review_options }}
+            ${{ needs.trigger-review.outputs.review_options }} > review_output.txt 2>&1
+          
+          # Parse the output and set step outputs
+          if grep -q "REVIEW_SUCCESS=true" review_output.txt; then
+            echo "success=true" >> $GITHUB_OUTPUT
+            # Extract the review comment
+            sed -n '/REVIEW_COMMENT<<EOF/,/^EOF$/p' review_output.txt | sed '1d;$d' > review_comment.txt
+            echo "comment<<EOF" >> $GITHUB_OUTPUT
+            cat review_comment.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            # Extract metadata
+            tokens=$(grep "REVIEW_TOKENS=" review_output.txt | cut -d'=' -f2 || echo "unknown")
+            model=$(grep "REVIEW_MODEL=" review_output.txt | cut -d'=' -f2 || echo "unknown")
+            echo "tokens=$tokens" >> $GITHUB_OUTPUT
+            echo "model=$model" >> $GITHUB_OUTPUT
+          else
+            echo "success=false" >> $GITHUB_OUTPUT
+            echo "error=$(grep 'REVIEW_ERROR=' review_output.txt | cut -d'=' -f2 || echo 'Unknown error')" >> $GITHUB_OUTPUT
+            sed -n '/REVIEW_COMMENT<<EOF/,/^EOF$/p' review_output.txt | sed '1d;$d' > review_comment.txt
+            echo "comment<<EOF" >> $GITHUB_OUTPUT
+            cat review_comment.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
 
       - name: Post review comment
         if: always() && steps.diff.outputs.has_changes == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            
-            // Read the review output
-            const output = process.env.GITHUB_OUTPUT;
-            const outputContent = fs.readFileSync(output, 'utf8');
-            
-            // Extract review comment
-            const commentMatch = outputContent.match(/REVIEW_COMMENT<<EOF\n([\s\S]*?)\nEOF/);
-            const reviewComment = commentMatch ? commentMatch[1] : 'Review failed - no output generated';
+            // Get the review comment from step outputs
+            const reviewComment = `${{ steps.review.outputs.comment }}` || 'Review failed - no output generated';
             
             // Post the review
             await github.rest.issues.createComment({
@@ -187,21 +202,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
+            // Get success status from step outputs
             let success = '${{ steps.diff.outputs.has_changes }}' === 'false'; // Default to true if no changes
             
-            // Try to read success status from GITHUB_OUTPUT file
-            try {
-              const outputFile = process.env.GITHUB_OUTPUT;
-              if (outputFile && fs.existsSync(outputFile)) {
-                const outputContent = fs.readFileSync(outputFile, 'utf8');
-                const successMatch = outputContent.match(/^REVIEW_SUCCESS=(.*)$/m);
-                if (successMatch) {
-                  success = successMatch[1] === 'true';
-                }
-              }
-            } catch (error) {
-              console.log('Could not read output file:', error.message);
+            if ('${{ steps.review.outputs.success }}' !== '') {
+              success = '${{ steps.review.outputs.success }}' === 'true';
             }
             
             console.log('Review success status:', success);
@@ -252,17 +257,12 @@ jobs:
           echo "Trigger: ${{ github.event.comment.user.login }}"
           echo "Options: ${{ needs.trigger-review.outputs.review_options }}"
           
-          # Extract values from GITHUB_OUTPUT file if it exists
-          if [ -f "$GITHUB_OUTPUT" ]; then
-            success=$(grep "^REVIEW_SUCCESS=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
-            tokens=$(grep "^REVIEW_TOKENS=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
-            model=$(grep "^REVIEW_MODEL=" "$GITHUB_OUTPUT" | cut -d'=' -f2 || echo "unknown")
-            echo "Success: $success"
-            echo "Tokens: $tokens"
-            echo "Model: $model"
-          else
-            echo "Success: unknown"
-            echo "Tokens: unknown"
-            echo "Model: unknown"
-          fi
+          # Get values from step outputs
+          success="${{ steps.review.outputs.success }}"
+          tokens="${{ steps.review.outputs.tokens }}"
+          model="${{ steps.review.outputs.model }}"
+          
+          echo "Success: ${success:-unknown}"
+          echo "Tokens: ${tokens:-unknown}"
+          echo "Model: ${model:-unknown}"
           echo "================================="
