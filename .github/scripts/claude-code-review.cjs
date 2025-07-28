@@ -162,7 +162,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
   /**
    * Truncate diff if it exceeds token limits
    */
-  truncateDiff(diff, maxInputTokens = 6000) {
+  truncateDiff(diff, maxInputTokens = 2000) {
     const estimatedTokens = this.estimateTokens(diff);
 
     if (estimatedTokens <= maxInputTokens) {
@@ -232,7 +232,8 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       }
 
       // Handle large diffs
-      const { diff: finalDiff, ...truncationInfo } = this.truncateDiff(processedDiff);
+      const maxInputTokens = config.maxInputTokens || 2000; // Use config value or default to 2000
+      const { diff: finalDiff, ...truncationInfo } = this.truncateDiff(processedDiff, maxInputTokens);
 
       // Generate prompts
       const systemPrompt = this.generateSystemPrompt();
