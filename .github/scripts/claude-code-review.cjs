@@ -27,6 +27,7 @@ class ClaudeCodeReviewer {
    * Make a request to Claude API
    */
   async callClaude(messages, systemPrompt) {
+    console.error('DEBUG: Preparing Claude API request...');
     const requestBody = {
       model: this.config.model,
       max_tokens: this.config.maxTokens,
@@ -34,6 +35,7 @@ class ClaudeCodeReviewer {
       messages: messages,
     };
     const data = JSON.stringify(requestBody);
+    console.error(`DEBUG: Request body size: ${data.length} bytes`);
 
     const options = {
       hostname: 'api.anthropic.com',
@@ -49,7 +51,9 @@ class ClaudeCodeReviewer {
     };
 
     return new Promise((resolve, reject) => {
+      console.error('DEBUG: Sending HTTPS request to Claude API...');
       const req = https.request(options, (res) => {
+        console.error(`DEBUG: Got response with status: ${res.statusCode}`);
         let responseData = '';
 
         // Set encoding to handle UTF-8 properly
@@ -60,23 +64,30 @@ class ClaudeCodeReviewer {
         });
 
         res.on('end', () => {
+          console.error(`DEBUG: Response complete. Size: ${responseData.length} chars`);
           try {
             const parsed = JSON.parse(responseData);
             if (res.statusCode >= 400) {
+              console.error(`DEBUG: API error response: ${JSON.stringify(parsed)}`);
               reject(new Error(`Claude API error: ${parsed.error?.message || responseData}`));
             } else {
+              console.error('DEBUG: API call successful');
               resolve(parsed);
             }
           } catch (error) {
+            console.error(`DEBUG: JSON parse error: ${error.message}`);
+            console.error(`DEBUG: Raw response: ${responseData.substring(0, 500)}...`);
             reject(new Error(`Failed to parse Claude response: ${error.message}`));
           }
         });
       });
 
       req.on('error', (error) => {
+        console.error(`DEBUG: Request error: ${error.message}`);
         reject(new Error(`Request failed: ${error.message}`));
       });
 
+      console.error('DEBUG: Writing request data and ending request...');
       req.write(data);
       req.end();
     });
@@ -213,11 +224,15 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
    * Main review function
    */
   async reviewCode(diff, config = {}) {
+    console.error('DEBUG: Starting reviewCode method...');
     try {
       // Process and filter diff
+      console.error('DEBUG: Processing diff...');
       const processedDiff = this.processDiff(diff, config);
+      console.error(`DEBUG: Processed diff size: ${processedDiff.length} characters`);
 
       if (!processedDiff.trim()) {
+        console.error('DEBUG: No reviewable code changes found');
         return {
           success: true,
           comment:
@@ -228,9 +243,12 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
 
       // Check diff size but don't truncate
       const maxInputTokens = config.maxInputTokens || 100000; // Use config value or default to 100k
+      console.error(`DEBUG: Using maxInputTokens: ${maxInputTokens}`);
       const { diff: finalDiff, ...sizeInfo } = this.checkDiffSize(processedDiff, maxInputTokens);
+      console.error(`DEBUG: Final diff size: ${finalDiff.length} chars, estimated tokens: ${sizeInfo.originalTokens}`);
 
       // Generate prompts
+      console.error('DEBUG: Generating system prompt...');
       const systemPrompt = this.generateSystemPrompt();
       const messages = [
         {
@@ -238,8 +256,10 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
           content: `Please review these code changes:\n\n\`\`\`diff\n${finalDiff}\n\`\`\``,
         },
       ];
+      console.error('DEBUG: About to call Claude API...');
 
       const response = await this.callClaude(messages, systemPrompt);
+      console.error('DEBUG: Claude API call completed successfully');
 
       // Format final comment
       const comment = this.formatReviewComment(response, sizeInfo);
@@ -254,6 +274,8 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
         },
       };
     } catch (error) {
+      console.error('DEBUG: Error in reviewCode method:', error.message);
+      console.error('DEBUG: Full error stack:', error.stack);
       return {
         success: false,
         error: error.message,
@@ -265,14 +287,18 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
 
 // CLI interface for GitHub Actions
 async function main() {
+  console.error('DEBUG: Claude review script starting...');
+  
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY environment variable is required');
+    console.error('ERROR: ANTHROPIC_API_KEY environment variable is required');
     process.exit(1);
   }
+  console.error('DEBUG: API key found');
 
   // Parse command line arguments
   const args = process.argv.slice(2);
+  console.error(`DEBUG: Command line args: ${JSON.stringify(args)}`);
   const options = {};
 
   for (let i = 0; i < args.length; i++) {
@@ -297,38 +323,53 @@ async function main() {
 
   // Load configuration if provided
   let config = {};
+  console.error(`DEBUG: Options parsed: ${JSON.stringify(options)}`);
+  
   if (options.configFile && fs.existsSync(options.configFile)) {
+    console.error(`DEBUG: Loading config file: ${options.configFile}`);
     try {
       config = JSON.parse(fs.readFileSync(options.configFile, 'utf8'));
+      console.error(`DEBUG: Config loaded successfully: ${JSON.stringify(Object.keys(config))}`);
     } catch (error) {
-      console.error('Failed to load config file:', error.message);
+      console.error('ERROR: Failed to load config file:', error.message);
       process.exit(1);
     }
+  } else {
+    console.error(`DEBUG: No config file specified or file doesn't exist: ${options.configFile}`);
   }
 
   // Read diff from file or stdin
   let diff = '';
   if (options.diffFile && fs.existsSync(options.diffFile)) {
+    console.error(`DEBUG: Reading diff from file: ${options.diffFile}`);
     diff = fs.readFileSync(options.diffFile, 'utf8');
+    console.error(`DEBUG: Diff loaded, size: ${diff.length} characters`);
   } else {
+    console.error('DEBUG: Reading diff from stdin');
     // Read from stdin
     process.stdin.setEncoding('utf8');
     for await (const chunk of process.stdin) {
       diff += chunk;
     }
+    console.error(`DEBUG: Diff read from stdin, size: ${diff.length} characters`);
   }
 
   if (!diff.trim()) {
-    console.error('No diff content provided');
+    console.error('ERROR: No diff content provided');
     process.exit(1);
   }
 
   // Perform review
+  console.error('DEBUG: Creating Claude reviewer...');
   const reviewer = new ClaudeCodeReviewer(apiKey, options);
+  console.error('DEBUG: Starting review process...');
   const result = await reviewer.reviewCode(diff, config);
+  console.error(`DEBUG: Review completed, success: ${result.success}`);
 
   // Output results
+  console.error('DEBUG: Formatting output...');
   if (result.success) {
+    console.error('DEBUG: Review successful, outputting success result');
     console.log('REVIEW_SUCCESS=true');
     console.log('REVIEW_COMMENT<<EOF');
     console.log(result.comment);
@@ -337,19 +378,23 @@ async function main() {
       console.log(`REVIEW_TOKENS=${result.metadata.tokens}`);
       console.log(`REVIEW_MODEL=${result.metadata.model}`);
     }
+    console.error('DEBUG: Success output complete');
   } else {
+    console.error(`DEBUG: Review failed with error: ${result.error}`);
     console.log('REVIEW_SUCCESS=false');
     console.log('REVIEW_ERROR=' + result.error);
     console.log('REVIEW_COMMENT<<EOF');
     console.log(result.comment);
     console.log('EOF');
+    console.error('DEBUG: Error output complete, exiting with code 1');
     process.exit(1);
   }
 }
 
 if (require.main === module) {
   main().catch((error) => {
-    console.error('Fatal error:', error);
+    console.error('DEBUG: Fatal error in main():', error.message);
+    console.error('DEBUG: Fatal error stack:', error.stack);
     process.exit(1);
   });
 }
