@@ -1,0 +1,241 @@
+name: AI Code Review
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+# Only allow one review at a time per PR to avoid conflicts
+concurrency:
+  group: ai-review-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  trigger-review:
+    name: Check for Review Trigger
+    if: github.event.issue.pull_request && contains(github.event.comment.body, '/claude-review')
+    runs-on: ubuntu-latest
+    outputs:
+      should_review: ${{ steps.check.outputs.should_review }}
+      review_options: ${{ steps.parse.outputs.options }}
+    steps:
+      - name: Check if user can trigger reviews
+        id: check
+        run: |
+          # For now, allow any user to trigger reviews
+          # You can add permission checks here if needed
+          echo "should_review=true" >> $GITHUB_OUTPUT
+      
+      - name: Parse review options
+        id: parse
+        run: |
+          comment="${{ github.event.comment.body }}"
+          
+          # Extract options from the comment
+          options=""
+          
+          if echo "$comment" | grep -q -- "--model sonnet"; then
+            options="$options --model sonnet"
+          fi
+          
+          if echo "$comment" | grep -q -- "--brief"; then
+            options="$options --brief"
+          fi
+          
+          if echo "$comment" | grep -oE -- "--focus [a-zA-Z,]+" >/dev/null; then
+            focus=$(echo "$comment" | grep -oE -- "--focus [a-zA-Z,]+" | cut -d' ' -f2)
+            options="$options --focus $focus"
+          fi
+          
+          echo "options=$options" >> $GITHUB_OUTPUT
+          echo "Parsed options: $options"
+
+  claude-review:
+    name: Claude AI Code Review
+    needs: trigger-review
+    if: needs.trigger-review.outputs.should_review == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    steps:
+      - name: React to trigger comment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ github.event.comment.id }},
+              content: 'eyes'
+            });
+
+      - name: Add reviewing label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                labels: ['ai-reviewing']
+              });
+            } catch (error) {
+              console.log('Could not add label (might not exist):', error.message);
+            }
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # Fetch the PR branch
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get PR details
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: ${{ github.event.issue.number }}
+            });
+            
+            core.setOutput('base_sha', pr.data.base.sha);
+            core.setOutput('head_sha', pr.data.head.sha);
+            core.setOutput('pr_title', pr.data.title);
+            return pr.data;
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generate diff
+        id: diff
+        run: |
+          # Get the diff between base and head
+          git fetch origin ${{ steps.pr.outputs.base_sha }}
+          git fetch origin ${{ steps.pr.outputs.head_sha }}
+          
+          # Generate diff and save to file
+          git diff ${{ steps.pr.outputs.base_sha }}..${{ steps.pr.outputs.head_sha }} > pr_diff.txt
+          
+          # Check if diff is not empty
+          if [ ! -s pr_diff.txt ]; then
+            echo "No changes found in PR"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "Generated diff with $(wc -l < pr_diff.txt) lines"
+          fi
+
+      - name: Run Claude review
+        id: review
+        if: steps.diff.outputs.has_changes == 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          # Make the script executable
+          chmod +x .github/scripts/claude-code-review.js
+          
+          # Run the review with parsed options
+          node .github/scripts/claude-code-review.js \
+            --diff pr_diff.txt \
+            --config .github/claude-review-config.json \
+            ${{ needs.trigger-review.outputs.review_options }} \
+            >> $GITHUB_OUTPUT
+
+      - name: Post review comment
+        if: always() && steps.diff.outputs.has_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read the review output
+            const output = process.env.GITHUB_OUTPUT;
+            const outputContent = fs.readFileSync(output, 'utf8');
+            
+            // Extract review comment
+            const commentMatch = outputContent.match(/REVIEW_COMMENT<<EOF\n([\s\S]*?)\nEOF/);
+            const reviewComment = commentMatch ? commentMatch[1] : 'Review failed - no output generated';
+            
+            // Post the review
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: reviewComment
+            });
+
+      - name: Handle no changes
+        if: steps.diff.outputs.has_changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.issue.number }},
+              body: '## 🤖 Claude AI Code Review\n\nNo code changes found in this PR to review.'
+            });
+
+      - name: Update labels and reactions
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const success = process.env.REVIEW_SUCCESS === 'true' || '${{ steps.diff.outputs.has_changes }}' === 'false';
+            
+            // Remove reviewing label and add appropriate status label
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                name: 'ai-reviewing'
+              });
+            } catch (error) {
+              console.log('Could not remove reviewing label:', error.message);
+            }
+            
+            // Add status label
+            const statusLabel = success ? 'ai-reviewed' : 'ai-error';
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: ${{ github.event.issue.number }},
+                labels: [statusLabel]
+              });
+            } catch (error) {
+              console.log(`Could not add ${statusLabel} label:`, error.message);
+            }
+            
+            // React to original comment
+            const reaction = success ? '+1' : '-1';
+            try {
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: ${{ github.event.comment.id }},
+                content: reaction
+              });
+            } catch (error) {
+              console.log('Could not add reaction:', error.message);
+            }
+
+      - name: Log review metrics
+        if: always()
+        run: |
+          echo "=== Claude AI Review Metrics ==="
+          echo "PR: #${{ github.event.issue.number }}"
+          echo "Trigger: ${{ github.event.comment.user.login }}"
+          echo "Options: ${{ needs.trigger-review.outputs.review_options }}"
+          echo "Success: ${REVIEW_SUCCESS:-unknown}"
+          echo "Tokens: ${REVIEW_TOKENS:-unknown}"
+          echo "Model: ${REVIEW_MODEL:-unknown}"
+          echo "================================="
