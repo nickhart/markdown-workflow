@@ -6,8 +6,8 @@ import {
   loadCollectionMetadata,
   saveCollectionMetadata,
   updateCollectionMetadata,
-} from '../../../src/cli/shared/metadata-utils.js';
-import type { CollectionMetadata } from '../../../src/core/types.js';
+} from '../../../../src/cli/shared/metadata-utils.js';
+import type { CollectionMetadata } from '../../../../src/core/types.js';
 
 // Mock dependencies
 jest.mock('fs');

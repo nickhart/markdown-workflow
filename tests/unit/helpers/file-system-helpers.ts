@@ -1,5 +1,5 @@
 import { MockSystemInterface } from '../mocks/mock-system-interface.js';
-import { crawlDirectoryStructure } from '../../scripts/generate-mock-fs.js';
+import { crawlDirectoryStructure } from '../../../scripts/generate-mock-fs.js';
 import * as path from 'path';
 
 export type FileSystemContent = {

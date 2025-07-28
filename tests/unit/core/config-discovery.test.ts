@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ConfigDiscovery } from '../../src/core/config-discovery.js';
+import { ConfigDiscovery } from '../../../src/core/config-discovery.js';
 import { MockSystemInterface } from '../mocks/mock-system-interface.js';
 
 describe('ConfigDiscovery', () => {

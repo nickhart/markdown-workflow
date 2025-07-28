@@ -11,7 +11,7 @@ import {
   logTemplateUsage,
   logFileCreation,
   logForceRecreation,
-} from '../../../src/cli/shared/formatting-utils.js';
+} from '../../../../src/cli/shared/formatting-utils.js';
 
 describe('Formatting Utils', () => {
   let consoleSpy: {
