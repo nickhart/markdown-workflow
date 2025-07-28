@@ -254,7 +254,6 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
         },
       };
     } catch (error) {
-      console.error('Claude review failed:', error.message);
       return {
         success: false,
         error: error.message,
@@ -303,6 +302,7 @@ async function main() {
       config = JSON.parse(fs.readFileSync(options.configFile, 'utf8'));
     } catch (error) {
       console.error('Failed to load config file:', error.message);
+      process.exit(1);
     }
   }
 
