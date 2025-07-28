@@ -35,7 +35,8 @@ class ClaudeCodeReviewer {
     };
     const data = JSON.stringify(requestBody);
 
-    console.error(`DEBUG: body:\n """${data}\n"""\n`)
+    console.error(`DEBUG: body length ${data.length}: """\n${data}\n"""\n`)
+    console.error(`DEBUG body byte length: ${Buffer.byteLength(data, 'utf8')}`)
 
     const options = {
       hostname: 'api.anthropic.com',
