@@ -51,7 +51,7 @@ class ClaudeCodeReviewer {
     return new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let responseData = '';
-        
+
         // Set encoding to handle UTF-8 properly
         res.setEncoding('utf8');
 
@@ -175,7 +175,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
 
     // If extremely large, we could warn but let's not truncate
     console.error(`WARNING: Large diff detected (${estimatedTokens} tokens). This may take longer to process.`);
-    
+
     return {
       diff: diff, // Don't truncate - review the full diff
       truncated: false,
@@ -244,6 +244,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
 
       // Call Claude API
       console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${sizeInfo.originalTokens}`);
+      console.error(`DEBUG: body:\n """${messages}\n"""\n`)
       const response = await this.callClaude(messages, systemPrompt);
 
       // Format final comment
