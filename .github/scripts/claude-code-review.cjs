@@ -378,12 +378,18 @@ async function main() {
   console.error(`DEBUG: result.comment length: ${result.comment ? result.comment.length : 'undefined'}`);
   if (result.success) {
     console.error('DEBUG: Review successful, outputting success result');
+    console.error('DEBUG: About to output REVIEW_SUCCESS=true');
     console.log('REVIEW_SUCCESS=true');
+    console.error('DEBUG: About to output REVIEW_COMMENT<<EOF');
     console.log('REVIEW_COMMENT<<EOF');
+    console.error(`DEBUG: About to output comment (${result.comment.length} chars)`);
     console.log(result.comment);
+    console.error('DEBUG: About to output EOF');
     console.log('EOF');
     if (result.metadata) {
+      console.error(`DEBUG: About to output tokens: ${result.metadata.tokens}`);
       console.log(`REVIEW_TOKENS=${result.metadata.tokens}`);
+      console.error(`DEBUG: About to output model: ${result.metadata.model}`);
       console.log(`REVIEW_MODEL=${result.metadata.model}`);
     }
     console.error('DEBUG: Success output complete');
