@@ -35,9 +35,6 @@ class ClaudeCodeReviewer {
     };
     const data = JSON.stringify(requestBody);
 
-    console.error(`DEBUG: body length ${data.length}: """\n${data}\n"""\n`)
-    console.error(`DEBUG body byte length: ${Buffer.byteLength(data, 'utf8')}`)
-
     const options = {
       hostname: 'api.anthropic.com',
       port: 443,
@@ -45,7 +42,7 @@ class ClaudeCodeReviewer {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': data.length,
+        'Content-Length': Buffer.byteLength(data, 'utf8'),
         'x-api-key': this.apiKey,
         'anthropic-version': '2023-06-01',
       },
