@@ -324,6 +324,38 @@ pnpm format                     # Auto-fix formatting issues
 - **[Testing Guide](docs/testing-mock-filesystems.md)** - Comprehensive testing documentation
 - **[Blog Post Ideas](docs/blog-notes.md)** - Development story and collaboration insights
 
+## 🤖 AI Code Review
+
+Get AI-powered code reviews on your pull requests using Claude:
+
+### How to Use
+
+**Trigger a review** by commenting on any PR:
+```
+/claude-review
+```
+
+**Available options**:
+```bash
+/claude-review                    # Standard review with Haiku model
+/claude-review --model sonnet     # Use Claude 3.5 Sonnet (more thorough, higher cost)
+/claude-review --brief           # Concise feedback only
+/claude-review --focus security  # Focus on specific areas (security, performance, maintainability, typescript)
+```
+
+### What to Expect
+
+- **Status tracking**: Watch for 👀 → ✅ reactions and labels
+- **Review focus**: Security issues, logic bugs, TypeScript best practices, maintainability
+- **Cost**: ~$0.001-0.01 per review (Haiku), ~$0.02-0.05 per review (Sonnet)
+- **Non-blocking**: Reviews never prevent PR merging
+
+### Review Labels
+
+- 🏷️ `ai-reviewing` - Review in progress
+- 🏷️ `ai-reviewed` - Review completed successfully  
+- 🏷️ `ai-error` - Review failed (check comments for details)
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -331,6 +363,7 @@ pnpm format                     # Auto-fix formatting issues
 3. Add tests for new functionality
 4. Run quality checks: `pnpm preflight:full` (includes all tests, linting, and formatting)
 5. Submit a pull request
+6. *Optional*: Request AI review with `/claude-review` for additional feedback
 
 ## 📄 License
 
