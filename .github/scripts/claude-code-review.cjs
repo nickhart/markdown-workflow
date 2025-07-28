@@ -34,16 +34,6 @@ class ClaudeCodeReviewer {
       messages: messages,
     };
     const data = JSON.stringify(requestBody);
-    console.error(`DEBUG: JSON request size: ${data.length} chars`);
-    console.error(`DEBUG: JSON request ends with: "${data.slice(-100)}"`);
-    
-    // Validate JSON is parseable
-    try {
-      JSON.parse(data);
-      console.error(`DEBUG: JSON request is valid`);
-    } catch (e) {
-      console.error(`DEBUG: JSON request is INVALID: ${e.message}`);
-    }
 
     const options = {
       hostname: 'api.anthropic.com',
@@ -58,23 +48,7 @@ class ClaudeCodeReviewer {
       },
     };
 
-    // DEBUG: Log the full request without sending it
-    console.error(`DEBUG: Full HTTP request would be:`);
-    console.error(`POST /v1/messages HTTP/1.1`);
-    console.error(`Host: api.anthropic.com`);
-    console.error(`Content-Type: application/json`);
-    console.error(`Content-Length: ${data.length}`);
-    console.error(`x-api-key: ${this.apiKey.substring(0, 8)}...`);
-    console.error(`anthropic-version: 2023-06-01`);
-    console.error(`\nBody:`);
-    console.error(data);
-    console.error(`\nEND OF REQUEST`);
-
     return new Promise((resolve, reject) => {
-      // For debugging, don't actually send the request
-      reject(new Error('DEBUG: Request logging complete - not actually sending to Claude'));
-      
-      /* Original network request code (commented out for debugging):
       const req = https.request(options, (res) => {
         let responseData = '';
         
@@ -86,7 +60,6 @@ class ClaudeCodeReviewer {
         });
 
         res.on('end', () => {
-          console.error(`DEBUG: Response size: ${responseData.length} chars, ends with: "${responseData.slice(-50)}"`);
           try {
             const parsed = JSON.parse(responseData);
             if (res.statusCode >= 400) {
@@ -106,7 +79,6 @@ class ClaudeCodeReviewer {
 
       req.write(data);
       req.end();
-      */
     });
   }
 
@@ -192,28 +164,22 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
   }
 
   /**
-   * Truncate diff if it exceeds token limits
+   * Check if diff exceeds reasonable limits (but don't truncate)
    */
-  truncateDiff(diff, maxInputTokens = 2000) {
+  checkDiffSize(diff, maxInputTokens = 100000) {
     const estimatedTokens = this.estimateTokens(diff);
 
     if (estimatedTokens <= maxInputTokens) {
       return { diff, truncated: false, originalTokens: estimatedTokens };
     }
 
-    // Keep first part of diff and add truncation notice
-    const targetLength = maxInputTokens * 4 * 0.8; // Leave some buffer
-    const truncatedDiff =
-      diff.substring(0, targetLength) +
-      '\n\n[... diff truncated due to size limits. Review covers first ' +
-      Math.round((targetLength / diff.length) * 100) +
-      '% of changes ...]';
-
+    // If extremely large, we could warn but let's not truncate
+    console.error(`WARNING: Large diff detected (${estimatedTokens} tokens). This may take longer to process.`);
+    
     return {
-      diff: truncatedDiff,
-      truncated: true,
+      diff: diff, // Don't truncate - review the full diff
+      truncated: false,
       originalTokens: estimatedTokens,
-      truncatedTokens: this.estimateTokens(truncatedDiff),
     };
   }
 
@@ -222,7 +188,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
    */
   formatReviewComment(response, metadata) {
     const { model, focus, brief } = this.config;
-    const { truncated, originalTokens, truncatedTokens } = metadata;
+    const { truncated, originalTokens } = metadata;
 
     let comment = `## 🤖 Claude AI Code Review\n\n`;
 
@@ -231,9 +197,9 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
     comment += `- **Model**: ${model}\n`;
     comment += `- **Focus Areas**: ${focus.join(', ')}\n`;
     comment += `- **Mode**: ${brief ? 'Brief' : 'Detailed'}\n`;
-    comment += `- **Tokens Used**: ~${truncatedTokens || originalTokens}\n`;
+    comment += `- **Tokens Used**: ~${originalTokens}\n`;
     if (truncated) {
-      comment += `- **Note**: Diff truncated (original: ~${originalTokens} tokens)\n`;
+      comment += `- **Note**: Large diff detected but reviewed in full\n`;
     }
     comment += `\n</details>\n\n`;
 
@@ -263,9 +229,9 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
         };
       }
 
-      // Handle large diffs
-      const maxInputTokens = config.maxInputTokens || 2000; // Use config value or default to 2000
-      const { diff: finalDiff, ...truncationInfo } = this.truncateDiff(processedDiff, maxInputTokens);
+      // Check diff size but don't truncate
+      const maxInputTokens = config.maxInputTokens || 100000; // Use config value or default to 100k
+      const { diff: finalDiff, ...sizeInfo } = this.checkDiffSize(processedDiff, maxInputTokens);
 
       // Generate prompts
       const systemPrompt = this.generateSystemPrompt();
@@ -277,11 +243,11 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       ];
 
       // Call Claude API
-      console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${truncationInfo.truncatedTokens || truncationInfo.originalTokens}`);
+      console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${sizeInfo.originalTokens}`);
       const response = await this.callClaude(messages, systemPrompt);
 
       // Format final comment
-      const comment = this.formatReviewComment(response, truncationInfo);
+      const comment = this.formatReviewComment(response, sizeInfo);
 
       return {
         success: true,
@@ -289,7 +255,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
         metadata: {
           tokens: response.usage?.input_tokens + response.usage?.output_tokens || 'unknown',
           model: this.config.model,
-          truncated: truncationInfo.truncated,
+          truncated: sizeInfo.truncated,
         },
       };
     } catch (error) {
