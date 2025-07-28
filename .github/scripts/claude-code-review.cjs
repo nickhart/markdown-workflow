@@ -52,12 +52,16 @@ class ClaudeCodeReviewer {
     return new Promise((resolve, reject) => {
       const req = https.request(options, (res) => {
         let responseData = '';
+        
+        // Set encoding to handle UTF-8 properly
+        res.setEncoding('utf8');
 
         res.on('data', (chunk) => {
           responseData += chunk;
         });
 
         res.on('end', () => {
+          console.error(`DEBUG: Response size: ${responseData.length} chars, ends with: "${responseData.slice(-50)}"`);
           try {
             const parsed = JSON.parse(responseData);
             if (res.statusCode >= 400) {
