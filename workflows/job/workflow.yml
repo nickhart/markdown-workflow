@@ -5,44 +5,44 @@ workflow:
   name: "job"
   description: "Track job applications through hiring process"
   version: "1.0.0"
-  
+
   # Define the stages a job application can go through
   stages:
     - name: "active"
       description: "New applications in progress"
       color: "blue"
       next: ["submitted", "rejected", "withdrawn"]
-    
+
     - name: "submitted"
       description: "Applications submitted to company"
       color: "yellow"
       next: ["interview", "rejected"]
-    
+
     - name: "interview"
       description: "Interview process started"
       color: "orange"
       next: ["offered", "rejected"]
-    
+
     - name: "offered"
       description: "Job offer received"
       color: "green"
       next: ["accepted", "declined"]
-    
+
     - name: "accepted"
       description: "Job offer accepted"
       color: "green"
       terminal: true
-    
+
     - name: "declined"
       description: "Job offer declined"
       color: "gray"
       terminal: true
-    
+
     - name: "rejected"
       description: "Application rejected"
       color: "red"
       terminal: true
-    
+
     - name: "withdrawn"
       description: "Application withdrawn"
       color: "gray"
@@ -52,14 +52,14 @@ workflow:
   templates:
     - name: "resume"
       file: "templates/resume/default.md"
-      output: "resume_{{user.preferred_name}}.md"
+      output: "resume_{{user.name}}.md"
       description: "Resume tailored for this application"
-      
+
     - name: "cover_letter"
       file: "templates/cover_letter/default.md"
-      output: "cover_letter_{{user.preferred_name}}.md"
+      output: "cover_letter_{{user.name}}.md"
       description: "Cover letter for this application"
-    
+
     - name: "notes"
       file: "templates/notes/default.md"
       output: "{{#prefix}}{{prefix}}_{{/prefix}}notes.md"
@@ -70,7 +70,7 @@ workflow:
     - name: "resume_reference"
       file: "templates/static/resume_reference.docx"
       description: "DOCX formatting reference for resume"
-    
+
     - name: "cover_letter_reference"
       file: "templates/static/cover_letter_reference.docx"
       description: "DOCX formatting reference for cover letter"
@@ -100,7 +100,7 @@ workflow:
           options: ["default", "mobile", "frontend"]
           default: "default"
           description: "Resume template variant to use"
-    
+
     - name: "format"
       description: "Convert documents to various formats"
       converter: "pandoc"
@@ -111,7 +111,7 @@ workflow:
           options: ["docx", "html", "pdf", "all"]
           default: "docx"
           description: "Output format"
-    
+
     - name: "add"
       description: "Add new item from template to collection"
       parameters:
@@ -124,7 +124,7 @@ workflow:
           type: "string"
           required: false
           description: "Optional prefix for the output filename"
-    
+
     - name: "scrape"
       description: "Archive job description from URL"
       parameters:
@@ -144,7 +144,7 @@ workflow:
       - role
       - date_created
       - status
-    
+
     optional_fields:
       - url
       - salary_range
@@ -152,7 +152,7 @@ workflow:
       - application_deadline
       - contact_person
       - notes
-    
+
     auto_generated:
       - collection_id
       - date_created

@@ -83,7 +83,8 @@ export class TemplateProcessor {
         ),
         user: {
           ...userConfigForTemplate,
-          // Add sanitized version of preferred_name for filenames
+          // Add sanitized versions for filenames
+          name: sanitizeForFilename(userConfigForTemplate.name),
           preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name),
         },
       };
