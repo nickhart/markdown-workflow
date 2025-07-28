@@ -28,7 +28,8 @@
       "inputs": ["test-e2e-snapshots.sh", "workflows/**", "test-configs/**", "scripts/snapshot.js"],
       "outputs": ["__fs_snapshots__/**"],
       "cache": false
-    }
+    },
+    "format:check": {}
   },
   "globalDependencies": ["package.json", "pnpm-lock.yaml", "tsconfig.base.json"]
 }

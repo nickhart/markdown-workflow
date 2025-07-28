@@ -222,6 +222,9 @@ create_baseline_snapshots() {
         node scripts/snapshot.js delete fresh-project-with-testing-config 2>/dev/null || true
         node scripts/snapshot.js delete project-with-job-deterministic 2>/dev/null || true
         node scripts/snapshot.js delete project-with-multiple-jobs 2>/dev/null || true
+        node scripts/snapshot.js delete project-with-job-formatted 2>/dev/null || true
+        node scripts/snapshot.js delete project-with-job-status-change 2>/dev/null || true
+        node scripts/snapshot.js delete project-with-job-list 2>/dev/null || true
     else
         log_info "=== Creating Baseline Snapshots ==="
     fi
@@ -288,9 +291,23 @@ create_baseline_snapshots() {
     normalize_timestamps "$PROJECT_TEST_DIR"
     create_baseline_snapshot "project-with-job-deterministic" "$PROJECT_TEST_DIR" "project with one job collection (deterministic)" "$WORKFLOW_ROOT"
     
+    # Remove the Example Corp collection to make clean multiple jobs snapshot
+    log_info "Removing Example Corp collection for clean multiple jobs snapshot"
+    rm -rf "$PROJECT_TEST_DIR/job/active/example_corp_software_engineer_20250121"
+    
+    # Create project with multiple job collections
+    log_info "Creating multiple job collections for advanced snapshot"
+    node "$WORKFLOW_ROOT/dist/cli/index.js" create job "Company A" "Role A" > /dev/null 2>&1
+    node "$WORKFLOW_ROOT/dist/cli/index.js" create job "Company B" "Role B" > /dev/null 2>&1
+    
+    log_info "Creating snapshot of project with multiple jobs"
+    normalize_timestamps "$PROJECT_TEST_DIR"
+    create_baseline_snapshot "project-with-multiple-jobs" "$PROJECT_TEST_DIR" "project with multiple job collections" "$WORKFLOW_ROOT"
+    
     # Clean up for actual tests
     log_info "Cleaning up project directory for actual tests"
     rm -rf "$PROJECT_TEST_DIR/.markdown-workflow"
+    rm -rf "$PROJECT_TEST_DIR/job"
     cd - > /dev/null
 }
 
@@ -463,9 +480,11 @@ test_advanced_snapshots() {
     node "$WORKFLOW_ROOT/dist/cli/index.js" create job "Company A" "Role A" > /dev/null 2>&1
     node "$WORKFLOW_ROOT/dist/cli/index.js" create job "Company B" "Role B" > /dev/null 2>&1
     
-    # Create snapshot with this clean state
+    # Create snapshot with this clean state (only during update mode)
     normalize_timestamps "$ADVANCED_TEST_DIR"
-    create_baseline_snapshot "project-with-multiple-jobs" "$ADVANCED_TEST_DIR" "project with multiple job collections" "$WORKFLOW_ROOT"
+    if [ "$UPDATE_SNAPSHOTS" = true ]; then
+        create_baseline_snapshot "project-with-multiple-jobs" "$ADVANCED_TEST_DIR" "project with multiple job collections" "$WORKFLOW_ROOT"
+    fi
     
     # Test that we can recreate this exact structure
     rm -rf .markdown-workflow job

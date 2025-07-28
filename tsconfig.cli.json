@@ -12,7 +12,11 @@
     "declaration": false,
     "sourceMap": false,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
   "include": ["src/cli/**/*", "src/core/**/*", "src/shared/**/*"],
   "exclude": ["src/app/**/*", "src/api/**/*", "tests/**/*", "node_modules"]

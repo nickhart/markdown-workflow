@@ -278,6 +278,22 @@ pnpm test                       # Run unit tests
 pnpm test:e2e:snapshots         # Run E2E snapshot tests
 ```
 
+### Quality Assurance Commands
+
+```bash
+# Quick validation (essential checks only)
+pnpm preflight                 # Build + unit tests + lint + format check
+
+# Comprehensive validation (includes E2E tests)
+pnpm preflight:full             # Build + unit tests + lint + format check + E2E snapshots
+turbo preflight:full            # Same as above, runs via Turbo
+
+# Individual quality checks
+pnpm lint                       # ESLint code quality
+pnpm format:check               # Prettier formatting check
+pnpm format                     # Auto-fix formatting issues
+```
+
 ### Testing
 
 - **Unit tests:** Comprehensive mocking with in-memory filesystems
@@ -313,7 +329,7 @@ pnpm test:e2e:snapshots         # Run E2E snapshot tests
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new functionality
-4. Ensure all tests pass: `pnpm test && pnpm test:e2e:snapshots`
+4. Run quality checks: `pnpm preflight:full` (includes all tests, linting, and formatting)
 5. Submit a pull request
 
 ## 📄 License
