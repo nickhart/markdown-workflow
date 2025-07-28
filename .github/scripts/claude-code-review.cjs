@@ -35,6 +35,15 @@ class ClaudeCodeReviewer {
     };
     const data = JSON.stringify(requestBody);
     console.error(`DEBUG: JSON request size: ${data.length} chars`);
+    console.error(`DEBUG: JSON request ends with: "${data.slice(-100)}"`);
+    
+    // Validate JSON is parseable
+    try {
+      JSON.parse(data);
+      console.error(`DEBUG: JSON request is valid`);
+    } catch (e) {
+      console.error(`DEBUG: JSON request is INVALID: ${e.message}`);
+    }
 
     const options = {
       hostname: 'api.anthropic.com',
