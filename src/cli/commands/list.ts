@@ -42,7 +42,7 @@ export async function listCommand(workflowName: string, options: ListOptions = {
   // Display results
   if (filteredCollections.length === 0) {
     const statusFilter = options.status ? ` with status '${options.status}'` : '';
-    console.log(`No collections found for workflow '${workflowName}'${statusFilter}`);
+    console.log(`📭 No collections found for workflow '${workflowName}'${statusFilter}`);
     return;
   }
 
@@ -62,10 +62,28 @@ export async function listCommand(workflowName: string, options: ListOptions = {
 }
 
 /**
+ * Get status icon for collection status
+ */
+function getStatusDisplay(status: string): string {
+  const statusMap: Record<string, string> = {
+    active: '🔵',
+    submitted: '📤',
+    interview: '🎯',
+    offered: '🎉',
+    accepted: '✅',
+    rejected: '❌',
+    declined: '👋',
+  };
+
+  const icon = statusMap[status] || '❓';
+  return `${icon} ${status}`;
+}
+
+/**
  * Display collections in a formatted table
  */
 function displayCollectionsTable(collections: Collection[], workflowName: string): void {
-  console.log(`\n${workflowName.toUpperCase()} COLLECTIONS\n`);
+  console.log(`\n📋 ${workflowName.toUpperCase()} COLLECTIONS\n`);
 
   // Sort by date created (newest first)
   const sortedCollections = [...collections].sort(
@@ -90,9 +108,9 @@ function displayCollectionsTable(collections: Collection[], workflowName: string
   const maxStatusWidth = Math.max(6, ...sortedCollections.map((c) => c.metadata.status.length));
 
   // Header
-  const header = `${'ID'.padEnd(maxIdWidth)} | ${'COMPANY'.padEnd(maxCompanyWidth)} | ${'ROLE'.padEnd(maxRoleWidth)} | ${'STATUS'.padEnd(maxStatusWidth)} | CREATED    | MODIFIED`;
+  const header = `${'ID'.padEnd(maxIdWidth)} │ ${'COMPANY'.padEnd(maxCompanyWidth)} │ ${'ROLE'.padEnd(maxRoleWidth)} │ ${'STATUS'.padEnd(maxStatusWidth + 4)} │ ${'CREATED'}    │ ${'MODIFIED'}`;
   console.log(header);
-  console.log('-'.repeat(header.length));
+  console.log('─'.repeat(header.length));
 
   // Rows
   for (const collection of sortedCollections) {
@@ -103,14 +121,14 @@ function displayCollectionsTable(collections: Collection[], workflowName: string
     const role = (
       typeof collection.metadata.role === 'string' ? collection.metadata.role : ''
     ).padEnd(maxRoleWidth);
-    const status = collection.metadata.status.padEnd(maxStatusWidth);
+    const statusDisplay = getStatusDisplay(collection.metadata.status).padEnd(maxStatusWidth + 4);
     const created = new Date(collection.metadata.date_created).toLocaleDateString();
     const modified = new Date(collection.metadata.date_modified).toLocaleDateString();
 
-    console.log(`${id} | ${company} | ${role} | ${status} | ${created} | ${modified}`);
+    console.log(`${id} │ ${company} │ ${role} │ ${statusDisplay} │ ${created} │ ${modified}`);
   }
 
-  console.log(`\nTotal: ${collections.length} collections`);
+  console.log(`\n✨ Total: ${collections.length} collections`);
 }
 
 export default listCommand;

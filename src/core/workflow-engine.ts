@@ -342,14 +342,22 @@ export class WorkflowEngine {
       const baseName = path.basename(file, '.md');
       const outputPath = path.join(outputDir, `${baseName}.${formatType}`);
 
-      // For now, just copy the file (placeholder for actual conversion)
-      // TODO: Implement actual document conversion using pandoc
-      console.log(`Converting ${file} to ${formatType}...`);
+      try {
+        const formatTypeStr = String(formatType);
+        console.log(`🔄 Converting ${file} to ${formatTypeStr.toUpperCase()}...`);
 
-      if (formatType === 'docx') {
-        // Placeholder: In reality, would use pandoc or similar
-        this.systemInterface.copyFileSync(inputPath, outputPath.replace('.docx', '.converted.md'));
-        console.log(`Created: ${outputPath}`);
+        if (formatType === 'docx') {
+          // Note: This is a placeholder implementation - actual conversion would use pandoc
+          const tempOutputPath = outputPath.replace('.docx', '.converted.md');
+          this.systemInterface.copyFileSync(inputPath, tempOutputPath);
+          console.log(`✅ Created: ${path.relative(collection.path, tempOutputPath)}`);
+        } else {
+          console.log(`⚠️  Format '${formatTypeStr}' not yet implemented`);
+        }
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        console.log(`❌ Failed to convert ${file}: ${errorMsg}`);
+        throw new Error(`Document conversion failed for ${file}: ${errorMsg}`);
       }
     }
   }
