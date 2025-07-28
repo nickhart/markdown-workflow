@@ -1,25 +1,25 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { TemplateProcessor } from '../../../src/cli/shared/template-processor.js';
-import { WorkflowTemplate } from '../../../src/core/types.js';
-import { ProjectConfig } from '../../../src/core/schemas.js';
-import { ConfigDiscovery } from '../../../src/core/config-discovery.js';
+import { TemplateProcessor } from '../../../../src/cli/shared/template-processor.js';
+import { WorkflowTemplate } from '../../../../src/core/types.js';
+import { ProjectConfig } from '../../../../src/core/schemas.js';
+import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
 
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
-jest.mock('../../../src/core/config-discovery.js');
-jest.mock('../../../src/cli/shared/formatting-utils.js');
+jest.mock('../../../../src/core/config-discovery.js');
+jest.mock('../../../../src/cli/shared/formatting-utils.js');
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;
 const MockedConfigDiscovery = ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>;
 
 // Import actual formatting utils to mock them properly
-import * as formattingUtils from '../../../src/cli/shared/formatting-utils.js';
+import * as formattingUtils from '../../../../src/cli/shared/formatting-utils.js';
 
 // Mock formatting utils
-jest.mock('../../../src/cli/shared/formatting-utils.js', () => ({
+jest.mock('../../../../src/cli/shared/formatting-utils.js', () => ({
   logTemplateUsage: jest.fn(),
   logFileCreation: jest.fn(),
   logWarning: jest.fn(),

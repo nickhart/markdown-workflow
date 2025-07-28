@@ -9,7 +9,7 @@ import {
   CollectionMetadata,
   Collection,
   CliContext,
-} from '../../src/core/types.js';
+} from '../../../src/core/types.js';
 
 describe('Type Definitions', () => {
   describe('WorkflowStage', () => {

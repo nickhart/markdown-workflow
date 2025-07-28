@@ -1,15 +1,15 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { listCommand } from '../../src/cli/commands/list.js';
-import { WorkflowEngine } from '../../src/core/workflow-engine.js';
-import { ConfigDiscovery } from '../../src/core/config-discovery.js';
-import { MockSystemInterface } from '../mocks/mock-system-interface.js';
-import { createEnhancedMockFileSystem } from '../helpers/file-system-helpers.js';
+import { listCommand } from '../../../../src/cli/commands/list.js';
+import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
+import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { MockSystemInterface } from '../../mocks/mock-system-interface.js';
+import { createEnhancedMockFileSystem } from '../../helpers/file-system-helpers.js';
 
 // Mock dependencies
 jest.mock('path');
 jest.mock('yaml');
-jest.mock('../../src/core/workflow-engine.js');
+jest.mock('../../../../src/core/workflow-engine.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
 const mockYAML = YAML as jest.Mocked<typeof YAML>;

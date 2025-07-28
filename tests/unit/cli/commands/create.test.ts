@@ -1,17 +1,17 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { createCommand } from '../../src/cli/commands/create.js';
-import { ConfigDiscovery } from '../../src/core/config-discovery.js';
-import { MockSystemInterface } from '../mocks/mock-system-interface.js';
+import { createCommand } from '../../../../src/cli/commands/create.js';
+import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { MockSystemInterface } from '../../mocks/mock-system-interface.js';
 import {
   createMockFileSystem,
   createEnhancedMockFileSystem,
-} from '../helpers/file-system-helpers.js';
+} from '../../helpers/file-system-helpers.js';
 
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
-jest.mock('../../src/shared/web-scraper.js', () => ({
+jest.mock('../../../../src/shared/web-scraper.js', () => ({
   scrapeUrl: jest.fn().mockResolvedValue({
     success: true,
     outputFile: 'job_description.html',
