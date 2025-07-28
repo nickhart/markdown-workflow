@@ -173,9 +173,6 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
       return { diff, truncated: false, originalTokens: estimatedTokens };
     }
 
-    // If extremely large, we could warn but let's not truncate
-    console.error(`WARNING: Large diff detected (${estimatedTokens} tokens). This may take longer to process.`);
-
     return {
       diff: diff, // Don't truncate - review the full diff
       truncated: false,
@@ -241,9 +238,6 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
           content: `Please review these code changes:\n\n\`\`\`diff\n${finalDiff}\n\`\`\``,
         },
       ];
-
-      // Call Claude API
-      console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${sizeInfo.originalTokens}`);
 
       const response = await this.callClaude(messages, systemPrompt);
 
