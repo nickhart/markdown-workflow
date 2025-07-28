@@ -7,7 +7,7 @@
   "maxInputTokens": 6000,
   "includePatterns": [
     "**/*.ts",
-    "**/*.js", 
+    "**/*.js",
     "**/*.tsx",
     "**/*.jsx",
     "**/*.json",
@@ -40,7 +40,7 @@
       "keywords": ["XSS", "injection", "authentication", "authorization", "secrets", "validation"]
     },
     "performance": {
-      "description": "Performance issues and optimization opportunities", 
+      "description": "Performance issues and optimization opportunities",
       "keywords": ["memory leaks", "inefficient loops", "blocking operations", "caching"]
     },
     "maintainability": {
@@ -62,7 +62,7 @@
       "description": "Security vulnerabilities or bugs that could break functionality"
     },
     "warning": {
-      "emoji": "🟡", 
+      "emoji": "🟡",
       "description": "Maintainability issues or potential problems"
     },
     "suggestion": {

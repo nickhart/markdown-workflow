@@ -331,11 +331,13 @@ Get AI-powered code reviews on your pull requests using Claude:
 ### How to Use
 
 **Trigger a review** by commenting on any PR:
+
 ```
 /claude-review
 ```
 
 **Available options**:
+
 ```bash
 /claude-review                    # Standard review with Haiku model
 /claude-review --model sonnet     # Use Claude 3.5 Sonnet (more thorough, higher cost)
@@ -353,7 +355,7 @@ Get AI-powered code reviews on your pull requests using Claude:
 ### Review Labels
 
 - 🏷️ `ai-reviewing` - Review in progress
-- 🏷️ `ai-reviewed` - Review completed successfully  
+- 🏷️ `ai-reviewed` - Review completed successfully
 - 🏷️ `ai-error` - Review failed (check comments for details)
 
 ## 🤝 Contributing
@@ -363,7 +365,7 @@ Get AI-powered code reviews on your pull requests using Claude:
 3. Add tests for new functionality
 4. Run quality checks: `pnpm preflight:full` (includes all tests, linting, and formatting)
 5. Submit a pull request
-6. *Optional*: Request AI review with `/claude-review` for additional feedback
+6. _Optional_: Request AI review with `/claude-review` for additional feedback
 
 ## 📄 License
 
