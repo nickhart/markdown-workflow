@@ -35,6 +35,8 @@ class ClaudeCodeReviewer {
     };
     const data = JSON.stringify(requestBody);
 
+    console.error(`DEBUG: body:\n """${data}\n"""\n`)
+
     const options = {
       hostname: 'api.anthropic.com',
       port: 443,
@@ -244,7 +246,7 @@ If no significant issues are found, acknowledge the code quality and provide 1-2
 
       // Call Claude API
       console.error(`DEBUG: About to call Claude with diff size: ${finalDiff.length} chars, estimated tokens: ${sizeInfo.originalTokens}`);
-      console.error(`DEBUG: body:\n """${messages}\n"""\n`)
+
       const response = await this.callClaude(messages, systemPrompt);
 
       // Format final comment
