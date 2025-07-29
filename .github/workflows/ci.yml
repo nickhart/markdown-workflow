@@ -83,11 +83,6 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install pandoc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc
-
       - uses: pnpm/action-setup@v3
         with:
           version: 10
@@ -171,7 +166,10 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install
+        run: |
+          pnpm install
+          sudo apt-get update
+          sudo apt-get install -y pandoc
 
       - name: Build CLI
         run: pnpm run cli:build
