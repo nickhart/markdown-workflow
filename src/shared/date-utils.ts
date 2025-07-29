@@ -29,12 +29,12 @@ export function resetFrozenTime(): void {
  */
 export function getCurrentDate(config?: ProjectConfig): Date {
   const testing = config?.system?.testing;
-  
+
   // If time is frozen, always return the frozen time
   if (testing?.freeze_time && frozenTime) {
     return new Date(frozenTime);
   }
-  
+
   // Check if we have a testing override for current date
   const overrideDate = testing?.override_current_date;
 
@@ -150,13 +150,13 @@ export function getCurrentISODate(config?: ProjectConfig): string {
 }
 
 // Global state for ID generation
-let idCounter = 1;
+let _idCounter = 1;
 
 /**
  * Reset ID counter (for testing)
  */
 export function resetIdCounter(): void {
-  idCounter = 1;
+  _idCounter = 1;
 }
 
 /**
@@ -165,7 +165,7 @@ export function resetIdCounter(): void {
 export function initializeIdCounter(config?: ProjectConfig): void {
   const testing = config?.system?.testing;
   if (testing?.id_counter_start) {
-    idCounter = testing.id_counter_start;
+    _idCounter = testing.id_counter_start;
   }
 }
 

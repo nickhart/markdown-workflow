@@ -5,7 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { compareSnapshotsEnhanced, validateSnapshotHealth } from './snapshot-diff-utils.js';
+// Note: compareSnapshotsEnhanced and validateSnapshotHealth are not used in this file
+// They are used in other files that import from this module
 
 export interface E2ETestContext {
   testName: string;
@@ -46,7 +47,7 @@ export interface E2ETestReport {
  */
 export function generateE2EReport(context: E2ETestContext): E2ETestReport {
   const isSuccess = context.actualExitCode === context.expectedExitCode;
-  
+
   const report: E2ETestReport = {
     success: isSuccess,
     summary: generateSummary(context),
@@ -55,7 +56,7 @@ export function generateE2EReport(context: E2ETestContext): E2ETestReport {
     diagnostics: collectDiagnostics(context),
     suggestions: generateSuggestions(context),
     relatedFiles: findRelatedFiles(context),
-    quickFixes: generateQuickFixes(context)
+    quickFixes: generateQuickFixes(context),
   };
 
   return report;
@@ -71,7 +72,7 @@ function generateSummary(context: E2ETestContext): string {
 
   const parts = [];
   parts.push(`❌ ${context.testName} - failed`);
-  
+
   if (context.actualExitCode !== context.expectedExitCode) {
     parts.push(`(exit code: expected ${context.expectedExitCode}, got ${context.actualExitCode})`);
   }
@@ -88,12 +89,12 @@ function generateSummary(context: E2ETestContext): string {
  */
 function generateDetailedReport(context: E2ETestContext): string {
   const lines = [];
-  
+
   lines.push('╔══════════════════════════════════════════════════════════════════════╗');
   lines.push('║                        E2E TEST FAILURE REPORT                      ║');
   lines.push('╚══════════════════════════════════════════════════════════════════════╝');
   lines.push('');
-  
+
   // Test Information
   lines.push('📋 TEST INFORMATION');
   lines.push('─'.repeat(50));
@@ -123,7 +124,7 @@ function generateDetailedReport(context: E2ETestContext): string {
     lines.push('─'.repeat(50));
     const outputLines = context.output.split('\n');
     const maxLines = 20; // Limit output to prevent overwhelming reports
-    
+
     if (outputLines.length > maxLines) {
       lines.push(...outputLines.slice(0, maxLines));
       lines.push(`... (${outputLines.length - maxLines} more lines truncated)`);
@@ -142,7 +143,7 @@ function generateDetailedReport(context: E2ETestContext): string {
     if (context.error.stack) {
       lines.push('Stack Trace:');
       const stackLines = context.error.stack.split('\n').slice(0, 10); // Limit stack trace
-      lines.push(...stackLines.map(line => `  ${line}`));
+      lines.push(...stackLines.map((line) => `  ${line}`));
     }
     lines.push('');
   }
@@ -158,20 +159,23 @@ function collectDiagnostics(context: E2ETestContext): E2ETestReport['diagnostics
     configFiles: [],
     fileSystem: [],
     snapshots: [],
-    environmentVars: {}
+    environmentVars: {},
   };
 
   // Check configuration files
   const configPaths = [
     path.join(context.workingDirectory, '.markdown-workflow', 'config.yml'),
     path.join(process.cwd(), 'test-configs', 'testing-config.yml'),
-    path.join(context.workingDirectory, 'package.json')
+    path.join(context.workingDirectory, 'package.json'),
   ];
 
   for (const configPath of configPaths) {
     const exists = fs.existsSync(configPath);
-    const diagnostic: any = { path: configPath, exists };
-    
+    const diagnostic: { path: string; exists: boolean; content?: string } = {
+      path: configPath,
+      exists,
+    };
+
     if (exists) {
       try {
         diagnostic.content = fs.readFileSync(configPath, 'utf8').substring(0, 1000); // Limit content size
@@ -179,7 +183,7 @@ function collectDiagnostics(context: E2ETestContext): E2ETestReport['diagnostics
         diagnostic.content = `Error reading file: ${error}`;
       }
     }
-    
+
     diagnostics.configFiles.push(diagnostic);
   }
 
@@ -190,23 +194,26 @@ function collectDiagnostics(context: E2ETestContext): E2ETestReport['diagnostics
     path.join(context.workingDirectory, 'job'),
     path.join(context.workingDirectory, 'blog'),
     path.join(process.cwd(), 'dist', 'cli', 'index.js'),
-    path.join(process.cwd(), '__fs_snapshots__')
+    path.join(process.cwd(), '__fs_snapshots__'),
   ];
 
   for (const fsPath of fsPathsToCheck) {
     const exists = fs.existsSync(fsPath);
-    const diagnostic: any = { path: fsPath, exists };
-    
+    const diagnostic: { path: string; exists: boolean; type?: string; size?: number } = {
+      path: fsPath,
+      exists,
+    };
+
     if (exists) {
       try {
         const stats = fs.statSync(fsPath);
         diagnostic.type = stats.isDirectory() ? 'directory' : 'file';
         diagnostic.size = stats.size;
-      } catch (error) {
+      } catch {
         // Ignore stat errors
       }
     }
-    
+
     diagnostics.fileSystem.push(diagnostic);
   }
 
@@ -214,23 +221,23 @@ function collectDiagnostics(context: E2ETestContext): E2ETestReport['diagnostics
   const snapshotDir = path.join(process.cwd(), '__fs_snapshots__');
   if (fs.existsSync(snapshotDir)) {
     try {
-      const snapshots = fs.readdirSync(snapshotDir).filter(f => f.endsWith('.json'));
-      
+      const snapshots = fs.readdirSync(snapshotDir).filter((f) => f.endsWith('.json'));
+
       for (const snapshot of snapshots) {
         const snapshotPath = path.join(snapshotDir, snapshot);
         const stats = fs.statSync(snapshotPath);
-        
+
         diagnostics.snapshots.push({
           name: path.basename(snapshot, '.json'),
           exists: true,
-          lastModified: stats.mtime.toISOString()
+          lastModified: stats.mtime.toISOString(),
         });
       }
     } catch (error) {
       diagnostics.snapshots.push({
         name: 'ERROR',
         exists: false,
-        lastModified: `Error reading snapshots: ${error}`
+        lastModified: `Error reading snapshots: ${error}`,
       });
     }
   }
@@ -238,12 +245,12 @@ function collectDiagnostics(context: E2ETestContext): E2ETestReport['diagnostics
   // Collect relevant environment variables
   const relevantEnvVars = [
     'NODE_ENV',
-    'TESTING_MODE', 
+    'TESTING_MODE',
     'MOCK_PANDOC',
     'CI',
     'DEBUG_MOCKS',
     'NODE_VERSION',
-    'PWD'
+    'PWD',
   ];
 
   for (const envVar of relevantEnvVars) {
@@ -277,8 +284,12 @@ function generateSuggestions(context: E2ETestContext): string[] {
   // Snapshot-specific suggestions
   if (context.snapshotName) {
     suggestions.push('🔧 Snapshot test suggestions:');
-    suggestions.push(`   • Compare manually: pnpm snapshot compare ${context.snapshotName} ${context.workingDirectory}`);
-    suggestions.push(`   • Update snapshot if changes are expected: pnpm snapshot update ${context.snapshotName} ${context.workingDirectory}`);
+    suggestions.push(
+      `   • Compare manually: pnpm snapshot compare ${context.snapshotName} ${context.workingDirectory}`,
+    );
+    suggestions.push(
+      `   • Update snapshot if changes are expected: pnpm snapshot update ${context.snapshotName} ${context.workingDirectory}`,
+    );
     suggestions.push('   • Check if testing configuration provides deterministic dates');
   }
 
@@ -334,7 +345,11 @@ function findRelatedFiles(context: E2ETestContext): string[] {
 
   // Add snapshot file if this is a snapshot test
   if (context.snapshotName) {
-    const snapshotPath = path.join(process.cwd(), '__fs_snapshots__', `${context.snapshotName}.json`);
+    const snapshotPath = path.join(
+      process.cwd(),
+      '__fs_snapshots__',
+      `${context.snapshotName}.json`,
+    );
     if (fs.existsSync(snapshotPath)) {
       relatedFiles.push(snapshotPath);
     }
@@ -355,51 +370,53 @@ function findRelatedFiles(context: E2ETestContext): string[] {
     relatedFiles.push(path.join(process.cwd(), 'src', 'shared', 'document-converter.ts'));
   }
 
-  return relatedFiles.filter(file => fs.existsSync(file));
+  return relatedFiles.filter((file) => fs.existsSync(file));
 }
 
 /**
  * Generate quick fix commands that might resolve the issue
  */
-function generateQuickFixes(context: E2ETestContext): Array<{ description: string; command: string }> {
+function generateQuickFixes(
+  context: E2ETestContext,
+): Array<{ description: string; command: string }> {
   const quickFixes = [];
 
   // CLI build fix
   quickFixes.push({
     description: 'Rebuild the CLI',
-    command: 'pnpm cli:build'
+    command: 'pnpm cli:build',
   });
 
   // Snapshot update fix
   if (context.snapshotName) {
     quickFixes.push({
       description: 'Update the snapshot if changes are expected',
-      command: `pnpm snapshot update ${context.snapshotName} ${context.workingDirectory}`
+      command: `pnpm snapshot update ${context.snapshotName} ${context.workingDirectory}`,
     });
 
     quickFixes.push({
       description: 'Regenerate all snapshots',
-      command: 'pnpm test:e2e:snapshots:update'
+      command: 'pnpm test:e2e:snapshots:update',
     });
   }
 
   // Clean workspace fix
   quickFixes.push({
     description: 'Clean the test workspace',
-    command: `rm -rf ${context.workingDirectory}/.markdown-workflow ${context.workingDirectory}/job ${context.workingDirectory}/blog`
+    command: `rm -rf ${context.workingDirectory}/.markdown-workflow ${context.workingDirectory}/job ${context.workingDirectory}/blog`,
   });
 
   // Environment setup fix
   quickFixes.push({
     description: 'Run full preflight check',
-    command: 'pnpm preflight:full'
+    command: 'pnpm preflight:full',
   });
 
   // Permission fix (if on Unix-like system)
   if (process.platform !== 'win32') {
     quickFixes.push({
       description: 'Fix CLI permissions',
-      command: 'chmod +x dist/cli/index.js'
+      command: 'chmod +x dist/cli/index.js',
     });
   }
 
@@ -411,25 +428,25 @@ function generateQuickFixes(context: E2ETestContext): Array<{ description: strin
  */
 export function formatE2EReport(report: E2ETestReport): string {
   const lines = [];
-  
+
   lines.push(report.detailedReport);
-  
+
   // Add diagnostics summary
   lines.push('🔍 DIAGNOSTICS SUMMARY');
   lines.push('─'.repeat(50));
-  
-  const missingConfigs = report.diagnostics.configFiles.filter(c => !c.exists);
+
+  const missingConfigs = report.diagnostics.configFiles.filter((c) => !c.exists);
   if (missingConfigs.length > 0) {
     lines.push('Missing configuration files:');
-    missingConfigs.forEach(config => lines.push(`  ❌ ${config.path}`));
+    missingConfigs.forEach((config) => lines.push(`  ❌ ${config.path}`));
   }
-  
-  const missingFiles = report.diagnostics.fileSystem.filter(f => !f.exists);
+
+  const missingFiles = report.diagnostics.fileSystem.filter((f) => !f.exists);
   if (missingFiles.length > 0) {
     lines.push('Missing file system items:');
-    missingFiles.forEach(file => lines.push(`  ❌ ${file.path}`));
+    missingFiles.forEach((file) => lines.push(`  ❌ ${file.path}`));
   }
-  
+
   lines.push(`Available snapshots: ${report.diagnostics.snapshots.length}`);
   lines.push('');
 
@@ -456,7 +473,7 @@ export function formatE2EReport(report: E2ETestReport): string {
   if (report.relatedFiles.length > 0) {
     lines.push('📂 RELATED FILES');
     lines.push('─'.repeat(50));
-    report.relatedFiles.forEach(file => {
+    report.relatedFiles.forEach((file) => {
       const exists = fs.existsSync(file) ? '✅' : '❌';
       lines.push(`  ${exists} ${file}`);
     });
@@ -477,7 +494,7 @@ export function createE2ETestContext(
   actualExitCode: number,
   output: string,
   error?: Error,
-  snapshotName?: string
+  snapshotName?: string,
 ): E2ETestContext {
   return {
     testName,
@@ -493,7 +510,7 @@ export function createE2ETestContext(
       platform: process.platform,
       cwd: process.cwd(),
       mockPandoc: process.env.MOCK_PANDOC === 'true',
-      testingMode: process.env.TESTING_MODE || 'unknown'
-    }
+      testingMode: process.env.TESTING_MODE || 'unknown',
+    },
   };
 }

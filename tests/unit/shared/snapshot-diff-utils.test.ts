@@ -6,10 +6,10 @@ import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { 
-  compareSnapshotsEnhanced, 
+import {
+  compareSnapshotsEnhanced,
   validateSnapshotHealth,
-  generateContentDiff 
+  generateContentDiff,
 } from '../../../src/shared/snapshot-diff-utils.js';
 
 describe('Snapshot Diff Utils', () => {
@@ -22,14 +22,14 @@ describe('Snapshot Diff Utils', () => {
     tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'snapshot-test-'));
     testWorkflowRoot = path.join(tempDir, 'workflow');
     testSnapshotDir = path.join(testWorkflowRoot, '__fs_snapshots__');
-    
+
     fs.mkdirSync(testWorkflowRoot, { recursive: true });
     fs.mkdirSync(testSnapshotDir, { recursive: true });
-    
+
     // Create mock snapshot.js script
     const scriptsDir = path.join(testWorkflowRoot, 'scripts');
     fs.mkdirSync(scriptsDir, { recursive: true });
-    
+
     const mockSnapshotScript = `#!/usr/bin/env node
 // Mock snapshot.js for testing
 const args = process.argv.slice(2);
@@ -82,7 +82,7 @@ if (command === 'compare') {
 
       expect(result.hasDifferences).toBe(true);
       expect(result.summary).toContain('not found');
-      expect(result.suggestions.some(s => s.includes('Create the snapshot with:'))).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('Create the snapshot with:'))).toBe(true);
     });
 
     it('should report no differences for matching snapshots', () => {
@@ -91,10 +91,17 @@ if (command === 'compare') {
 
       // Create a mock snapshot file
       const snapshotPath = path.join(testSnapshotDir, 'matching-snapshot.json');
-      fs.writeFileSync(snapshotPath, JSON.stringify({
-        options: { includeContent: true },
-        tree: []
-      }, null, 2));
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify(
+          {
+            options: { includeContent: true },
+            tree: [],
+          },
+          null,
+          2,
+        ),
+      );
 
       const result = compareSnapshotsEnhanced('matching-snapshot', testDir, testWorkflowRoot);
 
@@ -109,10 +116,17 @@ if (command === 'compare') {
 
       // Create a mock snapshot file
       const snapshotPath = path.join(testSnapshotDir, 'diff-snapshot.json');
-      fs.writeFileSync(snapshotPath, JSON.stringify({
-        options: { includeContent: true },
-        tree: []
-      }, null, 2));
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify(
+          {
+            options: { includeContent: true },
+            tree: [],
+          },
+          null,
+          2,
+        ),
+      );
 
       const result = compareSnapshotsEnhanced('diff-snapshot', testDir, testWorkflowRoot);
 
@@ -130,17 +144,24 @@ if (command === 'compare') {
       fs.mkdirSync(testDir, { recursive: true });
 
       const snapshotPath = path.join(testSnapshotDir, 'diff-snapshot.json');
-      fs.writeFileSync(snapshotPath, JSON.stringify({
-        options: { includeContent: true },
-        tree: []
-      }, null, 2));
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify(
+          {
+            options: { includeContent: true },
+            tree: [],
+          },
+          null,
+          2,
+        ),
+      );
 
       const result = compareSnapshotsEnhanced('diff-snapshot', testDir, testWorkflowRoot);
 
-      expect(result.suggestions.some(s => s.includes('To fix added files'))).toBe(true);
-      expect(result.suggestions.some(s => s.includes('To fix removed files'))).toBe(true);
-      expect(result.suggestions.some(s => s.includes('To fix modified files'))).toBe(true);
-      expect(result.suggestions.some(s => s.includes('Debugging tips'))).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('To fix added files'))).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('To fix removed files'))).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('To fix modified files'))).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('Debugging tips'))).toBe(true);
     });
   });
 
@@ -148,10 +169,17 @@ if (command === 'compare') {
     it('should report healthy state for valid snapshot directory', () => {
       // Create a valid snapshot
       const snapshotPath = path.join(testSnapshotDir, 'test-snapshot.json');
-      fs.writeFileSync(snapshotPath, JSON.stringify({
-        options: { includeContent: true },
-        tree: []
-      }, null, 2));
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify(
+          {
+            options: { includeContent: true },
+            tree: [],
+          },
+          null,
+          2,
+        ),
+      );
 
       // Create test config
       const testConfigDir = path.join(testWorkflowRoot, 'test-configs');
@@ -171,7 +199,9 @@ if (command === 'compare') {
 
       expect(health.isHealthy).toBe(false);
       expect(health.issues).toContain('Snapshot directory does not exist');
-      expect(health.recommendations.some(r => r.includes('Create snapshots directory'))).toBe(true);
+      expect(health.recommendations.some((r) => r.includes('Create snapshots directory'))).toBe(
+        true,
+      );
     });
 
     it('should detect empty snapshot directory', () => {
@@ -179,7 +209,9 @@ if (command === 'compare') {
 
       expect(health.isHealthy).toBe(false);
       expect(health.issues).toContain('No snapshots found');
-      expect(health.recommendations.some(r => r.includes('Create baseline snapshots'))).toBe(true);
+      expect(health.recommendations.some((r) => r.includes('Create baseline snapshots'))).toBe(
+        true,
+      );
     });
 
     it('should detect corrupted snapshot files', () => {
@@ -190,23 +222,36 @@ if (command === 'compare') {
       const health = validateSnapshotHealth(testWorkflowRoot);
 
       expect(health.isHealthy).toBe(false);
-      expect(health.issues.some(i => i.includes('Corrupted snapshot: corrupted.json'))).toBe(true);
-      expect(health.recommendations.some(r => r.includes('Delete and recreate corrupted snapshot'))).toBe(true);
+      expect(health.issues.some((i) => i.includes('Corrupted snapshot: corrupted.json'))).toBe(
+        true,
+      );
+      expect(
+        health.recommendations.some((r) => r.includes('Delete and recreate corrupted snapshot')),
+      ).toBe(true);
     });
 
     it('should detect missing test configuration', () => {
       // Create a valid snapshot but no test config
       const snapshotPath = path.join(testSnapshotDir, 'test-snapshot.json');
-      fs.writeFileSync(snapshotPath, JSON.stringify({
-        options: { includeContent: true },
-        tree: []
-      }, null, 2));
+      fs.writeFileSync(
+        snapshotPath,
+        JSON.stringify(
+          {
+            options: { includeContent: true },
+            tree: [],
+          },
+          null,
+          2,
+        ),
+      );
 
       const health = validateSnapshotHealth(testWorkflowRoot);
 
       expect(health.isHealthy).toBe(false);
       expect(health.issues).toContain('Testing configuration not found');
-      expect(health.recommendations.some(r => r.includes('testing-config.yml exists'))).toBe(true);
+      expect(health.recommendations.some((r) => r.includes('testing-config.yml exists'))).toBe(
+        true,
+      );
     });
   });
 

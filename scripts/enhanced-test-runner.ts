@@ -8,16 +8,16 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
-import { 
-  generateE2EReport, 
-  formatE2EReport, 
+import {
+  generateE2EReport,
+  formatE2EReport,
   createE2ETestContext,
-  type E2ETestReport 
+  type E2ETestReport,
 } from '../src/shared/enhanced-error-reporting.js';
-import { 
-  compareSnapshotsEnhanced, 
+import {
+  compareSnapshotsEnhanced,
   validateSnapshotHealth,
-  type EnhancedDiffResult 
+  type EnhancedDiffResult,
 } from '../src/shared/snapshot-diff-utils.js';
 
 interface TestResult {
@@ -28,12 +28,8 @@ interface TestResult {
   snapshotDiff?: EnhancedDiffResult;
 }
 
-interface TestSuite {
-  name: string;
-  tests: TestResult[];
-  duration: number;
-  success: boolean;
-}
+// TestSuite interface is defined but not currently used in this implementation
+// Keeping it for potential future use
 
 class EnhancedTestRunner {
   private workflowRoot: string;
@@ -74,13 +70,13 @@ class EnhancedTestRunner {
 
     // Check snapshot health
     const snapshotHealth = validateSnapshotHealth(this.workflowRoot);
-    
+
     if (!snapshotHealth.isHealthy) {
       console.log('⚠️  Snapshot health issues detected:');
-      snapshotHealth.issues.forEach(issue => console.log(`   • ${issue}`));
+      snapshotHealth.issues.forEach((issue) => console.log(`   • ${issue}`));
       console.log('');
       console.log('💡 Recommendations:');
-      snapshotHealth.recommendations.forEach(rec => console.log(`   • ${rec}`));
+      snapshotHealth.recommendations.forEach((rec) => console.log(`   • ${rec}`));
       console.log('');
     } else {
       console.log('✅ Snapshot system is healthy');
@@ -119,17 +115,20 @@ class EnhancedTestRunner {
       const output = execSync(`bash ${scriptPath} ${args.join(' ')}`, {
         cwd: this.workflowRoot,
         encoding: 'utf8',
-        stdio: 'pipe'
+        stdio: 'pipe',
       });
 
       console.log('✅ Existing E2E tests completed successfully');
       console.log(output);
-
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log('❌ E2E tests failed - generating enhanced reports...');
-      
+
       // Parse the error output to identify specific test failures
-      await this.analyzeTestFailures(error.stdout || error.message || '');
+      const errorOutput =
+        (error as { stdout?: string; message?: string }).stdout ||
+        (error as { message?: string }).message ||
+        '';
+      await this.analyzeTestFailures(errorOutput);
     }
 
     // Run our own enhanced snapshot comparisons
@@ -146,14 +145,14 @@ class EnhancedTestRunner {
     // Parse the output to identify failed tests
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
-      
+
       if (line.includes('[FAIL]')) {
         const testNameMatch = line.match(/\[FAIL\]\s+(.+)/);
         if (testNameMatch) {
           failedTests.push({
             name: testNameMatch[1],
             output: this.extractTestOutput(lines, i),
-            line: i
+            line: i,
           });
         }
       }
@@ -170,8 +169,8 @@ class EnhancedTestRunner {
    */
   private extractTestOutput(lines: string[], failureLineIndex: number): string {
     const output = [];
-    let startIndex = Math.max(0, failureLineIndex - 10);
-    let endIndex = Math.min(lines.length, failureLineIndex + 10);
+    const startIndex = Math.max(0, failureLineIndex - 10);
+    const endIndex = Math.min(lines.length, failureLineIndex + 10);
 
     for (let i = startIndex; i < endIndex; i++) {
       output.push(lines[i]);
@@ -183,7 +182,11 @@ class EnhancedTestRunner {
   /**
    * Generate enhanced failure report for a specific test
    */
-  private async generateEnhancedFailureReport(failedTest: any): Promise<void> {
+  private async generateEnhancedFailureReport(failedTest: {
+    name: string;
+    output: string;
+    line: number;
+  }): Promise<void> {
     console.log('');
     console.log('🔍 ENHANCED FAILURE ANALYSIS');
     console.log('═'.repeat(70));
@@ -201,7 +204,7 @@ class EnhancedTestRunner {
       0, // Expected exit code (assumed)
       1, // Actual exit code (from failure)
       failedTest.output,
-      new Error(`Test failed: ${testName}`)
+      new Error(`Test failed: ${testName}`),
     );
 
     const report = generateE2EReport(context);
@@ -213,7 +216,7 @@ class EnhancedTestRunner {
       name: testName,
       success: false,
       duration: 0,
-      report
+      report,
     });
   }
 
@@ -230,9 +233,10 @@ class EnhancedTestRunner {
       return;
     }
 
-    const snapshots = fs.readdirSync(snapshotDir)
-      .filter(f => f.endsWith('.json'))
-      .map(f => path.basename(f, '.json'));
+    const snapshots = fs
+      .readdirSync(snapshotDir)
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => path.basename(f, '.json'));
 
     console.log(`Found ${snapshots.length} snapshots to test`);
 
@@ -251,7 +255,7 @@ class EnhancedTestRunner {
     // For demo purposes, we'll use a temporary directory
     // In real usage, this would be the actual test directory from the bash script
     const testDir = path.join(this.workflowRoot, 'tmp', 'enhanced-test');
-    
+
     if (!fs.existsSync(testDir)) {
       console.log(`  ⏭️  Skipping - test directory not found: ${testDir}`);
       return;
@@ -266,25 +270,25 @@ class EnhancedTestRunner {
       console.log(diffResult.summary);
       console.log('');
       console.log(diffResult.detailedReport);
-      
+
       if (diffResult.suggestions.length > 0) {
         console.log('💡 Suggestions:');
-        diffResult.suggestions.forEach(suggestion => console.log(`   ${suggestion}`));
+        diffResult.suggestions.forEach((suggestion) => console.log(`   ${suggestion}`));
       }
 
       this.testResults.push({
         name: `snapshot-${snapshotName}`,
         success: false,
         duration,
-        snapshotDiff: diffResult
+        snapshotDiff: diffResult,
       });
     } else {
       console.log(`  ✅ Snapshot matches perfectly`);
-      
+
       this.testResults.push({
         name: `snapshot-${snapshotName}`,
         success: true,
-        duration
+        duration,
       });
     }
   }
@@ -294,8 +298,8 @@ class EnhancedTestRunner {
    */
   private async generateFinalReport(): Promise<void> {
     const totalDuration = Date.now() - this.startTime;
-    const successCount = this.testResults.filter(t => t.success).length;
-    const failureCount = this.testResults.filter(t => !t.success).length;
+    const successCount = this.testResults.filter((t) => t.success).length;
+    const failureCount = this.testResults.filter((t) => !t.success).length;
 
     console.log('');
     console.log('╔══════════════════════════════════════════════════════════════════════╗');
@@ -314,8 +318,8 @@ class EnhancedTestRunner {
     if (failureCount > 0) {
       console.log('❌ FAILED TESTS');
       console.log('─'.repeat(50));
-      
-      const failedTests = this.testResults.filter(t => !t.success);
+
+      const failedTests = this.testResults.filter((t) => !t.success);
       failedTests.forEach((test, index) => {
         console.log(`${index + 1}. ${test.name}`);
         if (test.snapshotDiff) {
@@ -341,13 +345,13 @@ class EnhancedTestRunner {
     if (!snapshotHealth.isHealthy) {
       console.log('⚠️  ENVIRONMENT ISSUES');
       console.log('─'.repeat(50));
-      snapshotHealth.issues.forEach(issue => console.log(`• ${issue}`));
+      snapshotHealth.issues.forEach((issue) => console.log(`• ${issue}`));
       console.log('');
     }
 
     console.log('📋 NEXT STEPS');
     console.log('─'.repeat(50));
-    
+
     if (failureCount === 0) {
       console.log('✅ All tests passed! The system is working correctly.');
     } else {
@@ -359,7 +363,7 @@ class EnhancedTestRunner {
     }
 
     console.log('');
-    
+
     // Exit with appropriate code
     process.exit(failureCount > 0 ? 1 : 0);
   }
@@ -374,7 +378,7 @@ async function main() {
   const workflowRoot = process.cwd();
 
   const runner = new EnhancedTestRunner(workflowRoot);
-  
+
   try {
     await runner.runEnhancedTests(updateSnapshots);
   } catch (error) {
@@ -385,7 +389,7 @@ async function main() {
 
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
-  main().catch(error => {
+  main().catch((error) => {
     console.error('Fatal error:', error);
     process.exit(1);
   });
