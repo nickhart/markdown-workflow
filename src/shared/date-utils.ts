@@ -58,6 +58,16 @@ export function formatDate(date: Date, format: string, config?: ProjectConfig): 
     case 'UNIX':
       return Math.floor(date.getTime() / 1000).toString();
 
+    case 'LONG_DATE':
+      // Format as "Monday, July 28, 2025"
+      return date.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: timezoneOverride || undefined,
+      });
+
     default:
       // For custom formats, try to handle common patterns
       let formatted = format;

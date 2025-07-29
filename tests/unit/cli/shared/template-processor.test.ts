@@ -63,7 +63,7 @@ describe('TemplateProcessor', () => {
 
       expect(config).toEqual({
         name: 'Your Name',
-        preferred_name: 'john_doe',
+        preferred_name: 'john doe',
         email: 'your.email@example.com',
         phone: '(555) 123-4567',
         address: '123 Main St',
@@ -81,7 +81,7 @@ describe('TemplateProcessor', () => {
     const template: WorkflowTemplate = {
       name: 'resume',
       file: 'templates/resume/default.md',
-      output: 'resume_{{user.preferred_name}}.md',
+      output: 'resume_{{user.preferred_name_sanitized}}.md',
     };
 
     it('should build variant template path correctly', () => {
@@ -117,7 +117,7 @@ describe('TemplateProcessor', () => {
     const template: WorkflowTemplate = {
       name: 'resume',
       file: 'templates/resume/default.md',
-      output: 'resume_{{user.preferred_name}}.md',
+      output: 'resume_{{user.preferred_name_sanitized}}.md',
     };
 
     beforeEach(() => {
@@ -214,13 +214,13 @@ describe('TemplateProcessor', () => {
     const template: WorkflowTemplate = {
       name: 'resume',
       file: 'templates/resume/default.md',
-      output: 'resume_{{user.preferred_name}}.md',
+      output: 'resume_{{user.preferred_name_sanitized}}.md',
     };
 
     const mockProjectConfig: ProjectConfig = {
       user: {
         name: 'John Doe',
-        preferred_name: 'john_doe',
+        preferred_name: 'john doe',
         email: 'john@example.com',
         phone: '(555) 123-4567',
         address: '123 Main St',
@@ -274,11 +274,11 @@ describe('TemplateProcessor', () => {
         'utf8',
       );
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        '/collection/path/resume_johndoe.md',
+        '/collection/path/resume_john_doe.md',
         expect.stringContaining('# John Doe Resume'),
       );
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        '/collection/path/resume_johndoe.md',
+        '/collection/path/resume_john_doe.md',
         expect.stringContaining('Email: john@example.com'),
       );
     });
@@ -295,7 +295,7 @@ describe('TemplateProcessor', () => {
       });
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
-        '/collection/path/resume_johndoe.md',
+        '/collection/path/resume_john_doe.md',
         expect.stringContaining('# Your Name Resume'),
       );
     });
@@ -419,7 +419,7 @@ describe('TemplateProcessor', () => {
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '/collection/path/resume.md',
-        expect.stringMatching(/Created on: \d{4}-\d{2}-\d{2}/),
+        expect.stringMatching(/Created on: \w+, \w+ \d{1,2}, \d{4}/),
       );
     });
   });

@@ -353,8 +353,16 @@ export class WorkflowEngine {
         let referenceDoc: string | undefined;
 
         if (formatType === 'docx' && templateType) {
+          console.log(`🔍 Looking for reference document for template type: ${templateType}`);
           // Look for reference document in workflow statics
           referenceDoc = await this.findReferenceDoc(workflow, templateType);
+          if (referenceDoc) {
+            console.log(`\n📄 USING REFERENCE DOCUMENT: ${referenceDoc}\n`);
+          } else {
+            console.log(`\n⚠️  NO REFERENCE DOCUMENT FOUND - using default pandoc styling\n`);
+          }
+        } else if (formatType === 'docx') {
+          console.log(`\n⚠️  NO TEMPLATE TYPE DETECTED - using default pandoc styling\n`);
         }
 
         const result = await convertDocument({
@@ -431,7 +439,7 @@ export class WorkflowEngine {
       collection_id: collection.metadata.collection_id,
       date: formatDate(
         getCurrentDate(this.projectConfig || undefined),
-        'YYYY-MM-DD',
+        'LONG_DATE',
         this.projectConfig || undefined,
       ),
       user: this.projectConfig?.user || this.getDefaultUserConfig(),
@@ -508,48 +516,56 @@ export class WorkflowEngine {
 
     // For each template in the workflow, resolve its output filename
     for (const template of workflow.workflow.templates) {
-      // Template variables are used in the pattern matching logic below
-      const _templateVariables = {
-        user: this.projectConfig?.user || this.getDefaultUserConfig(),
-        company: collection.metadata.company,
-        role: collection.metadata.role,
-        application_name: collection.metadata.collection_id,
-        date: formatDate(
-          getCurrentDate(this.projectConfig || undefined),
-          'YYYY-MM-DD',
-          this.projectConfig || undefined,
-        ),
-        // Add any other variables that might be used in output patterns
-        prefix: '{{prefix}}', // Placeholder for dynamic templates
-      };
-
       try {
         // Find all collection artifacts that match this template pattern
         const matchingFiles = collection.artifacts.filter((artifact) => {
-          // For dynamic templates (like notes), we need pattern matching
+          // Simple approach: check if the artifact filename starts with the template name
+          // This handles cases like "resume" -> "resume_nicholas_hart.md"
+          if (artifact.startsWith(`${template.name}_`) && artifact.endsWith('.md')) {
+            return true;
+          }
+
+          // For dynamic templates (like notes with prefixes), we need pattern matching
           if (template.output.includes('{{prefix}}')) {
             // Match any file that could have been generated from this template
+            // Example: "{{prefix}}_notes.md" should match "recruiter_notes.md"
             const basePattern = template.output.replace('{{prefix}}', '(.+)');
-            const regex = new RegExp(
-              basePattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)'),
-            );
-            return regex.test(artifact);
-          } else {
-            // For user variable templates, match the pattern more flexibly
+            try {
+              const regex = new RegExp(
+                '^' +
+                  basePattern
+                    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                    .replace('\\(\\.\\+\\)', '(.+)') +
+                  '$',
+              );
+              return regex.test(artifact);
+            } catch {
+              return false;
+            }
+          }
+
+          // Fallback: try to match the exact template output pattern
+          if (template.output && !template.output.includes('{{prefix}}')) {
+            // For templates with user variables, try to match flexibly
             let pattern = template.output;
 
-            // Replace user variables with wildcards for matching
-            pattern = pattern.replace(/\{\{user\.preferred_name\}\}/g, '(.+)');
-            pattern = pattern.replace(/\{\{user\.name\}\}/g, '(.+)');
+            // Replace common user variables with wildcards for matching
+            pattern = pattern.replace(/\{\{user\.[^}]+\}\}/g, '(.+)');
+            pattern = pattern.replace(/\{\{[^}]+\}\}/g, '(.+)'); // Any other template variables
 
-            // Create regex from pattern
-            const regex = new RegExp(
-              '^' +
-                pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)') +
-                '$',
-            );
-            return regex.test(artifact);
+            try {
+              const regex = new RegExp(
+                '^' +
+                  pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)') +
+                  '$',
+              );
+              return regex.test(artifact);
+            } catch {
+              return false;
+            }
           }
+
+          return false;
         });
 
         if (matchingFiles.length > 0) {
@@ -608,61 +624,129 @@ export class WorkflowEngine {
    * Based on the original shell function logic
    */
   private detectTemplateType(baseName: string): string | null {
+    console.log(`  🔍 Detecting template type from filename: ${baseName}`);
+
     // Handle patterns like "resume_nicholas_hart" -> "resume" or "cover_letter_john_doe" -> "cover_letter"
-    const parts = baseName.split('_');
+    const _parts = baseName.split('_');
 
     // Look for known template types
     const knownTypes = ['resume', 'cover_letter', 'notes'];
 
     for (const type of knownTypes) {
       if (baseName.startsWith(type + '_')) {
+        console.log(`  ✅ Detected template type: ${type} (from pattern ${type}_*)`);
         return type;
       }
     }
 
     // If no underscore pattern, check if the whole name is a known type
     if (knownTypes.includes(baseName)) {
+      console.log(`  ✅ Detected template type: ${baseName} (exact match)`);
       return baseName;
     }
 
+    console.log(`  ❌ No template type detected for: ${baseName}`);
     return null;
   }
 
   /**
-   * Find reference document for template type in workflow statics
-   * Looks for patterns like "resume_reference" for "resume" template type
+   * Find reference document for template type with co-located approach
+   * Priority: project templates/[type]/reference.docx > system templates/[type]/reference.docx > workflow statics (legacy)
    */
   private async findReferenceDoc(
     workflow: WorkflowFile,
     templateType: string,
   ): Promise<string | undefined> {
-    if (!workflow.workflow.statics) {
-      return undefined;
+    console.log(`  🔍 Searching for reference document for template type: ${templateType}`);
+
+    const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
+
+    // 1. Try co-located reference.docx in project workflows directory first
+    if (projectPaths.workflowsDir) {
+      const projectRefPath = path.join(
+        projectPaths.workflowsDir,
+        workflow.workflow.name,
+        'templates',
+        templateType,
+        'reference.docx',
+      );
+      console.log(`  🔍 Checking project co-located path: ${projectRefPath}`);
+
+      if (this.systemInterface.existsSync(projectRefPath)) {
+        console.log(`  ✅ Reference document found at project path: ${projectRefPath}`);
+        return projectRefPath;
+      }
     }
 
-    // Look for reference doc in statics (e.g., "resume_reference" for "resume")
-    const referenceStaticName = `${templateType}_reference`;
-    const referenceStatic = workflow.workflow.statics.find(
-      (s: WorkflowStatic) => s.name === referenceStaticName,
-    );
-
-    if (!referenceStatic) {
-      return undefined;
-    }
-
-    // Try to resolve the static file path with inheritance
-    const systemStaticPath = path.join(
+    // 2. Try co-located reference.docx in system workflows directory
+    const systemRefPath = path.join(
       this.systemRoot,
       'workflows',
       workflow.workflow.name,
-      referenceStatic.file,
+      'templates',
+      templateType,
+      'reference.docx',
     );
+    console.log(`  🔍 Checking system co-located path: ${systemRefPath}`);
 
-    // For now, just check system path - could add project path override later
-    if (this.systemInterface.existsSync(systemStaticPath)) {
-      return systemStaticPath;
+    if (this.systemInterface.existsSync(systemRefPath)) {
+      console.log(`  ✅ Reference document found at system path: ${systemRefPath}`);
+      return systemRefPath;
     }
 
+    // 3. Legacy fallback: try workflow statics (for backwards compatibility)
+    if (workflow.workflow.statics) {
+      console.log(`  🔍 Falling back to legacy statics approach`);
+      console.log(
+        `  📋 Available statics: ${workflow.workflow.statics.map((s) => s.name).join(', ')}`,
+      );
+
+      const referenceStaticName = `${templateType}_reference`;
+      console.log(`  🔍 Looking for static named: ${referenceStaticName}`);
+
+      const referenceStatic = workflow.workflow.statics.find(
+        (s: WorkflowStatic) => s.name === referenceStaticName,
+      );
+
+      if (referenceStatic) {
+        console.log(`  ✅ Found legacy static: ${referenceStatic.name} -> ${referenceStatic.file}`);
+
+        // Try project static path first
+        if (projectPaths.workflowsDir) {
+          const projectStaticPath = path.join(
+            projectPaths.workflowsDir,
+            workflow.workflow.name,
+            referenceStatic.file,
+          );
+          console.log(`  🔍 Checking project static path: ${projectStaticPath}`);
+
+          if (this.systemInterface.existsSync(projectStaticPath)) {
+            console.log(
+              `  ✅ Legacy reference document found at project static path: ${projectStaticPath}`,
+            );
+            return projectStaticPath;
+          }
+        }
+
+        // Try system static path
+        const systemStaticPath = path.join(
+          this.systemRoot,
+          'workflows',
+          workflow.workflow.name,
+          referenceStatic.file,
+        );
+        console.log(`  🔍 Checking system static path: ${systemStaticPath}`);
+
+        if (this.systemInterface.existsSync(systemStaticPath)) {
+          console.log(
+            `  ✅ Legacy reference document found at system static path: ${systemStaticPath}`,
+          );
+          return systemStaticPath;
+        }
+      }
+    }
+
+    console.log(`  ❌ No reference document found for template type: ${templateType}`);
     return undefined;
   }
 }

@@ -78,7 +78,7 @@ export class TemplateProcessor {
         ...options.variables,
         date: formatDate(
           getCurrentDate(options.projectConfig || undefined),
-          'YYYY-MM-DD',
+          'LONG_DATE',
           options.projectConfig || undefined,
         ),
         user: {
@@ -86,8 +86,7 @@ export class TemplateProcessor {
           // Add sanitized versions for filenames - use separate keys to preserve original values
           name_sanitized: sanitizeForFilename(userConfigForTemplate.name),
           preferred_name_sanitized: sanitizeForFilename(userConfigForTemplate.preferred_name),
-          // Keep original preferred_name sanitized for backwards compatibility
-          preferred_name: sanitizeForFilename(userConfigForTemplate.preferred_name),
+          // Keep original preferred_name unsanitized for content/signatures
         },
       };
 
@@ -179,7 +178,7 @@ export class TemplateProcessor {
   static getDefaultUserConfig() {
     return {
       name: 'Your Name',
-      preferred_name: 'john_doe',
+      preferred_name: 'john doe',
       email: 'your.email@example.com',
       phone: '(555) 123-4567',
       address: '123 Main St',
