@@ -1,5 +1,4 @@
 import * as fs from 'fs';
-import * as path from 'path';
 import { jest } from '@jest/globals';
 
 // Mock child_process spawn
