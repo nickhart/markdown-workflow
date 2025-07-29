@@ -39,12 +39,29 @@ system:
 
   # Testing Overrides (for predictable testing and snapshots)
   testing:
-    # Fixed date for predictable testing - ensures snapshots always match
+    # Date/Time overrides
     override_current_date: "2025-01-21T10:00:00.000Z"
-    # Fixed timezone for consistent date formatting
     override_timezone: "UTC"
-    # Use deterministic IDs instead of date-based ones
+    freeze_time: true  # Always return the same time
+    
+    # ID generation overrides
     deterministic_ids: true
+    id_prefix: "test"
+    id_counter_start: 1
+    
+    # User variable overrides (override default user info for testing)
+    override_user:
+      name: "Test User"
+      preferred_name: "test_user"
+      email: "test@example.com"
+      phone: "(555) 123-4567"
+      city: "Test City"
+      state: "TS"
+    
+    # System variable overrides
+    mock_file_timestamps: true  # Use fixed timestamps for file operations
+    mock_external_apis: true    # Mock external API calls
+    seed_random: "test-seed-123"  # Seed for deterministic random values
 
 # Workflow-specific overrides
 workflows:

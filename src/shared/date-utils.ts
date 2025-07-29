@@ -4,12 +4,39 @@
 
 import { ProjectConfig } from '../core/schemas.js';
 
+// Global state for frozen time in testing
+let frozenTime: Date | null = null;
+
+/**
+ * Initialize frozen time from configuration (for testing)
+ */
+export function initializeFrozenTime(config?: ProjectConfig): void {
+  const testing = config?.system?.testing;
+  if (testing?.freeze_time && testing.override_current_date) {
+    frozenTime = new Date(testing.override_current_date);
+  }
+}
+
+/**
+ * Reset frozen time state
+ */
+export function resetFrozenTime(): void {
+  frozenTime = null;
+}
+
 /**
  * Get the current date, respecting testing overrides
  */
 export function getCurrentDate(config?: ProjectConfig): Date {
+  const testing = config?.system?.testing;
+  
+  // If time is frozen, always return the frozen time
+  if (testing?.freeze_time && frozenTime) {
+    return new Date(frozenTime);
+  }
+  
   // Check if we have a testing override for current date
-  const overrideDate = config?.system?.testing?.override_current_date;
+  const overrideDate = testing?.override_current_date;
 
   if (overrideDate) {
     const parsedDate = new Date(overrideDate);
@@ -122,6 +149,26 @@ export function getCurrentISODate(config?: ProjectConfig): string {
   return currentDate.toISOString();
 }
 
+// Global state for ID generation
+let idCounter = 1;
+
+/**
+ * Reset ID counter (for testing)
+ */
+export function resetIdCounter(): void {
+  idCounter = 1;
+}
+
+/**
+ * Initialize ID counter from configuration
+ */
+export function initializeIdCounter(config?: ProjectConfig): void {
+  const testing = config?.system?.testing;
+  if (testing?.id_counter_start) {
+    idCounter = testing.id_counter_start;
+  }
+}
+
 /**
  * Generate a deterministic ID for testing purposes
  */
@@ -132,7 +179,8 @@ export function generateCollectionId(
 ): string {
   const sanitizeSpaces = config?.system?.collection_id?.sanitize_spaces || '_';
   const maxLength = config?.system?.collection_id?.max_length || 50;
-  const useDeterministicIds = config?.system?.testing?.deterministic_ids || false;
+  const testing = config?.system?.testing;
+  const useDeterministicIds = testing?.deterministic_ids || false;
 
   // Sanitize company and role names
   const sanitizedCompany = company
