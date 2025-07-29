@@ -163,6 +163,10 @@ create_baseline_snapshot() {
 setup_test_env() {
     log_info "Setting up test environment..."
     
+    # Enable pandoc mocking for deterministic testing
+    export MOCK_PANDOC=true
+    log_info "Enabled pandoc mocking for deterministic testing"
+    
     # Create temporary test directories inside the repository
     mkdir -p "$(pwd)/tmp"  # Ensure tmp directory exists
     export TEST_ROOT="$(pwd)/tmp/test-e2e-$$"
