@@ -107,12 +107,12 @@ export const SystemConfigSchema = z.object({
       override_current_date: z.string().optional(),
       override_timezone: z.string().optional(),
       freeze_time: z.boolean().optional(), // Freeze time at override_current_date
-      
+
       // ID generation overrides
       deterministic_ids: z.boolean().optional(),
       id_prefix: z.string().optional(), // Custom prefix for generated IDs
       id_counter_start: z.number().optional(), // Starting counter for sequential IDs
-      
+
       // User variable overrides
       override_user: z
         .object({
@@ -129,7 +129,7 @@ export const SystemConfigSchema = z.object({
           website: z.string().optional(),
         })
         .optional(),
-      
+
       // System variable overrides
       mock_file_timestamps: z.boolean().optional(), // Use fixed timestamps for file operations
       mock_external_apis: z.boolean().optional(), // Mock external API calls

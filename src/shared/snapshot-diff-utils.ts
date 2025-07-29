@@ -58,10 +58,10 @@ export interface EnhancedDiffResult {
 export function compareSnapshotsEnhanced(
   snapshotName: string,
   actualDirectory: string,
-  workflowRoot: string = process.cwd()
+  workflowRoot: string = process.cwd(),
 ): EnhancedDiffResult {
   const snapshotPath = path.join(workflowRoot, '__fs_snapshots__', `${snapshotName}.json`);
-  
+
   if (!fs.existsSync(snapshotPath)) {
     return {
       hasDifferences: true,
@@ -71,32 +71,35 @@ export function compareSnapshotsEnhanced(
       suggestions: [
         'Create the snapshot with: pnpm snapshot create ' + snapshotName + ' ' + actualDirectory,
         'Check if the snapshot name is spelled correctly',
-        'Verify the __fs_snapshots__ directory exists'
+        'Verify the __fs_snapshots__ directory exists',
       ],
-      relatedFiles: [snapshotPath]
+      relatedFiles: [snapshotPath],
     };
   }
 
   try {
     // Use the existing snapshot.js script to get comparison
     const compareCommand = `node "${path.join(workflowRoot, 'scripts/snapshot.js')}" compare "${snapshotName}" "${actualDirectory}" --content`;
-    
+
     let compareOutput = '';
     let exitCode = 0;
-    
+
     try {
-      compareOutput = execSync(compareCommand, { 
-        cwd: workflowRoot, 
+      compareOutput = execSync(compareCommand, {
+        cwd: workflowRoot,
         encoding: 'utf8',
-        stdio: 'pipe'
+        stdio: 'pipe',
       });
-    } catch (error: any) {
-      exitCode = error.status || 1;
-      compareOutput = error.stdout || error.message || '';
+    } catch (error: unknown) {
+      exitCode = (error as { status?: number }).status || 1;
+      compareOutput =
+        (error as { stdout?: string; message?: string }).stdout ||
+        (error as { message?: string }).message ||
+        '';
     }
 
     const hasDifferences = exitCode !== 0;
-    
+
     if (!hasDifferences) {
       return {
         hasDifferences: false,
@@ -104,7 +107,7 @@ export function compareSnapshotsEnhanced(
         differences: { added: [], removed: [], modified: [], typeChanged: [] },
         detailedReport: 'Directory structure and content match the expected snapshot.',
         suggestions: [],
-        relatedFiles: [snapshotPath]
+        relatedFiles: [snapshotPath],
       };
     }
 
@@ -120,21 +123,21 @@ export function compareSnapshotsEnhanced(
       differences,
       detailedReport: enhancedReport,
       suggestions,
-      relatedFiles
+      relatedFiles,
     };
-
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errorMessage = (error as { message?: string }).message || 'Unknown error';
     return {
       hasDifferences: true,
-      summary: `❌ Error comparing snapshots: ${error.message}`,
+      summary: `❌ Error comparing snapshots: ${errorMessage}`,
       differences: { added: [], removed: [], modified: [], typeChanged: [] },
-      detailedReport: `Failed to compare snapshot '${snapshotName}' with directory '${actualDirectory}'.\nError: ${error.message}`,
+      detailedReport: `Failed to compare snapshot '${snapshotName}' with directory '${actualDirectory}'.\nError: ${errorMessage}`,
       suggestions: [
         'Check if the snapshot.js script exists and is executable',
         'Verify the directory path is correct',
-        'Ensure you have read permissions on the snapshot and directory'
+        'Ensure you have read permissions on the snapshot and directory',
       ],
-      relatedFiles: [snapshotPath]
+      relatedFiles: [snapshotPath],
     };
   }
 }
@@ -147,7 +150,7 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
     added: [],
     removed: [],
     modified: [],
-    typeChanged: []
+    typeChanged: [],
   };
 
   const lines = output.split('\n');
@@ -155,7 +158,7 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     if (trimmed.includes('+ Added files:')) {
       currentSection = 'added';
       continue;
@@ -181,7 +184,7 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
           path: match[1],
           type: match[2] as 'file' | 'directory',
           size: 0,
-          modified: new Date().toISOString()
+          modified: new Date().toISOString(),
         });
       }
     } else if (currentSection === 'removed' && trimmed.startsWith('- ')) {
@@ -192,14 +195,17 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
           path: match[1],
           type: match[2] as 'file' | 'directory',
           size: 0,
-          modified: new Date().toISOString()
+          modified: new Date().toISOString(),
         });
       }
     } else if (currentSection === 'modified' && trimmed.startsWith('~ ')) {
       const filePath = trimmed.substring(2);
       const modifiedItem = {
         path: filePath,
-        changes: {} as any
+        changes: {} as {
+          size?: { from: number; to: number };
+          content?: { from: string; to: string };
+        },
       };
       differences.modified.push(modifiedItem);
     } else if (currentSection === 'typeChanged' && trimmed.startsWith('⚠ ')) {
@@ -208,7 +214,7 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
         differences.typeChanged.push({
           path: match[1],
           from: match[2],
-          to: match[3]
+          to: match[3],
         });
       }
     }
@@ -221,9 +227,12 @@ function parseSnapshotOutput(output: string): SnapshotDifference {
  * Generate a concise summary of differences
  */
 function generateSummary(differences: SnapshotDifference): string {
-  const totalChanges = differences.added.length + differences.removed.length + 
-    differences.modified.length + differences.typeChanged.length;
-  
+  const totalChanges =
+    differences.added.length +
+    differences.removed.length +
+    differences.modified.length +
+    differences.typeChanged.length;
+
   if (totalChanges === 0) {
     return '✅ No differences found';
   }
@@ -232,7 +241,8 @@ function generateSummary(differences: SnapshotDifference): string {
   if (differences.added.length > 0) parts.push(`${differences.added.length} added`);
   if (differences.removed.length > 0) parts.push(`${differences.removed.length} removed`);
   if (differences.modified.length > 0) parts.push(`${differences.modified.length} modified`);
-  if (differences.typeChanged.length > 0) parts.push(`${differences.typeChanged.length} type changed`);
+  if (differences.typeChanged.length > 0)
+    parts.push(`${differences.typeChanged.length} type changed`);
 
   return `❌ Found ${totalChanges} difference(s): ${parts.join(', ')}`;
 }
@@ -243,10 +253,10 @@ function generateSummary(differences: SnapshotDifference): string {
 function generateEnhancedReport(
   differences: SnapshotDifference,
   snapshotName: string,
-  actualDirectory: string
+  actualDirectory: string,
 ): string {
   const lines = [];
-  
+
   lines.push('╔═══════════════════════════════════════════════════════════════════╗');
   lines.push('║                      SNAPSHOT COMPARISON REPORT                  ║');
   lines.push('╚═══════════════════════════════════════════════════════════════════╝');
@@ -259,7 +269,7 @@ function generateEnhancedReport(
     lines.push('┌─ ADDED FILES ──────────────────────────────────────────────────┐');
     lines.push('│ These files exist in the actual directory but not the snapshot │');
     lines.push('└─────────────────────────────────────────────────────────────────┘');
-    differences.added.forEach(item => {
+    differences.added.forEach((item) => {
       const icon = item.type === 'directory' ? '📁' : '📄';
       lines.push(`  ${icon} + ${item.path}`);
       if (item.type === 'file' && item.size > 0) {
@@ -273,7 +283,7 @@ function generateEnhancedReport(
     lines.push('┌─ REMOVED FILES ────────────────────────────────────────────────┐');
     lines.push('│ These files exist in the snapshot but not the actual directory │');
     lines.push('└─────────────────────────────────────────────────────────────────┘');
-    differences.removed.forEach(item => {
+    differences.removed.forEach((item) => {
       const icon = item.type === 'directory' ? '📁' : '📄';
       lines.push(`  ${icon} - ${item.path}`);
       if (item.type === 'file' && item.size > 0) {
@@ -287,7 +297,7 @@ function generateEnhancedReport(
     lines.push('┌─ MODIFIED FILES ───────────────────────────────────────────────┐');
     lines.push('│ These files have different content or properties               │');
     lines.push('└─────────────────────────────────────────────────────────────────┘');
-    differences.modified.forEach(item => {
+    differences.modified.forEach((item) => {
       lines.push(`  📝 ~ ${item.path}`);
       if (item.changes.size) {
         const oldSize = formatFileSize(item.changes.size.from);
@@ -295,7 +305,9 @@ function generateEnhancedReport(
         lines.push(`    ├─ Size: ${oldSize} → ${newSize}`);
       }
       if (item.changes.content) {
-        lines.push(`    ├─ Content hash: ${item.changes.content.from.substring(0, 8)}... → ${item.changes.content.to.substring(0, 8)}...`);
+        lines.push(
+          `    ├─ Content hash: ${item.changes.content.from.substring(0, 8)}... → ${item.changes.content.to.substring(0, 8)}...`,
+        );
       }
     });
     lines.push('');
@@ -305,7 +317,7 @@ function generateEnhancedReport(
     lines.push('┌─ TYPE CHANGES ─────────────────────────────────────────────────┐');
     lines.push('│ These items changed from file to directory or vice versa       │');
     lines.push('└─────────────────────────────────────────────────────────────────┘');
-    differences.typeChanged.forEach(item => {
+    differences.typeChanged.forEach((item) => {
       const fromIcon = item.from === 'directory' ? '📁' : '📄';
       const toIcon = item.to === 'directory' ? '📁' : '📄';
       lines.push(`  ⚠️  ${item.path}: ${fromIcon} ${item.from} → ${toIcon} ${item.to}`);
@@ -322,7 +334,7 @@ function generateEnhancedReport(
 function generateSuggestions(
   differences: SnapshotDifference,
   snapshotName: string,
-  actualDirectory: string
+  actualDirectory: string,
 ): string[] {
   const suggestions = [];
 
@@ -372,10 +384,10 @@ function generateSuggestions(
 function findRelatedFiles(
   differences: SnapshotDifference,
   workflowRoot: string,
-  actualDirectory: string
+  actualDirectory: string,
 ): string[] {
   const relatedFiles = [];
-  
+
   // Add the snapshot file
   const snapshotDir = path.join(workflowRoot, '__fs_snapshots__');
   if (fs.existsSync(snapshotDir)) {
@@ -400,7 +412,7 @@ function findRelatedFiles(
   }
 
   // Add any files mentioned in the differences
-  [...differences.added, ...differences.removed, ...differences.modified].forEach(item => {
+  [...differences.added, ...differences.removed, ...differences.modified].forEach((item) => {
     const fullPath = path.join(actualDirectory, item.path);
     if (fs.existsSync(fullPath)) {
       relatedFiles.push(fullPath);
@@ -415,11 +427,11 @@ function findRelatedFiles(
  */
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B';
-  
+
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
@@ -429,31 +441,31 @@ function formatFileSize(bytes: number): string {
 export function generateContentDiff(
   expectedContent: string,
   actualContent: string,
-  filePath: string
+  filePath: string,
 ): string {
   const lines = [];
-  
+
   lines.push(`╔═══ CONTENT DIFF: ${filePath} ═══╗`);
-  
+
   const expectedLines = expectedContent.split('\n');
   const actualLines = actualContent.split('\n');
   const maxLines = Math.max(expectedLines.length, actualLines.length);
-  
+
   lines.push('┌─ EXPECTED ─────────────────┬─ ACTUAL ───────────────────┐');
-  
+
   for (let i = 0; i < maxLines; i++) {
     const expectedLine = expectedLines[i] || '';
     const actualLine = actualLines[i] || '';
-    
+
     const expectedPadded = expectedLine.padEnd(27).substring(0, 27);
     const actualPadded = actualLine.padEnd(27).substring(0, 27);
-    
+
     const marker = expectedLine === actualLine ? '│' : '≠';
     lines.push(`│${expectedPadded}${marker}${actualPadded}│`);
   }
-  
+
   lines.push('└─────────────────────────────┴─────────────────────────────┘');
-  
+
   return lines.join('\n');
 }
 
@@ -467,17 +479,17 @@ export function validateSnapshotHealth(workflowRoot: string): {
 } {
   const issues = [];
   const recommendations = [];
-  
+
   const snapshotDir = path.join(workflowRoot, '__fs_snapshots__');
-  
+
   if (!fs.existsSync(snapshotDir)) {
     issues.push('Snapshot directory does not exist');
     recommendations.push('Create snapshots directory with: mkdir __fs_snapshots__');
     return { isHealthy: false, issues, recommendations };
   }
 
-  const snapshots = fs.readdirSync(snapshotDir).filter(f => f.endsWith('.json'));
-  
+  const snapshots = fs.readdirSync(snapshotDir).filter((f) => f.endsWith('.json'));
+
   if (snapshots.length === 0) {
     issues.push('No snapshots found');
     recommendations.push('Create baseline snapshots with: pnpm test:e2e:snapshots:update');
@@ -488,9 +500,11 @@ export function validateSnapshotHealth(workflowRoot: string): {
     try {
       const content = fs.readFileSync(path.join(snapshotDir, snapshot), 'utf8');
       JSON.parse(content);
-    } catch (error) {
+    } catch {
       issues.push(`Corrupted snapshot: ${snapshot}`);
-      recommendations.push(`Delete and recreate corrupted snapshot: pnpm snapshot delete ${path.basename(snapshot, '.json')}`);
+      recommendations.push(
+        `Delete and recreate corrupted snapshot: pnpm snapshot delete ${path.basename(snapshot, '.json')}`,
+      );
     }
   }
 
@@ -504,6 +518,6 @@ export function validateSnapshotHealth(workflowRoot: string): {
   return {
     isHealthy: issues.length === 0,
     issues,
-    recommendations
+    recommendations,
   };
 }

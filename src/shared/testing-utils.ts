@@ -51,12 +51,12 @@ export function initializeMockState(config?: ProjectConfig): void {
  */
 export function getMockDate(config?: ProjectConfig): Date {
   const testing = config?.system?.testing;
-  
+
   // If time is frozen, always return the frozen time
   if (testing?.freeze_time && mockState.frozenTime) {
     return new Date(mockState.frozenTime);
   }
-  
+
   // Check if we have a testing override for current date
   const overrideDate = testing?.override_current_date;
   if (overrideDate) {
@@ -65,7 +65,7 @@ export function getMockDate(config?: ProjectConfig): Date {
       return parsedDate;
     }
   }
-  
+
   return new Date();
 }
 
@@ -74,16 +74,16 @@ export function getMockDate(config?: ProjectConfig): Date {
  */
 export function getMockId(config?: ProjectConfig, prefix?: string): string {
   const testing = config?.system?.testing;
-  
+
   if (!testing?.deterministic_ids) {
     // Return a timestamp-based ID if not in deterministic mode
     return Date.now().toString(36);
   }
-  
+
   const idPrefix = prefix || testing.id_prefix || 'test';
   const paddedCounter = mockState.idCounter.toString().padStart(3, '0');
   mockState.idCounter++;
-  
+
   return `${idPrefix}_${paddedCounter}`;
 }
 
@@ -107,15 +107,15 @@ export function getMockUser(config?: ProjectConfig): Record<string, string> {
 
   const testing = config?.system?.testing;
   const userOverrides = testing?.override_user;
-  
+
   if (!userOverrides) {
     return defaultUser;
   }
-  
+
   return {
     ...defaultUser,
     ...Object.fromEntries(
-      Object.entries(userOverrides).filter(([_, value]) => value !== undefined)
+      Object.entries(userOverrides).filter(([_, value]) => value !== undefined),
     ),
   };
 }
@@ -125,15 +125,15 @@ export function getMockUser(config?: ProjectConfig): Record<string, string> {
  */
 export function getMockRandom(config?: ProjectConfig): number {
   const testing = config?.system?.testing;
-  
+
   if (!testing?.seed_random) {
     return Math.random();
   }
-  
+
   // Simple seeded PRNG implementation
   const seed = hashString(testing.seed_random + mockState.idCounter);
   mockState.idCounter++;
-  
+
   return (seed % 1000000) / 1000000;
 }
 
@@ -142,21 +142,24 @@ export function getMockRandom(config?: ProjectConfig): number {
  */
 export function getMockUUID(config?: ProjectConfig): string {
   const testing = config?.system?.testing;
-  
+
   if (!testing?.deterministic_ids) {
     // Return a real UUID-style string
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
       return v.toString(16);
     });
   }
-  
+
   // Return deterministic UUID-style string
   const counter = mockState.idCounter.toString().padStart(8, '0');
   mockState.idCounter++;
-  
-  return `${counter.slice(0,8)}-${counter.slice(0,4)}-4${counter.slice(0,3)}-a${counter.slice(0,3)}-${counter}0000`.slice(0, 36);
+
+  return `${counter.slice(0, 8)}-${counter.slice(0, 4)}-4${counter.slice(0, 3)}-a${counter.slice(0, 3)}-${counter}0000`.slice(
+    0,
+    36,
+  );
 }
 
 /**
@@ -164,11 +167,11 @@ export function getMockUUID(config?: ProjectConfig): string {
  */
 export function getMockTimestamp(config?: ProjectConfig): Date {
   const testing = config?.system?.testing;
-  
+
   if (testing?.mock_file_timestamps) {
     return getMockDate(config);
   }
-  
+
   return new Date();
 }
 
@@ -186,7 +189,7 @@ function hashString(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash; // Convert to 32-bit integer
   }
   return Math.abs(hash);
@@ -197,13 +200,13 @@ function hashString(str: string): number {
  */
 export function getMockDelay(config?: ProjectConfig, baseMs: number = 100): number {
   const testing = config?.system?.testing;
-  
+
   if (testing?.deterministic_ids) {
     // Return a fixed delay in deterministic mode
     return baseMs;
   }
-  
-  return baseMs + (Math.random() * baseMs);
+
+  return baseMs + Math.random() * baseMs;
 }
 
 /**
@@ -211,7 +214,7 @@ export function getMockDelay(config?: ProjectConfig, baseMs: number = 100): numb
  */
 export function logMockState(config?: ProjectConfig): void {
   const testing = config?.system?.testing;
-  
+
   if (testing && process.env.NODE_ENV === 'test') {
     console.log('Mock State:', {
       idCounter: mockState.idCounter,
@@ -226,7 +229,7 @@ export function logMockState(config?: ProjectConfig): void {
 /**
  * Utility to wrap a function with mock state initialization
  */
-export function withMockState<T extends any[], R>(
+export function withMockState<T extends unknown[], R>(
   config: ProjectConfig | undefined,
   fn: (...args: T) => R,
 ): (...args: T) => R {
@@ -244,15 +247,15 @@ export const TestingEnvironment = {
   isE2E(): boolean {
     return process.env.NODE_ENV === 'test' || process.env.TESTING_MODE === 'e2e';
   },
-  
+
   isMockPandoc(): boolean {
     return process.env.MOCK_PANDOC === 'true';
   },
-  
+
   isCI(): boolean {
     return process.env.CI === 'true';
   },
-  
+
   shouldLogMockValues(): boolean {
     return process.env.DEBUG_MOCKS === 'true';
   },
