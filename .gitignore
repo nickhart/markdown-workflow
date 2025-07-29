@@ -50,6 +50,7 @@ test-*
 .markdown-workflow
 tmp/
 migrate-reference/
+writing-repo/
 
 # turbo
 .turbo/
