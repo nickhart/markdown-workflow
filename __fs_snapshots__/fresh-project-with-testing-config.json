@@ -18,14 +18,14 @@
       "path": ".markdown-workflow",
       "type": "directory",
       "size": 0,
-      "modified": "2025-07-29T05:14:07.987Z",
+      "modified": "2025-07-29T05:26:26.752Z",
       "children": [
         {
           "name": "config.yml",
           "path": ".markdown-workflow/config.yml",
           "type": "file",
           "size": 1925,
-          "modified": "2025-07-29T05:14:07.999Z",
+          "modified": "2025-07-29T05:26:26.765Z",
           "contentHash": "a0d080c573161b71ba4962fd4dafc36b",
           "content": "# Testing Configuration with Date/Time Overrides\n# This config demonstrates how to use testing overrides for predictable snapshots\n\n# User Information (used for template substitution)\nuser:\n  name: \"Test User\"\n  preferred_name: \"test_user\"\n  email: \"test@example.com\"\n  phone: \"(555) 123-4567\"\n  address: \"123 Test Street\"\n  city: \"Test City\"\n  state: \"TS\"\n  zip: \"12345\"\n  linkedin: \"linkedin.com/in/testuser\"\n  github: \"github.com/testuser\"\n  website: \"testuser.com\"\n\n# System Configuration\nsystem:\n  scraper: \"wget\"  # Options: \"wget\", \"curl\", \"native\"\n  web_download:\n    timeout: 30\n    add_utf8_bom: true\n    html_cleanup: \"scripts\"  # Options: \"none\", \"scripts\", \"markdown\"\n\n  output_formats:\n    - \"docx\"\n    - \"html\"\n    - \"pdf\"\n\n  git:\n    auto_commit: true\n    commit_message_template: \"Add {{workflow}} collection: {{collection_id}}\"\n\n  collection_id:\n    date_format: \"YYYYMMDD\"\n    sanitize_spaces: \"_\"\n    max_length: 50\n\n  # Testing Overrides (for predictable testing and snapshots)\n  testing:\n    # Fixed date for predictable testing - ensures snapshots always match\n    override_current_date: \"2025-01-21T10:00:00.000Z\"\n    # Fixed timezone for consistent date formatting\n    override_timezone: \"UTC\"\n    # Use deterministic IDs instead of date-based ones\n    deterministic_ids: true\n\n# Workflow-specific overrides\nworkflows:\n  job:\n    templates:\n      resume:\n        default_template: \"default\"\n        available_templates:\n          - \"default\"\n          - \"mobile\"\n          - \"frontend\"\n\n    custom_fields:\n      - name: \"salary_range\"\n        type: \"string\"\n        description: \"Expected salary range\"\n      - name: \"remote_preference\"\n        type: \"enum\"\n        options: [\"remote\", \"hybrid\", \"onsite\"]\n        description: \"Work location preference\"\n\n  blog:\n    custom_fields:\n      - name: \"estimated_reading_time\"\n        type: \"number\"\n        description: \"Estimated reading time in minutes\""
         },
@@ -34,21 +34,21 @@
           "path": ".markdown-workflow/workflows",
           "type": "directory",
           "size": 0,
-          "modified": "2025-07-29T05:14:07.988Z",
+          "modified": "2025-07-29T05:26:26.753Z",
           "children": [
             {
               "name": "blog",
               "path": ".markdown-workflow/workflows/blog",
               "type": "directory",
               "size": 0,
-              "modified": "2025-07-29T05:14:07.987Z",
+              "modified": "2025-07-29T05:26:26.752Z",
               "children": [
                 {
                   "name": "README.md",
                   "path": ".markdown-workflow/workflows/blog/README.md",
                   "type": "file",
                   "size": 545,
-                  "modified": "2025-07-29T05:14:07.988Z",
+                  "modified": "2025-07-29T05:26:26.752Z",
                   "contentHash": "186e0a2c8e5f40499ae1720ef738e87e",
                   "content": "# Blog Workflow Customization\n\nThis directory can contain customizations for the blog workflow.\n\n## Structure\n- `workflow.yml` - Override workflow definition\n- `templates/` - Custom templates (override system templates)\n\n## Template Resolution\nTemplates are resolved in this order:\n1. `templates/` in this directory (highest priority)\n2. System templates from markdown-workflow installation\n\n## Getting Started\n1. Copy system templates you want to customize\n2. Modify them to suit your needs\n3. System will automatically use your customizations\n"
                 },
@@ -57,7 +57,7 @@
                   "path": ".markdown-workflow/workflows/blog/templates",
                   "type": "directory",
                   "size": 0,
-                  "modified": "2025-07-29T05:14:07.987Z",
+                  "modified": "2025-07-29T05:26:26.752Z",
                   "children": []
                 }
               ]
@@ -67,14 +67,14 @@
               "path": ".markdown-workflow/workflows/job",
               "type": "directory",
               "size": 0,
-              "modified": "2025-07-29T05:14:07.988Z",
+              "modified": "2025-07-29T05:26:26.753Z",
               "children": [
                 {
                   "name": "README.md",
                   "path": ".markdown-workflow/workflows/job/README.md",
                   "type": "file",
                   "size": 543,
-                  "modified": "2025-07-29T05:14:07.988Z",
+                  "modified": "2025-07-29T05:26:26.753Z",
                   "contentHash": "4811ad05136a3acdf46578ab0e20a2e7",
                   "content": "# Job Workflow Customization\n\nThis directory can contain customizations for the job workflow.\n\n## Structure\n- `workflow.yml` - Override workflow definition\n- `templates/` - Custom templates (override system templates)\n\n## Template Resolution\nTemplates are resolved in this order:\n1. `templates/` in this directory (highest priority)\n2. System templates from markdown-workflow installation\n\n## Getting Started\n1. Copy system templates you want to customize\n2. Modify them to suit your needs\n3. System will automatically use your customizations\n"
                 },
@@ -83,7 +83,7 @@
                   "path": ".markdown-workflow/workflows/job/templates",
                   "type": "directory",
                   "size": 0,
-                  "modified": "2025-07-29T05:14:07.988Z",
+                  "modified": "2025-07-29T05:26:26.753Z",
                   "children": []
                 }
               ]
