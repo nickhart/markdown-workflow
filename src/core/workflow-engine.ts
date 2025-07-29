@@ -8,10 +8,12 @@ import {
   type WorkflowFile,
   type ProjectConfig,
   type WorkflowAction,
+  type WorkflowStatic,
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
 import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/date-utils.js';
 import { sanitizeForFilename, normalizeTemplateName } from '../shared/file-utils.js';
+import { convertDocument } from '../shared/document-converter.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -346,13 +348,31 @@ export class WorkflowEngine {
         const formatTypeStr = String(formatType);
         console.log(`🔄 Converting ${file} to ${formatTypeStr.toUpperCase()}...`);
 
-        if (formatType === 'docx') {
-          // Note: This is a placeholder implementation - actual conversion would use pandoc
-          const tempOutputPath = outputPath.replace('.docx', '.converted.md');
-          this.systemInterface.copyFileSync(inputPath, tempOutputPath);
-          console.log(`✅ Created: ${path.relative(collection.path, tempOutputPath)}`);
+        // Detect template type from filename (resume_nicholas_hart.md -> resume)
+        const templateType = this.detectTemplateType(baseName);
+        let referenceDoc: string | undefined;
+
+        if (formatType === 'docx' && templateType) {
+          // Look for reference document in workflow statics
+          referenceDoc = await this.findReferenceDoc(workflow, templateType);
+        }
+
+        const result = await convertDocument({
+          inputFile: inputPath,
+          outputFile: outputPath,
+          format: formatType as 'docx' | 'html' | 'pdf',
+          referenceDoc,
+        });
+
+        if (result.success) {
+          const relativePath = path.relative(collection.path, result.outputFile);
+          if (referenceDoc) {
+            console.log(`✅ Created: ${relativePath} (with reference doc)`);
+          } else {
+            console.log(`✅ Created: ${relativePath}`);
+          }
         } else {
-          console.log(`⚠️  Format '${formatTypeStr}' not yet implemented`);
+          throw new Error(result.error || 'Conversion failed');
         }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -581,6 +601,69 @@ export class WorkflowEngine {
    */
   getSystemRoot(): string {
     return this.systemRoot;
+  }
+
+  /**
+   * Detect template type from filename (resume_nicholas_hart.md -> resume)
+   * Based on the original shell function logic
+   */
+  private detectTemplateType(baseName: string): string | null {
+    // Handle patterns like "resume_nicholas_hart" -> "resume" or "cover_letter_john_doe" -> "cover_letter"
+    const parts = baseName.split('_');
+
+    // Look for known template types
+    const knownTypes = ['resume', 'cover_letter', 'notes'];
+
+    for (const type of knownTypes) {
+      if (baseName.startsWith(type + '_')) {
+        return type;
+      }
+    }
+
+    // If no underscore pattern, check if the whole name is a known type
+    if (knownTypes.includes(baseName)) {
+      return baseName;
+    }
+
+    return null;
+  }
+
+  /**
+   * Find reference document for template type in workflow statics
+   * Looks for patterns like "resume_reference" for "resume" template type
+   */
+  private async findReferenceDoc(
+    workflow: WorkflowFile,
+    templateType: string,
+  ): Promise<string | undefined> {
+    if (!workflow.workflow.statics) {
+      return undefined;
+    }
+
+    // Look for reference doc in statics (e.g., "resume_reference" for "resume")
+    const referenceStaticName = `${templateType}_reference`;
+    const referenceStatic = workflow.workflow.statics.find(
+      (s: WorkflowStatic) => s.name === referenceStaticName,
+    );
+
+    if (!referenceStatic) {
+      return undefined;
+    }
+
+    // Try to resolve the static file path with inheritance
+    const systemStaticPath = path.join(
+      this.systemRoot,
+      'workflows',
+      workflow.workflow.name,
+      referenceStatic.file,
+    );
+
+    // For now, just check system path - could add project path override later
+    if (this.systemInterface.existsSync(systemStaticPath)) {
+      return systemStaticPath;
+    }
+
+    return undefined;
   }
 }
 
