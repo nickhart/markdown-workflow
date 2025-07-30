@@ -14,8 +14,17 @@ workflow:
         type: "string"
         required: true
         description: "Blog post title"
+        help_text: "The title of your blog post (use quotes for titles with spaces or punctuation)"
     usage: "wf {alias} <title>"
     description: "Create a new blog post with title and content template"
+    help_text: |
+      Creates a new blog post with a structured content template and assets directory.
+      The post starts in draft status and can be moved through review to published.
+      Includes automatic metadata generation and template processing.
+    examples:
+      - "wf blog-create \"My First Blog Post\""
+      - "wf bc \"10 Tips for Better Code Reviews\""
+      - "wf blog-create \"Understanding React Hooks: A Deep Dive\""
 
   # Define the stages a blog post can go through
   stages:

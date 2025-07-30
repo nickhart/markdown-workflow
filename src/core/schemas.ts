@@ -60,6 +60,7 @@ export const WorkflowCLIArgumentSchema = z.object({
   type: z.enum(['string', 'number', 'boolean', 'array']),
   required: z.boolean().optional().default(false),
   description: z.string(),
+  help_text: z.string().optional(),
   default: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).optional(),
 });
 
@@ -68,6 +69,8 @@ export const WorkflowCLISchema = z.object({
   arguments: z.array(WorkflowCLIArgumentSchema).optional(),
   usage: z.string().optional(),
   description: z.string().optional(),
+  help_text: z.string().optional(),
+  examples: z.array(z.string()).optional(),
 });
 
 export const WorkflowDefinitionSchema = z.object({
