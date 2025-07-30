@@ -206,7 +206,7 @@ workflows: {}`,
       // Should create metadata file
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining('company: "Acme Corp"'),
+        expect.stringContaining('collection_id: "acme_corp_developer_'),
       );
 
       // Should log success
@@ -255,7 +255,7 @@ workflows: {}`,
       // Should create metadata file
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         expect.stringContaining('collection.yml'),
-        expect.stringContaining('company: "Acme Corp"'),
+        expect.stringContaining('collection_id: "acme_corp_developer_'),
       );
     });
   });

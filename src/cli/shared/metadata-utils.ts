@@ -9,24 +9,52 @@ import type { CollectionMetadata } from '../../core/types.js';
 
 /**
  * Generate YAML content for collection metadata
- * Merged from create.ts and update.ts (update.ts version includes notes support)
+ * Dynamic generation based on actual metadata fields
  */
 export function generateMetadataYaml(metadata: CollectionMetadata): string {
-  const urlLine = metadata.url ? `url: "${metadata.url}"` : '';
-  const notesLine = metadata.notes ? `notes: "${metadata.notes}"` : '';
+  // Core required fields that all workflows have
+  const coreFields = [
+    'collection_id',
+    'workflow',
+    'status',
+    'date_created',
+    'date_modified',
+    'status_history',
+  ];
 
-  return `# Collection Metadata
+  // Separate custom fields from core fields
+  const customFields: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(metadata)) {
+    if (!coreFields.includes(key) && value !== undefined) {
+      customFields[key] = value;
+    }
+  }
+
+  // Build the YAML sections
+  let yamlContent = `# Collection Metadata
 collection_id: "${metadata.collection_id}"
 workflow: "${metadata.workflow}"
 status: "${metadata.status}"
 date_created: "${metadata.date_created}"
 date_modified: "${metadata.date_modified}"
+`;
 
-# Application Details
-company: "${metadata.company}"
-role: "${metadata.role}"${urlLine ? `\n${urlLine}` : ''}${notesLine ? `\n${notesLine}` : ''}
+  // Add workflow-specific fields if they exist
+  if (Object.keys(customFields).length > 0) {
+    yamlContent += '\n# Workflow Details\n';
+    for (const [key, value] of Object.entries(customFields)) {
+      if (typeof value === 'string') {
+        yamlContent += `${key}: "${value}"\n`;
+      } else if (typeof value === 'number' || typeof value === 'boolean') {
+        yamlContent += `${key}: ${value}\n`;
+      } else if (Array.isArray(value)) {
+        yamlContent += `${key}: [${value.map((v) => `"${v}"`).join(', ')}]\n`;
+      }
+    }
+  }
 
-# Status History
+  // Add status history
+  yamlContent += `\n# Status History
 status_history:
   - status: "${metadata.status_history[0].status}"
     date: "${metadata.status_history[0].date}"
@@ -34,6 +62,8 @@ status_history:
 # Additional Fields
 # Add custom fields here as needed
 `;
+
+  return yamlContent;
 }
 
 /**

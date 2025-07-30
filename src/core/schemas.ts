@@ -40,6 +40,8 @@ export const WorkflowActionSchema = z.object({
   formats: z.array(z.string()).optional(),
   parameters: z.array(WorkflowActionParameterSchema).optional(),
   metadata_file: z.string().optional(),
+  create_directories: z.array(z.string()).optional(),
+  variable_mapping: z.record(z.string(), z.string()).optional(),
 });
 
 export const WorkflowMetadataSchema = z.object({
@@ -53,6 +55,21 @@ export const WorkflowCollectionIdSchema = z.object({
   max_length: z.number(),
 });
 
+export const WorkflowCLIArgumentSchema = z.object({
+  name: z.string(),
+  type: z.enum(['string', 'number', 'boolean', 'array']),
+  required: z.boolean().optional().default(false),
+  description: z.string(),
+  default: z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]).optional(),
+});
+
+export const WorkflowCLISchema = z.object({
+  aliases: z.array(z.string()).optional(),
+  arguments: z.array(WorkflowCLIArgumentSchema).optional(),
+  usage: z.string().optional(),
+  description: z.string().optional(),
+});
+
 export const WorkflowDefinitionSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -63,6 +80,7 @@ export const WorkflowDefinitionSchema = z.object({
   actions: z.array(WorkflowActionSchema),
   metadata: WorkflowMetadataSchema,
   collection_id: WorkflowCollectionIdSchema,
+  cli: WorkflowCLISchema.optional(),
 });
 
 export const WorkflowFileSchema = z.object({
@@ -192,6 +210,8 @@ export type WorkflowActionParameter = z.infer<typeof WorkflowActionParameterSche
 export type WorkflowAction = z.infer<typeof WorkflowActionSchema>;
 export type WorkflowMetadata = z.infer<typeof WorkflowMetadataSchema>;
 export type WorkflowCollectionId = z.infer<typeof WorkflowCollectionIdSchema>;
+export type WorkflowCLIArgument = z.infer<typeof WorkflowCLIArgumentSchema>;
+export type WorkflowCLI = z.infer<typeof WorkflowCLISchema>;
 export type WorkflowDefinition = z.infer<typeof WorkflowDefinitionSchema>;
 export type WorkflowFile = z.infer<typeof WorkflowFileSchema>;
 export type UserConfig = z.infer<typeof UserConfigSchema>;

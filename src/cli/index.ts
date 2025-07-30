@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as YAML from 'yaml';
 import { Command } from 'commander';
 import initCommand from './commands/init.js';
 import createWithHelpCommand from './commands/create-with-help.js';
@@ -10,12 +13,90 @@ import { addCommand, listTemplatesCommand } from './commands/add.js';
 import listCommand from './commands/list.js';
 import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
 import updateCommand from './commands/update.js';
+import { listAliasesCommand } from './commands/aliases.js';
 import { withErrorHandling } from './shared/error-handler.js';
 import { logError } from './shared/formatting-utils.js';
+import { ConfigDiscovery } from '../core/config-discovery.js';
+import { WorkflowFileSchema } from '../core/schemas.js';
 
 const program = new Command();
 
 program.name('wf').description('Markdown Workflow CLI').version('1.0.0');
+
+/**
+ * Register workflow-specific aliases as commands
+ */
+async function registerWorkflowAliases() {
+  try {
+    const configDiscovery = new ConfigDiscovery();
+    const systemConfig = configDiscovery.discoverSystemConfiguration();
+
+    for (const workflowName of systemConfig.availableWorkflows) {
+      try {
+        const workflowPath = path.join(
+          systemConfig.systemRoot,
+          'workflows',
+          workflowName,
+          'workflow.yml',
+        );
+
+        if (!fs.existsSync(workflowPath)) {
+          continue;
+        }
+
+        const workflowContent = fs.readFileSync(workflowPath, 'utf8');
+        const parsedYaml = YAML.parse(workflowContent);
+        const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
+
+        if (!validationResult.success) {
+          continue;
+        }
+
+        const workflowDef = validationResult.data.workflow;
+
+        // Register CLI aliases if they exist
+        if (workflowDef.cli?.aliases) {
+          for (const alias of workflowDef.cli.aliases) {
+            const createAction = workflowDef.actions.find((action) => action.name === 'create');
+
+            if (createAction) {
+              // Create alias command that maps to the create workflow
+              program
+                .command(alias)
+                .description(
+                  workflowDef.cli.description || `Create ${workflowName} using ${alias} alias`,
+                )
+                .usage(workflowDef.cli.usage?.replace('{alias}', alias) || `<args...>`)
+                .argument('[args...]', 'Arguments based on workflow configuration')
+                .option('-u, --url <url>', 'Optional URL (job workflows)')
+                .option('-t, --template-variant <variant>', 'Template variant to use')
+                .option('--force', 'Force recreate existing collection')
+                .action(
+                  withErrorHandling(async (args, options) => {
+                    // Map alias call to regular create command
+                    await createWithHelpCommand([workflowName, ...args], {
+                      url: options.url,
+                      template_variant: options.templateVariant,
+                      force: options.force,
+                    });
+                  }),
+                );
+            }
+          }
+        }
+      } catch {
+        // Skip individual workflow errors - don't break entire CLI
+        continue;
+      }
+    }
+  } catch {
+    // Don't break CLI startup if workflow registration fails
+    // The base commands will still work
+  }
+}
+
+// Register workflow aliases before parsing commands
+await registerWorkflowAliases();
 
 // wf-init command
 program
@@ -189,6 +270,17 @@ program
           force: options.force,
         });
       }
+    }),
+  );
+
+// wf-aliases command
+program
+  .command('aliases')
+  .description('List available workflow aliases')
+  .option('-w, --workflow <workflow>', 'Show aliases for specific workflow')
+  .action(
+    withErrorHandling(async (options) => {
+      await listAliasesCommand(options.workflow);
     }),
   );
 

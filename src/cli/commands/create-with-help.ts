@@ -65,24 +65,47 @@ export async function createWithHelpCommand(
       const workflowDef = validationResult.data.workflow;
       const createAction = workflowDef.actions.find((action) => action.name === 'create');
 
-      if (createAction && remainingArgs.length < 2) {
+      // Check if we have the minimum required arguments based on workflow CLI config
+      const cliArgs = workflowDef.cli?.arguments || [];
+      const requiredArgsCount = cliArgs.filter((arg) => arg.required).length;
+
+      if (createAction && remainingArgs.length < requiredArgsCount) {
         // Show workflow-specific usage
-        console.error(`Usage: ${createAction.usage || `wf create ${workflow} <company> <role>`}`);
+        console.error(
+          `Usage: ${workflowDef.cli?.usage || createAction.usage || `wf create ${workflow} <args...>`}`,
+        );
         console.error('');
-        console.error(createAction.description);
+        if (workflowDef.cli?.description) {
+          console.error(workflowDef.cli.description);
+        } else {
+          console.error(createAction.description);
+        }
+
+        // Show argument details if available
+        if (cliArgs.length > 0) {
+          console.error('');
+          console.error('Arguments:');
+          cliArgs.forEach((arg) => {
+            const required = arg.required ? ' (required)' : ' (optional)';
+            console.error(`  ${arg.name}${required}: ${arg.description}`);
+          });
+        }
+
         throw new Error('Missing required arguments');
+      }
+
+      // If we have enough arguments, proceed with the normal create command
+      if (remainingArgs.length >= requiredArgsCount) {
+        await createCommand(workflow, ...remainingArgs, options);
+        return; // Success, exit early
       }
     }
 
-    // If we have enough arguments, proceed with the normal create command
-    if (remainingArgs.length >= 2) {
-      const [company, role] = remainingArgs;
-      await createCommand(workflow, company, role, options);
-    } else {
-      // Fallback to generic usage
-      console.error(`Usage: wf create ${workflow} <company> <role> [options]`);
-      throw new Error('Missing required arguments');
-    }
+    // Fallback for workflows without CLI config or not enough arguments
+    const workflowDef = validationResult.success ? validationResult.data.workflow : null;
+    const usage = workflowDef?.cli?.usage || `wf create ${workflow} <args...>`;
+    console.error(`Usage: ${usage}`);
+    throw new Error('Missing required arguments');
   } catch (error) {
     if (error instanceof Error) {
       // Re-throw our own errors
