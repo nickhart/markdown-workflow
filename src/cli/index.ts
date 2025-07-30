@@ -103,7 +103,11 @@ async function registerWorkflowAliases() {
               }
 
               command.action(
-                withErrorHandling(async (args, options) => {
+                withErrorHandling(async (...argsWithOptions) => {
+                  // Commander.js passes individual arguments, then options as the last parameter
+                  const options = argsWithOptions[argsWithOptions.length - 1];
+                  const args = argsWithOptions.slice(0, -1);
+
                   // Map alias call to regular create command
                   await createWithHelpCommand([workflowName, ...args], {
                     url: options.url,
