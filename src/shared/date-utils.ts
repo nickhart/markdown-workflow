@@ -208,25 +208,41 @@ export function generateCollectionId(
     dateComponent = getCurrentDateForCollectionId(config);
   }
 
-  // Combine components
-  const baseId = `${sanitizedCompany}_${sanitizedRole}_${dateComponent}`;
+  // Combine components - handle case where role is empty (for blog posts, etc.)
+  const baseId = sanitizedRole
+    ? `${sanitizedCompany}_${sanitizedRole}_${dateComponent}`
+    : `${sanitizedCompany}_${dateComponent}`;
 
   // Truncate if necessary
   if (baseId.length > maxLength) {
-    const availableLength = maxLength - dateComponent.length - 2; // -2 for two underscores
-    const companyLength = Math.floor(availableLength * 0.6);
-    const roleLength = availableLength - companyLength;
+    if (sanitizedRole) {
+      // Two-part ID (company_role_date)
+      const availableLength = maxLength - dateComponent.length - 2; // -2 for two underscores
+      const companyLength = Math.floor(availableLength * 0.6);
+      const roleLength = availableLength - companyLength;
 
-    let truncatedCompany = sanitizedCompany.substring(0, companyLength);
-    let truncatedRole = sanitizedRole.substring(0, roleLength);
+      let truncatedCompany = sanitizedCompany.substring(0, companyLength);
+      let truncatedRole = sanitizedRole.substring(0, roleLength);
 
-    // Remove trailing underscores from truncated parts
-    truncatedCompany = truncatedCompany.replace(/_+$/, '');
-    truncatedRole = truncatedRole.replace(/_+$/, '');
+      // Remove trailing underscores from truncated parts
+      truncatedCompany = truncatedCompany.replace(/_+$/, '');
+      truncatedRole = truncatedRole.replace(/_+$/, '');
 
-    const truncatedId = `${truncatedCompany}_${truncatedRole}_${dateComponent}`;
-    // Collapse any multiple underscores that might have been created
-    return truncatedId.replace(/_+/g, '_');
+      const truncatedId = `${truncatedCompany}_${truncatedRole}_${dateComponent}`;
+      // Collapse any multiple underscores that might have been created
+      return truncatedId.replace(/_+/g, '_');
+    } else {
+      // Single-part ID (title_date)
+      const availableLength = maxLength - dateComponent.length - 1; // -1 for one underscore
+      let truncatedCompany = sanitizedCompany.substring(0, availableLength);
+
+      // Remove trailing underscores from truncated part
+      truncatedCompany = truncatedCompany.replace(/_+$/, '');
+
+      const truncatedId = `${truncatedCompany}_${dateComponent}`;
+      // Collapse any multiple underscores that might have been created
+      return truncatedId.replace(/_+/g, '_');
+    }
   }
 
   // Ensure no multiple underscores in the final result
