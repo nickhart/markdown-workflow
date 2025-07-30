@@ -61,26 +61,57 @@ async function registerWorkflowAliases() {
 
             if (createAction) {
               // Create alias command that maps to the create workflow
-              program
+              const command = program
                 .command(alias)
                 .description(
                   workflowDef.cli.description || `Create ${workflowName} using ${alias} alias`,
                 )
-                .usage(workflowDef.cli.usage?.replace('{alias}', alias) || `<args...>`)
-                .argument('[args...]', 'Arguments based on workflow configuration')
-                .option('-u, --url <url>', 'Optional URL (job workflows)')
-                .option('-t, --template-variant <variant>', 'Template variant to use')
-                .option('--force', 'Force recreate existing collection')
-                .action(
-                  withErrorHandling(async (args, options) => {
-                    // Map alias call to regular create command
-                    await createWithHelpCommand([workflowName, ...args], {
-                      url: options.url,
-                      template_variant: options.templateVariant,
-                      force: options.force,
-                    });
-                  }),
-                );
+                .usage(workflowDef.cli.usage?.replace('{alias}', alias) || `<args...>`);
+
+              // Add workflow-specific arguments instead of generic [args...]
+              if (workflowDef.cli?.arguments) {
+                workflowDef.cli.arguments.forEach((arg) => {
+                  const argSyntax = arg.required ? `<${arg.name}>` : `[${arg.name}]`;
+                  const description = arg.help_text || arg.description;
+                  command.argument(argSyntax, description);
+                });
+              } else {
+                // Fallback for workflows without CLI argument definitions
+                command.argument('[args...]', 'Arguments based on workflow configuration');
+              }
+
+              // Add workflow-appropriate options
+              if (
+                workflowName === 'job' ||
+                workflowDef.cli?.arguments?.some((arg) => arg.name === 'url')
+              ) {
+                command.option('-u, --url <url>', 'Job posting URL');
+              }
+              command.option('-t, --template-variant <variant>', 'Template variant to use');
+              command.option('--force', 'Force recreate existing collection');
+
+              // Add enhanced help text as additional description
+              if (workflowDef.cli?.help_text) {
+                command.addHelpText('after', `\n${workflowDef.cli.help_text}`);
+              }
+
+              if (workflowDef.cli?.examples && workflowDef.cli.examples.length > 0) {
+                const examplesText =
+                  '\nExamples:\n' +
+                  workflowDef.cli.examples.map((example) => `  $ ${example}`).join('\n');
+                command.addHelpText('after', examplesText);
+              }
+
+              command.action(
+                withErrorHandling(async (args, options) => {
+                  // Map alias call to regular create command
+                  await createWithHelpCommand([workflowName, ...args], {
+                    url: options.url,
+                    template_variant: options.templateVariant,
+                    force: options.force,
+                  });
+                }),
+              );
             }
           }
         }

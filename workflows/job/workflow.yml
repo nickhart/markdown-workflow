@@ -14,20 +14,33 @@ workflow:
         type: "string"
         required: true
         description: "Company name"
+        help_text: "The company you're applying to (use quotes for names with spaces)"
       - name: "role"
         type: "string"
         required: true
         description: "Job role/position"
+        help_text: "The specific position or job title you're applying for"
       - name: "variant"
         type: "string"
         required: false
         description: "Template variant (e.g., frontend, mobile, ai)"
+        help_text: "Optional template variant to customize resume/cover letter for specific roles"
       - name: "url"
         type: "string"
         required: false
         description: "Job posting URL"
+        help_text: "URL to the job posting (will be scraped and saved for reference)"
     usage: "wf {alias} <company> <role> [variant] [url]"
     description: "Create a new job application with resume and cover letter"
+    help_text: |
+      Creates a new job application with personalized resume and cover letter.
+      Files are generated from templates and organized by application status.
+      Use template variants to customize content for specific types of roles.
+    examples:
+      - "wf job-apply \"Google\" \"Software Engineer\""
+      - "wf job-apply \"Meta\" \"Frontend Developer\" frontend"
+      - "wf ja \"Stripe\" \"Backend Engineer\" --url https://stripe.com/jobs/123"
+      - "wf job-apply \"OpenAI\" \"ML Engineer\" ai https://openai.com/careers"
 
   # Define the stages a job application can go through
   stages:
