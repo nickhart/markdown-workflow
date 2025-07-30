@@ -115,16 +115,6 @@ I hope this guide has been helpful in understanding {{title}}. Feel free to reac
 
 ---
 
-## About the Author
+{{> author_bio}}
 
-{{user.name}} is a software engineer and technical writer passionate about sharing knowledge and helping others learn. You can find more of my work at:
-
-- **Website:** {{user.website}}
-- **GitHub:** {{user.github}}
-- **LinkedIn:** {{user.linkedin}}
-
----
-
-_Tags: #{{title}} #tutorial #development #programming_  
-_Category: Technical_  
-_Published: {{date}}_
+{{> post_metadata}}

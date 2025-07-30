@@ -3,7 +3,7 @@
 **{{user.name}}**  
 {{user.address}}  
 {{user.city}}, {{user.state}} {{user.zip}}  
-{{user.email}} | {{user.phone}}
+[{{{user.email}}}](mailto:{{{user.email}}}) | {{user.phone}}
 
 ---
 
@@ -60,5 +60,5 @@ Thank you for considering my application. I am excited about the possibility of 
 ---
 
 _Attachments: Resume, Portfolio_  
-_Contact: {{user.email}} | {{user.phone}}_  
-_LinkedIn: {{user.linkedin}} | GitHub: {{user.github}}_
+_Contact: [{{{user.email}}}](mailto:{{{user.email}}}) | {{user.phone}}_  
+_LinkedIn: [{{{user.linkedin}}}](https://{{{user.linkedin}}}) | GitHub: [{{{user.github}}}](https://{{{user.github}}}/)_

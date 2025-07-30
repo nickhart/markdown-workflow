@@ -90,8 +90,15 @@ export class TemplateProcessor {
         },
       };
 
-      // Process template with Mustache
-      const processedContent = Mustache.render(templateContent, templateVariables);
+      // Load partials (snippets) for template includes
+      const partials = this.loadPartials(
+        options.systemRoot,
+        options.workflowName,
+        options.projectPaths,
+      );
+
+      // Process template with Mustache including partials support
+      const processedContent = Mustache.render(templateContent, templateVariables, partials);
 
       // Generate output filename with Mustache
       const outputFile = Mustache.render(template.output, templateVariables);
@@ -170,6 +177,60 @@ export class TemplateProcessor {
     // Replace filename with variant, keep extension
     const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
     return path.join(workflowDir, variantFile);
+  }
+
+  /**
+   * Load partials (snippets) for template includes
+   * Supports inheritance: project snippets override system snippets
+   */
+  static loadPartials(
+    systemRoot: string,
+    workflowName: string,
+    projectPaths?: { workflowsDir: string } | null,
+  ): Record<string, string> {
+    const partials: Record<string, string> = {};
+
+    // Define potential snippet directories in load order (system first, then project overrides)
+    const snippetDirs: string[] = [];
+
+    // System snippets (loaded first, lower priority)
+    snippetDirs.push(path.join(systemRoot, 'workflows', workflowName, 'snippets'));
+
+    // Project snippets (loaded last, higher priority - overrides system)
+    if (projectPaths?.workflowsDir) {
+      snippetDirs.push(path.join(projectPaths.workflowsDir, workflowName, 'snippets'));
+    }
+
+    // Load snippets from all directories (later ones override earlier ones)
+    for (const snippetDir of snippetDirs) {
+      if (fs.existsSync(snippetDir)) {
+        try {
+          const snippetFiles = fs
+            .readdirSync(snippetDir)
+            .filter((file) => file.endsWith('.md') || file.endsWith('.txt'));
+
+          for (const snippetFile of snippetFiles) {
+            const snippetName = path.basename(snippetFile, path.extname(snippetFile));
+            const snippetPath = path.join(snippetDir, snippetFile);
+
+            try {
+              const snippetContent = fs.readFileSync(snippetPath, 'utf8');
+              partials[snippetName] = snippetContent;
+            } catch (error) {
+              logWarning(
+                `Failed to load snippet ${snippetName}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+        } catch (error) {
+          logWarning(
+            `Failed to read snippets directory ${snippetDir}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+    }
+
+    return partials;
   }
 
   /**
