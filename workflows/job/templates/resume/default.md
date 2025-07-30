@@ -1,7 +1,6 @@
 # {{user.name}}
 
-**{{user.email}}** | **{{user.phone}}** | **{{user.city}}, {{user.state}}**  
-**LinkedIn:** {{user.linkedin}} | **GitHub:** {{user.github}} | **Website:** {{user.website}}
+{{> contact_info}}
 
 ---
 
@@ -11,14 +10,7 @@ Experienced software engineer with a passion for building scalable applications 
 
 ---
 
-## Technical Skills
-
-- **Languages:** JavaScript, TypeScript, Python, Java, Go
-- **Frontend:** React, Vue.js, HTML5, CSS3, Tailwind CSS
-- **Backend:** Node.js, Express, Django, Spring Boot
-- **Databases:** PostgreSQL, MongoDB, Redis
-- **Cloud:** AWS, Google Cloud, Docker, Kubernetes
-- **Tools:** Git, Jenkins, Jest, Webpack, Vite
+{{> technical_skills}}
 
 ---
 
@@ -80,11 +72,7 @@ _August 2018 - May 2019_
 
 ---
 
-## Certifications
-
-- AWS Certified Developer - Associate (2022)
-- Google Cloud Professional Developer (2021)
-- Certified Scrum Master (2020)
+{{> certifications}}
 
 ---
 
@@ -95,6 +83,4 @@ _August 2018 - May 2019_
 - Continuous learning and staying updated with latest technologies
 - {{company}} specific interest: Contributing to innovative solutions in the {{role}} space
 
----
-
-_References available upon request_
+{{> references_footer}}

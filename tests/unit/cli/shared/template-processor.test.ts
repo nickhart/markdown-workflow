@@ -44,6 +44,18 @@ describe('TemplateProcessor', () => {
       const dir = parts.slice(0, -1).join('/');
       return { dir, name, ext, base: fileName, root: '' };
     });
+    mockPath.basename.mockImplementation((filePath: string, ext?: string) => {
+      const fileName = filePath.split('/').pop() || '';
+      if (ext && fileName.endsWith(ext)) {
+        return fileName.slice(0, -ext.length);
+      }
+      return fileName;
+    });
+    mockPath.extname.mockImplementation((filePath: string) => {
+      const fileName = filePath.split('/').pop() || '';
+      const lastDot = fileName.lastIndexOf('.');
+      return lastDot > 0 ? fileName.slice(lastDot) : '';
+    });
 
     // Mock ConfigDiscovery
     mockConfigDiscovery = {
@@ -420,6 +432,189 @@ describe('TemplateProcessor', () => {
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '/collection/path/resume.md',
         expect.stringMatching(/Created on: \w+, \w+ \d{1,2}, \d{4}/),
+      );
+    });
+  });
+
+  describe('loadPartials', () => {
+    beforeEach(() => {
+      mockFs.existsSync.mockReset();
+      mockFs.readdirSync.mockReset();
+      mockFs.readFileSync.mockReset();
+    });
+
+    it('should load partials from system snippets directory', () => {
+      mockFs.existsSync.mockImplementation((dirPath: string) => {
+        return dirPath === '/system/workflows/job/snippets';
+      });
+
+      mockFs.readdirSync.mockImplementation((dirPath: string) => {
+        if (dirPath === '/system/workflows/job/snippets') {
+          return ['header.md', 'footer.md', 'skills.txt'];
+        }
+        return [];
+      });
+
+      mockFs.readFileSync.mockImplementation((filePath: string) => {
+        if (filePath === '/system/workflows/job/snippets/header.md') {
+          return '# {{user.name}}\n\nContact: {{user.email}}';
+        }
+        if (filePath === '/system/workflows/job/snippets/footer.md') {
+          return '---\n\n_References available upon request_';
+        }
+        if (filePath === '/system/workflows/job/snippets/skills.txt') {
+          return '- JavaScript\n- TypeScript';
+        }
+        return '';
+      });
+
+      const partials = TemplateProcessor.loadPartials('/system', 'job');
+
+      expect(partials).toEqual({
+        header: '# {{user.name}}\n\nContact: {{user.email}}',
+        footer: '---\n\n_References available upon request_',
+        skills: '- JavaScript\n- TypeScript',
+      });
+    });
+
+    it('should prioritize project snippets over system snippets', () => {
+      mockFs.existsSync.mockImplementation((dirPath: string) => {
+        return (
+          dirPath === '/system/workflows/job/snippets' ||
+          dirPath === '/project/.markdown-workflow/workflows/job/snippets'
+        );
+      });
+
+      mockFs.readdirSync.mockImplementation((dirPath: string) => {
+        if (dirPath === '/system/workflows/job/snippets') {
+          return ['header.md', 'footer.md'];
+        }
+        if (dirPath === '/project/.markdown-workflow/workflows/job/snippets') {
+          return ['header.md']; // Override system header
+        }
+        return [];
+      });
+
+      mockFs.readFileSync.mockImplementation((filePath: string) => {
+        if (filePath === '/system/workflows/job/snippets/header.md') {
+          return 'System Header';
+        }
+        if (filePath === '/system/workflows/job/snippets/footer.md') {
+          return 'System Footer';
+        }
+        if (filePath === '/project/.markdown-workflow/workflows/job/snippets/header.md') {
+          return 'Project Header';
+        }
+        return '';
+      });
+
+      const partials = TemplateProcessor.loadPartials('/system', 'job', {
+        workflowsDir: '/project/.markdown-workflow/workflows',
+      });
+
+      expect(partials).toEqual({
+        header: 'Project Header', // Project overrides system
+        footer: 'System Footer', // System used as fallback
+      });
+    });
+
+    it('should handle missing snippets directory gracefully', () => {
+      mockFs.existsSync.mockReturnValue(false);
+
+      const partials = TemplateProcessor.loadPartials('/system', 'job');
+
+      expect(partials).toEqual({});
+    });
+
+    it('should handle snippet read errors gracefully', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readdirSync.mockReturnValue(['broken.md']);
+      mockFs.readFileSync.mockImplementation(() => {
+        throw new Error('Permission denied');
+      });
+
+      const partials = TemplateProcessor.loadPartials('/system', 'job');
+
+      expect(partials).toEqual({});
+      expect(mockedFormattingUtils.logWarning).toHaveBeenCalledWith(
+        'Failed to load snippet broken: Permission denied',
+      );
+    });
+
+    it('should filter only .md and .txt files', () => {
+      mockFs.existsSync.mockReturnValue(true);
+      mockFs.readdirSync.mockReturnValue([
+        'snippet.md',
+        'snippet.txt',
+        'image.png',
+        'config.json',
+        'script.js',
+      ]);
+
+      mockFs.readFileSync.mockImplementation((filePath: string) => {
+        if (filePath.includes('snippet.md')) return 'Markdown content';
+        if (filePath.includes('snippet.txt')) return 'Text content';
+        return '';
+      });
+
+      const partials = TemplateProcessor.loadPartials('/system', 'job');
+
+      expect(partials).toEqual({
+        snippet: 'Text content', // .txt loaded after .md, so it overrides
+      });
+
+      // Should only try to read .md and .txt files
+      expect(mockFs.readFileSync).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('processTemplate with partials', () => {
+    const template: WorkflowTemplate = {
+      name: 'resume',
+      file: 'templates/resume/default.md',
+      output: 'resume.md',
+    };
+
+    beforeEach(() => {
+      // Mock template resolution and content
+      mockFs.existsSync.mockImplementation((filePath: string) => {
+        return (
+          filePath === '/system/workflows/job/templates/resume/default.md' ||
+          filePath === '/system/workflows/job/snippets'
+        );
+      });
+
+      mockFs.readFileSync.mockImplementation((filePath: string) => {
+        if (filePath === '/system/workflows/job/templates/resume/default.md') {
+          return '# Resume\n\n{{> contact_info}}\n\n{{> skills}}';
+        }
+        if (filePath === '/system/workflows/job/snippets/contact_info.md') {
+          return 'Email: {{user.email}}';
+        }
+        if (filePath === '/system/workflows/job/snippets/skills.md') {
+          return '- JavaScript\n- TypeScript';
+        }
+        return '';
+      });
+
+      mockFs.readdirSync.mockReturnValue(['contact_info.md', 'skills.md']);
+      mockFs.writeFileSync.mockImplementation();
+    });
+
+    it('should process template with partials correctly', async () => {
+      await TemplateProcessor.processTemplate(template, '/collection/path', {
+        systemRoot: '/system',
+        workflowName: 'job',
+        variables: { company: 'TestCorp', role: 'Engineer' },
+      });
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        '/collection/path/resume.md',
+        expect.stringContaining('Email: your.email@example.com'),
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        '/collection/path/resume.md',
+        expect.stringContaining('- JavaScript'),
       );
     });
   });
