@@ -52,17 +52,22 @@ workflow:
     - name: "submitted"
       description: "Applications submitted to company"
       color: "yellow"
-      next: ["interview", "rejected"]
+      next: ["interview", "rejected", "ghosted"]
 
     - name: "interview"
       description: "Interview process started"
       color: "orange"
-      next: ["offered", "rejected"]
+      next: ["offered", "rejected", "ghosted"]
 
     - name: "offered"
       description: "Job offer received"
       color: "green"
-      next: ["accepted", "declined"]
+      next: ["accepted", "declined", "ghosted"]
+
+    - name: "ghosted"
+      description: "No response from company after extended period"
+      color: "purple"
+      next: ["interview", "rejected"]
 
     - name: "accepted"
       description: "Job offer accepted"
