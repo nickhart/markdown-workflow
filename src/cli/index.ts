@@ -249,12 +249,28 @@ program
   .command('list')
   .description('List collections for a workflow')
   .argument('<workflow>', 'Workflow name (e.g., job, blog)')
-  .option('-s, --status <status>', 'Filter by status')
+  .option('-s, --status <status>', 'Filter by status (comma-separated for multiple)')
+  .option('--name-filter <pattern>', 'Filter by collection ID pattern (case-insensitive)')
+  .option('--company-filter <pattern>', 'Filter by company name pattern (job workflow only)')
+  .option('--title-filter <pattern>', 'Filter by title pattern (blog workflow only)')
+  .option(
+    '--sort <field>',
+    'Sort by field (date-created, date-modified, status, company, title, collection-id)',
+    'date-created',
+  )
+  .option('--sort-order <order>', 'Sort order (asc, desc)', 'desc')
+  .option('--limit <N>', 'Limit results to N collections', (value) => parseInt(value, 10))
   .option('-f, --format <format>', 'Output format (table, json, yaml)', 'table')
   .action(
     withErrorHandling(async (workflow, options) => {
       await listCommand(workflow, {
         status: options.status,
+        nameFilter: options.nameFilter,
+        companyFilter: options.companyFilter,
+        titleFilter: options.titleFilter,
+        sort: options.sort,
+        sortOrder: options.sortOrder,
+        limit: options.limit,
         format: options.format,
       });
     }),
