@@ -6,6 +6,17 @@ workflow:
   description: "Track blog posts through writing and publishing process"
   version: "1.0.0"
 
+  # CLI command configuration
+  cli:
+    aliases: ["blog-create", "bc"]
+    arguments:
+      - name: "title"
+        type: "string"
+        required: true
+        description: "Blog post title"
+    usage: "wf {alias} <title>"
+    description: "Create a new blog post with title and content template"
+
   # Define the stages a blog post can go through
   stages:
     - name: "draft"
@@ -50,9 +61,12 @@ workflow:
   actions:
     - name: "create"
       description: "Create new blog post"
-      usage: "wf create blog <title> <description> [--url <url>] [--template-variant <variant>]"
+      usage: "wf create blog <title> [--template-variant <variant>]"
       templates: ["post"]
       metadata_file: "collection.yml"
+      create_directories: ["assets"]
+      variable_mapping:
+        title: "title"
       parameters:
         - name: "title"
           type: "string"

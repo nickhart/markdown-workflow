@@ -25,12 +25,16 @@ interface CreateOptions {
 /**
  * Create a new collection from a workflow template
  */
-export async function createCommand(
-  workflowName: string,
-  company: string,
-  role: string,
-  options: CreateOptions = {},
-): Promise<void> {
+export async function createCommand(workflowName: string, ...args: unknown[]): Promise<void> {
+  const options: CreateOptions =
+    args[args.length - 1] &&
+    typeof args[args.length - 1] === 'object' &&
+    !Array.isArray(args[args.length - 1])
+      ? (args.pop() as CreateOptions)
+      : {};
+
+  // Parse arguments based on workflow CLI configuration
+  const parsedArgs = args;
   // Initialize project context
   const { systemConfig, projectPaths } = await initializeProject(options);
 
@@ -47,8 +51,31 @@ export async function createCommand(
     workflowName,
   );
 
-  // Generate collection ID
-  const collectionId = generateCollectionId(company, role, systemConfig.projectConfig);
+  // Extract argument values based on workflow CLI configuration
+  const argumentValues: Record<string, unknown> = {};
+  if (workflowDefinition.workflow.cli?.arguments) {
+    workflowDefinition.workflow.cli.arguments.forEach((argDef, index) => {
+      if (index < parsedArgs.length) {
+        argumentValues[argDef.name] = parsedArgs[index];
+      } else if (argDef.required) {
+        throw new Error(`Missing required argument: ${argDef.name}`);
+      }
+    });
+  }
+
+  // Generate collection ID based on workflow-specific pattern
+  let collectionId: string;
+  if (workflowName === 'job') {
+    // Legacy support for job workflow
+    const company = (argumentValues.company as string) || (parsedArgs[0] as string);
+    const role = (argumentValues.role as string) || (parsedArgs[1] as string);
+    collectionId = generateCollectionId(company, role, systemConfig.projectConfig);
+  } else {
+    // For other workflows, use title or first argument for ID generation
+    const primaryValue =
+      (argumentValues.title as string) || (parsedArgs[0] as string) || 'untitled';
+    collectionId = generateCollectionId(primaryValue, '', systemConfig.projectConfig);
+  }
 
   // Create collection directory organized by workflow and initial status
   const initialStatus = workflowDefinition.workflow.stages[0].name;
@@ -85,7 +112,7 @@ export async function createCommand(
     }
   }
 
-  // Create collection metadata
+  // Create collection metadata based on workflow arguments
   const metadata: CollectionMetadata = {
     collection_id: collectionId,
     workflow: workflowName,
@@ -98,8 +125,7 @@ export async function createCommand(
         date: getCurrentISODate(systemConfig.projectConfig),
       },
     ],
-    company,
-    role,
+    ...argumentValues, // Include all workflow-specific arguments
     ...(options.url && { url: options.url }),
   };
 
@@ -108,23 +134,45 @@ export async function createCommand(
   const metadataContent = generateMetadataYaml(metadata);
   fs.writeFileSync(metadataPath, metadataContent);
 
-  // Process templates for the create action
+  // Create directories specified in workflow action
   const createAction = workflowDefinition.workflow.actions.find(
     (action) => action.name === 'create',
   );
 
+  if (createAction?.create_directories) {
+    for (const dirName of createAction.create_directories) {
+      const dirPath = path.join(collectionPath, dirName);
+
+      try {
+        fs.mkdirSync(dirPath, { recursive: true });
+      } catch (error) {
+        // Log warning but don't fail the entire operation
+        console.warn(`Warning: Could not create directory "${dirName}":`, error);
+      }
+    }
+  }
+
+  // Process templates for the create action
   if (createAction && createAction.templates) {
     for (const templateName of createAction.templates) {
       const template = workflowDefinition.workflow.templates.find((t) => t.name === templateName);
 
       if (template) {
-        // Filter options to only include string values for template processing
+        // Build template variables from workflow arguments and variable mapping
         const templateVariables: Record<string, string> = {
-          company,
-          role,
+          ...argumentValues,
           ...(options.url && { url: options.url }),
           ...(options.template_variant && { template_variant: options.template_variant }),
         };
+
+        // Apply variable mapping if defined in the create action
+        if (createAction.variable_mapping) {
+          for (const [sourceKey, targetKey] of Object.entries(createAction.variable_mapping)) {
+            if (argumentValues[sourceKey]) {
+              templateVariables[targetKey] = argumentValues[sourceKey] as string;
+            }
+          }
+        }
 
         await TemplateProcessor.processTemplate(template, collectionPath, {
           systemRoot: systemConfig.paths.systemRoot,

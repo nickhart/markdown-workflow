@@ -6,6 +6,29 @@ workflow:
   description: "Track job applications through hiring process"
   version: "1.0.0"
 
+  # CLI command configuration
+  cli:
+    aliases: ["job-apply", "ja"]
+    arguments:
+      - name: "company"
+        type: "string"
+        required: true
+        description: "Company name"
+      - name: "role"
+        type: "string"
+        required: true
+        description: "Job role/position"
+      - name: "variant"
+        type: "string"
+        required: false
+        description: "Template variant (e.g., frontend, mobile, ai)"
+      - name: "url"
+        type: "string"
+        required: false
+        description: "Job posting URL"
+    usage: "wf {alias} <company> <role> [variant] [url]"
+    description: "Create a new job application with resume and cover letter"
+
   # Define the stages a job application can go through
   stages:
     - name: "active"
@@ -82,6 +105,11 @@ workflow:
       usage: "wf create job <company> <role> [--url <job_posting_url>] [--template-variant <variant>]"
       templates: ["resume", "cover_letter"]
       metadata_file: "collection.yml"
+      variable_mapping:
+        company: "company"
+        role: "role"
+        variant: "template_variant"
+        url: "url"
       parameters:
         - name: "company"
           type: "string"
