@@ -25,6 +25,47 @@ if (!fs.existsSync(SNAPSHOTS_DIR)) {
 }
 
 /**
+ * Check if we should use deterministic timestamps based on testing configuration
+ */
+function shouldUseDeterministicTimestamps(directory) {
+  try {
+    // Look for testing config in the directory being snapshotted
+    const configPaths = [
+      path.join(directory, '.markdown-workflow', 'config.yml'),
+      path.join(directory, '..', '.markdown-workflow', 'config.yml'), // parent directory
+      path.join(process.cwd(), 'test-configs', 'testing-config.yml'), // test-configs directory
+    ];
+
+    for (const configPath of configPaths) {
+      if (fs.existsSync(configPath)) {
+        const configContent = fs.readFileSync(configPath, 'utf8');
+        // Simple check for mock_file_timestamps: true
+        if (configContent.includes('mock_file_timestamps: true')) {
+          return true;
+        }
+      }
+    }
+
+    // Also check for TESTING environment variable
+    return process.env.NODE_ENV === 'test' || process.env.TESTING === 'true';
+  } catch (error) {
+    // If we can't read config, default to real timestamps
+    return false;
+  }
+}
+
+/**
+ * Get timestamp - either deterministic for testing or real timestamp
+ */
+function getTimestamp(realStat, directory) {
+  if (shouldUseDeterministicTimestamps(directory)) {
+    // Use fixed timestamp for deterministic snapshots
+    return '2025-01-21T10:00:00.000Z';
+  }
+  return realStat.mtime.toISOString();
+}
+
+/**
  * Create a snapshot of a directory structure
  */
 function createSnapshot(directory, options = {}) {
@@ -62,7 +103,7 @@ function createSnapshot(directory, options = {}) {
           path: entryRelativePath,
           type: entry.isDirectory() ? 'directory' : 'file',
           size: entry.isFile() ? stats.size : 0,
-          modified: stats.mtime.toISOString(),
+          modified: getTimestamp(stats, directory),
         };
 
         if (entry.isFile() && includeContent) {

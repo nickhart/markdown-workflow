@@ -42,8 +42,8 @@ export async function formatCommand(
 
   // Get workflow-aware default format
   const configDiscoveryInstance = options.configDiscovery || new ConfigDiscovery();
-  const systemRoot = configDiscoveryInstance.findSystemRoot(process.cwd()) || '';
-  const workflowDef = await loadWorkflowDefinition(systemRoot, workflowName);
+  const systemConfig = configDiscoveryInstance.discoverSystemConfiguration();
+  const workflowDef = await loadWorkflowDefinition(systemConfig.systemRoot, workflowName);
   const formatAction = workflowDef.workflow.actions.find((a) => a.name === 'format');
   const defaultFormat = formatAction?.formats?.[0] || 'docx';
   const format = options.format || defaultFormat;
