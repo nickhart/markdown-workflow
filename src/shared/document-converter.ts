@@ -7,12 +7,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { PlantUMLProcessor, type PlantUMLConfig } from './plantuml-processor.js';
 
 export interface ConversionOptions {
   inputFile: string;
   outputFile: string;
   format: 'docx' | 'html' | 'pdf';
   referenceDoc?: string; // For DOCX styling
+  plantumlConfig?: PlantUMLConfig; // For PlantUML diagram processing
 }
 
 export interface ConversionResult {
@@ -27,7 +29,7 @@ export interface ConversionResult {
  * Supports mocking mode for deterministic testing via MOCK_PANDOC environment variable
  */
 export async function convertDocument(options: ConversionOptions): Promise<ConversionResult> {
-  const { inputFile, outputFile, format, referenceDoc } = options;
+  const { inputFile, outputFile, format, referenceDoc, plantumlConfig } = options;
 
   // Check if input file exists
   if (!fs.existsSync(inputFile)) {
@@ -49,6 +51,21 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
     return await mockPandocConversion(options);
   }
 
+  // Process PlantUML diagrams if configuration is provided
+  let actualInputFile = inputFile;
+  let tempProcessedFile: string | null = null;
+
+  if (plantumlConfig) {
+    const result = await processPlantUMLInFile(inputFile, outputDir, plantumlConfig);
+    if (result.success && result.processedFile) {
+      actualInputFile = result.processedFile;
+      tempProcessedFile = result.processedFile;
+    } else if (result.error) {
+      console.warn(`⚠️  PlantUML processing failed: ${result.error}`);
+      // Continue with original file
+    }
+  }
+
   // Build pandoc command arguments - simple approach like the shell function
   const args = [];
 
@@ -68,7 +85,7 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
   }
 
   // Add output file and input file
-  args.push('-o', outputFile, inputFile);
+  args.push('-o', outputFile, actualInputFile);
 
   try {
     const result = await runPandoc(args);
@@ -91,6 +108,11 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
       outputFile: outputFile,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
+  } finally {
+    // Clean up temporary processed file
+    if (tempProcessedFile && fs.existsSync(tempProcessedFile)) {
+      fs.unlinkSync(tempProcessedFile);
+    }
   }
 }
 
@@ -259,6 +281,59 @@ async function runPandoc(
       });
     });
   });
+}
+
+/**
+ * Process PlantUML diagrams in a markdown file
+ * Returns a temporary processed file with diagrams replaced by image references
+ */
+async function processPlantUMLInFile(
+  inputFile: string,
+  outputDir: string,
+  plantumlConfig: PlantUMLConfig,
+): Promise<{
+  success: boolean;
+  processedFile?: string;
+  error?: string;
+}> {
+  try {
+    // Read the input markdown file
+    const markdownContent = fs.readFileSync(inputFile, 'utf8');
+
+    // Create PlantUML processor
+    const processor = new PlantUMLProcessor(plantumlConfig);
+
+    // Create assets directory for diagrams (relative to output directory)
+    const assetsDir = path.join(outputDir, 'assets');
+
+    // Process the markdown content
+    const result = await processor.processMarkdown(markdownContent, assetsDir);
+
+    if (result.diagrams.length > 0) {
+      console.log(`🎨 Generated ${result.diagrams.length} PlantUML diagram(s):`);
+      result.diagrams.forEach((diagram) => {
+        console.log(`  - ${diagram.name}: ${diagram.relativePath}`);
+      });
+    }
+
+    // Create a temporary processed file
+    const tempFileName =
+      path.basename(inputFile, path.extname(inputFile)) + '_plantuml_processed.md';
+    const tempFile = path.join(outputDir, tempFileName);
+
+    // Write the processed markdown to temp file
+    fs.writeFileSync(tempFile, result.processedMarkdown, 'utf8');
+
+    return {
+      success: true,
+      processedFile: tempFile,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown PlantUML processing error',
+    };
+  }
 }
 
 /**

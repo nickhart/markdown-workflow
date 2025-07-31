@@ -144,6 +144,13 @@ async function createDefaultConfig(configPath: string): Promise<void> {
         sanitize_spaces: '_',
         max_length: 50,
       },
+      plantuml: {
+        method: 'auto',
+        docker_image: 'plantuml/plantuml',
+        java_jar_path: '/usr/local/lib/plantuml.jar',
+        output_format: 'png',
+        timeout: 30,
+      },
       testing: {
         // Uncomment to override current date for predictable testing
         // override_current_date: '2025-01-21T10:00:00.000Z',

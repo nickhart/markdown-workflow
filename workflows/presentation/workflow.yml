@@ -1,0 +1,135 @@
+# Technical Presentation Workflow
+# Create presentations with auto-generated UML diagrams
+
+workflow:
+  name: "presentation"
+  description: "Create technical presentations with auto-generated UML diagrams"
+  version: "1.0.0"
+
+  # CLI command configuration
+  cli:
+    aliases: ["pres", "slides"]
+    arguments:
+      - name: "title"
+        type: "string"
+        required: true
+        description: "Presentation title"
+        help_text: "The main title for your presentation"
+      - name: "template"
+        type: "string"
+        required: false
+        description: "Template variant (beginner, technical, architecture)"
+        help_text: "Choose a template that matches your presentation style"
+    
+    description: "Create technical presentations with PlantUML diagrams"
+    usage: "{alias} \"Presentation Title\" [template]"
+    help_text: |
+      Create professional technical presentations with auto-generated UML diagrams.
+      
+      Features:
+      - PlantUML diagram generation (flow, sequence, class diagrams)
+      - Multiple output formats (PPTX, HTML, PDF)
+      - Professional styling with reference templates
+      - Version control friendly markdown source
+      
+      The presentation system processes PlantUML blocks like:
+      ```plantuml:diagram-name
+      @startuml
+      A -> B : message
+      @enduml
+      ```
+    
+    examples:
+      - "pres \"System Architecture Overview\""
+      - "pres \"API Documentation\" technical"
+      - "slides \"Getting Started Guide\" beginner"
+
+  # Workflow stages
+  stages:
+    - name: "draft"
+      description: "Initial presentation draft"
+      color: "blue"
+      next: ["review", "published"]
+
+    - name: "review"
+      description: "Under review and revision"
+      color: "yellow"
+      next: ["draft", "published"]
+
+    - name: "published"
+      description: "Final presentation ready for delivery"
+      color: "green"
+      terminal: true
+
+  # Templates for content generation
+  templates:
+    - name: "content"
+      file: "templates/content/default.md"
+      output: "content.md"
+      description: "Main presentation content"
+    
+    - name: "slides"
+      file: "templates/slides/default.md"
+      output: "slides.md"
+      description: "Slide-specific formatting template"
+
+  # Static resources
+  statics:
+    - name: "pptx_template"
+      file: "templates/static/reference.pptx"
+      description: "PowerPoint reference template for styling"
+    
+    - name: "html_styles"
+      file: "templates/static/styles.css"
+      description: "CSS styles for HTML output"
+    
+    - name: "plantuml_config"
+      file: "templates/static/plantuml-config.txt"
+      description: "PlantUML configuration settings"
+
+  # Workflow actions
+  actions:
+    - name: "create"
+      description: "Create new presentation collection"
+      templates: ["content"]
+      metadata_file: "presentation.yml"
+      create_directories: ["assets", "diagrams", "images"]
+
+    - name: "format"
+      description: "Generate diagrams and create presentation files"
+      converter: "presentation"
+      formats: ["pptx", "html", "pdf"]
+      parameters:
+        - name: "theme"
+          type: "enum"
+          options: ["corporate", "technical", "minimal"]
+          default: "technical"
+          description: "Presentation theme"
+        
+        - name: "diagram_format"
+          type: "enum"
+          options: ["png", "svg"]
+          default: "png"
+          description: "Diagram output format"
+        
+        - name: "slide_layout"
+          type: "enum"
+          options: ["standard", "widescreen"]
+          default: "widescreen"
+          description: "Slide aspect ratio"
+
+    - name: "preview"
+      description: "Generate HTML preview of presentation"
+      converter: "presentation"
+      formats: ["html"]
+
+  # Metadata schema
+  metadata:
+    required_fields: ["title", "template"]
+    optional_fields: ["author", "date", "theme", "tags", "description"]
+    auto_generated: ["collection_id", "date_created", "date_modified", "status_history"]
+
+  # Collection ID format
+  collection_id:
+    pattern: "{title}_{date}"
+    max_length: 60

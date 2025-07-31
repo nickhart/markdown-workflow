@@ -60,8 +60,14 @@ export class WorkflowEngine {
    */
   private async ensureProjectConfigLoaded(): Promise<void> {
     if (this.projectConfig === null) {
-      const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
-      this.projectConfig = config.projectConfig || null;
+      try {
+        const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
+        this.projectConfig = config.projectConfig || null;
+        console.log(`🔧 Config resolution result:`, config.projectConfig ? 'SUCCESS' : 'NULL');
+      } catch (error) {
+        console.error(`🔧 Config resolution failed:`, error);
+        this.projectConfig = null;
+      }
     }
   }
 
@@ -300,6 +306,9 @@ export class WorkflowEngine {
     action: WorkflowAction,
     parameters: Record<string, unknown>,
   ): Promise<void> {
+    // Ensure project config is loaded for PlantUML and other settings
+    await this.ensureProjectConfigLoaded();
+
     const formatType = parameters.format || 'docx';
     const requestedArtifacts = parameters.artifacts as string[] | undefined;
     const outputDir = path.join(collection.path, 'formatted');
@@ -365,11 +374,18 @@ export class WorkflowEngine {
           console.log(`\n⚠️  NO TEMPLATE TYPE DETECTED - using default pandoc styling\n`);
         }
 
+        // Get PlantUML configuration from project config
+        let plantumlConfig = undefined;
+        if (this.projectConfig?.system?.plantuml) {
+          plantumlConfig = this.projectConfig.system.plantuml;
+        }
+
         const result = await convertDocument({
           inputFile: inputPath,
           outputFile: outputPath,
           format: formatType as 'docx' | 'html' | 'pdf',
           referenceDoc,
+          plantumlConfig,
         });
 
         if (result.success) {
@@ -619,6 +635,13 @@ export class WorkflowEngine {
         date_format: 'MM/DD/YYYY',
         sanitize_spaces: '_',
         max_length: 50,
+      },
+      plantuml: {
+        method: 'auto' as const,
+        docker_image: 'plantuml/plantuml',
+        java_jar_path: '/usr/local/lib/plantuml.jar',
+        output_format: 'png' as const,
+        timeout: 30,
       },
     };
   }

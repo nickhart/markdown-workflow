@@ -122,6 +122,13 @@ export const SystemConfigSchema = z.object({
     sanitize_spaces: z.string(),
     max_length: z.number(),
   }),
+  plantuml: z.object({
+    method: z.enum(['auto', 'docker', 'java', 'native']),
+    docker_image: z.string(),
+    java_jar_path: z.string().optional(),
+    output_format: z.enum(['png', 'svg']),
+    timeout: z.number(),
+  }),
   testing: z
     .object({
       // Date/Time overrides
