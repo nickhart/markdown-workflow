@@ -18,30 +18,31 @@ workflow:
       - name: "template"
         type: "string"
         required: false
-        description: "Template variant (beginner, technical, architecture)"
-        help_text: "Choose a template that matches your presentation style"
+        description: "Template variant (default, technical, layout-optimized, compact, beginner)"
+        help_text: "Choose a template that matches your presentation style and layout needs"
     
-    description: "Create technical presentations with PlantUML diagrams"
+    description: "Create technical presentations with Mermaid diagrams"
     usage: "{alias} \"Presentation Title\" [template]"
     help_text: |
-      Create professional technical presentations with auto-generated UML diagrams.
+      Create professional technical presentations with auto-generated diagrams.
       
       Features:
-      - PlantUML diagram generation (flow, sequence, class diagrams)
+      - Mermaid diagram generation (flowcharts, sequences, architectures)
+      - Layout-optimized templates (horizontal flows, compact layouts)
       - Multiple output formats (PPTX, HTML, PDF)
-      - Professional styling with reference templates
+      - Professional styling with size constraints
       - Version control friendly markdown source
       
-      The presentation system processes PlantUML blocks like:
-      ```plantuml:diagram-name
-      @startuml
-      A -> B : message
-      @enduml
+      The presentation system processes Mermaid blocks with layout hints:
+      ```mermaid:diagram-name {layout=horizontal, width=1000px}
+      flowchart LR
+        A --> B --> C
       ```
     
     examples:
       - "pres \"System Architecture Overview\""
-      - "pres \"API Documentation\" technical"
+      - "pres \"API Documentation\" layout-optimized"
+      - "pres \"Executive Summary\" compact"
       - "slides \"Getting Started Guide\" beginner"
 
   # Workflow stages
