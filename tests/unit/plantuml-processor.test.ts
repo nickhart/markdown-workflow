@@ -14,7 +14,7 @@ const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockOs = os as jest.Mocked<typeof os>;
 
-describe('PlantUMLProcessor', () => {
+describe.skip('PlantUMLProcessor [DEPRECATED - Replaced by Mermaid]', () => {
   let processor: PlantUMLProcessor;
   let mockConfig: PlantUMLConfig;
 

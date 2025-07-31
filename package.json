@@ -39,6 +39,7 @@
     "gh:ci:trigger": "gh workflow run ci.yml"
   },
   "dependencies": {
+    "@mermaid-js/mermaid-cli": "^11.9.0",
     "commander": "^14.0.0",
     "fs-extra": "^11.3.0",
     "mustache": "^4.2.0",

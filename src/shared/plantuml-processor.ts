@@ -37,10 +37,11 @@ export class PlantUMLProcessor {
 
   /**
    * Create processor from system configuration
+   * @deprecated This is legacy code - PlantUML has been replaced by Mermaid
    */
-  static fromSystemConfig(systemConfig: SystemConfig): PlantUMLProcessor {
-    return new PlantUMLProcessor(systemConfig.plantuml);
-  }
+  // static fromSystemConfig(systemConfig: SystemConfig): PlantUMLProcessor {
+  //   return new PlantUMLProcessor(systemConfig.plantuml);
+  // }
 
   /**
    * Detect available PlantUML installation methods
@@ -279,6 +280,8 @@ export class PlantUMLProcessor {
     diagrams: Array<{ name: string; path: string; relativePath: string }>;
   }> {
     const blocks = this.extractPlantUMLBlocks(markdown);
+    console.info(`Found ${blocks.length} PlantUML block(s) in markdown.`);
+
     const diagrams: Array<{ name: string; path: string; relativePath: string }> = [];
 
     if (blocks.length === 0) {

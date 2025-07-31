@@ -99,11 +99,9 @@ export interface SystemConfig {
     sanitize_spaces: string;
     max_length: number;
   };
-  plantuml: {
-    method: 'auto' | 'docker' | 'java' | 'native';
-    docker_image: string;
-    java_jar_path?: string;
+  mermaid: {
     output_format: 'png' | 'svg';
+    theme?: 'default' | 'dark' | 'forest' | 'neutral';
     timeout: number;
   };
   testing?: {

@@ -122,11 +122,9 @@ export const SystemConfigSchema = z.object({
     sanitize_spaces: z.string(),
     max_length: z.number(),
   }),
-  plantuml: z.object({
-    method: z.enum(['auto', 'docker', 'java', 'native']),
-    docker_image: z.string(),
-    java_jar_path: z.string().optional(),
+  mermaid: z.object({
     output_format: z.enum(['png', 'svg']),
+    theme: z.enum(['default', 'dark', 'forest', 'neutral']).optional(),
     timeout: z.number(),
   }),
   testing: z
