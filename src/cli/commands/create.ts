@@ -190,8 +190,12 @@ export async function createCommand(workflowName: string, ...args: unknown[]): P
     await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
   }
 
+  // Get workflow default format for next steps message
+  const formatAction = workflowDefinition.workflow.actions.find((a) => a.name === 'format');
+  const defaultFormat = formatAction?.formats?.[0];
+
   logSuccess('Collection created successfully!');
-  logNextSteps(workflowName, collectionId, collectionPath);
+  logNextSteps(workflowName, collectionId, collectionPath, defaultFormat);
 }
 
 export default createCommand;

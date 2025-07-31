@@ -2,17 +2,33 @@ import * as path from 'path';
 import { formatCommand, formatAllCommand } from '../../../../src/cli/commands/format.js';
 import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
 import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
+import { loadWorkflowDefinition } from '../../../../src/cli/shared/workflow-operations.js';
 
 // Mock dependencies
 jest.mock('path');
 jest.mock('../../../../src/core/workflow-engine.js');
+jest.mock('../../../../src/cli/shared/workflow-operations.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
 const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
+const mockLoadWorkflowDefinition = loadWorkflowDefinition as jest.MockedFunction<
+  typeof loadWorkflowDefinition
+>;
 
 describe('formatCommand', () => {
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
   let mockEngine: jest.Mocked<WorkflowEngine>;
+
+  const createMockWorkflowDef = (formats = ['docx', 'html', 'pdf']) => ({
+    workflow: {
+      actions: [
+        {
+          name: 'format',
+          formats,
+        },
+      ],
+    },
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,17 +44,25 @@ describe('formatCommand', () => {
     // Mock ConfigDiscovery
     mockConfigDiscovery = {
       requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+      findSystemRoot: jest.fn().mockReturnValue('/mock/system'),
     } as jest.Mocked<ConfigDiscovery>;
 
     // Mock WorkflowEngine
     mockEngine = {
-      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
+      getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog', 'presentation']),
       getCollection: jest.fn(),
+      getWorkflowDefinition: jest.fn(),
       executeAction: jest.fn(),
       getCollections: jest.fn(),
     } as jest.Mocked<WorkflowEngine>;
 
     MockedWorkflowEngine.mockImplementation(() => mockEngine);
+
+    // Set default workflow definition mock
+    mockEngine.getWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
+
+    // Mock loadWorkflowDefinition
+    mockLoadWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
   });
 
   it('should format all documents in a collection when no artifacts specified', async () => {
@@ -49,6 +73,7 @@ describe('formatCommand', () => {
     };
 
     mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockEngine.getWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
     mockEngine.executeAction.mockResolvedValue(undefined);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
@@ -185,6 +210,119 @@ describe('formatCommand', () => {
     await expect(formatCommand('nonexistent', 'test_collection', options)).rejects.toThrow(
       'Unknown workflow: nonexistent. Available: job, blog',
     );
+  });
+
+  describe('presentation workflow', () => {
+    it('should default to PPTX format for presentation workflow', async () => {
+      const mockPresentationCollection = {
+        metadata: { collection_id: 'test_presentation' },
+        artifacts: ['content.md'],
+        path: '/mock/project/presentation/draft/test_presentation',
+      };
+
+      const mockPresentationWorkflowDef = {
+        workflow: {
+          actions: [
+            {
+              name: 'format',
+              formats: ['pptx', 'html', 'pdf'],
+            },
+          ],
+        },
+      };
+
+      mockEngine.getCollection.mockResolvedValue(mockPresentationCollection);
+      mockLoadWorkflowDefinition.mockResolvedValue(mockPresentationWorkflowDef);
+      mockEngine.executeAction.mockResolvedValue(undefined);
+
+      const options = {
+        cwd: '/mock/project',
+        configDiscovery: mockConfigDiscovery,
+        // No format specified - should use workflow default
+      };
+
+      await formatCommand('presentation', 'test_presentation', options);
+
+      expect(console.log).toHaveBeenCalledWith('Format: pptx');
+      expect(mockEngine.executeAction).toHaveBeenCalledWith(
+        'presentation',
+        'test_presentation',
+        'format',
+        {
+          format: 'pptx',
+          artifacts: undefined,
+        },
+      );
+    });
+
+    it('should allow overriding default format for presentation workflow', async () => {
+      const mockPresentationCollection = {
+        metadata: { collection_id: 'test_presentation' },
+        artifacts: ['content.md'],
+        path: '/mock/project/presentation/draft/test_presentation',
+      };
+
+      const mockWorkflowDef = {
+        workflow: {
+          actions: [
+            {
+              name: 'format',
+              formats: ['pptx', 'html', 'pdf'],
+            },
+          ],
+        },
+      };
+
+      mockEngine.getCollection.mockResolvedValue(mockPresentationCollection);
+      mockLoadWorkflowDefinition.mockResolvedValue(mockWorkflowDef);
+      mockEngine.executeAction.mockResolvedValue(undefined);
+
+      const options = {
+        cwd: '/mock/project',
+        configDiscovery: mockConfigDiscovery,
+        format: 'html' as const,
+      };
+
+      await formatCommand('presentation', 'test_presentation', options);
+
+      expect(console.log).toHaveBeenCalledWith('Format: html');
+      expect(mockEngine.executeAction).toHaveBeenCalledWith(
+        'presentation',
+        'test_presentation',
+        'format',
+        {
+          format: 'html',
+          artifacts: undefined,
+        },
+      );
+    });
+
+    it('should fall back to docx when workflow has no format action', async () => {
+      const mockCollection = {
+        metadata: { collection_id: 'test_collection' },
+        artifacts: ['content.md'],
+        path: '/mock/project/presentation/draft/test_collection',
+      };
+
+      const mockWorkflowDef = {
+        workflow: {
+          actions: [], // No format action
+        },
+      };
+
+      mockEngine.getCollection.mockResolvedValue(mockCollection);
+      mockLoadWorkflowDefinition.mockResolvedValue(mockWorkflowDef);
+      mockEngine.executeAction.mockResolvedValue(undefined);
+
+      const options = {
+        cwd: '/mock/project',
+        configDiscovery: mockConfigDiscovery,
+      };
+
+      await formatCommand('presentation', 'test_collection', options);
+
+      expect(console.log).toHaveBeenCalledWith('Format: docx');
+    });
   });
 });
 

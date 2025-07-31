@@ -1,8 +1,9 @@
 import { WorkflowEngine } from '../../core/workflow-engine.js';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { loadWorkflowDefinition } from '../shared/workflow-operations.js';
 
 interface FormatOptions {
-  format?: 'docx' | 'html' | 'pdf';
+  format?: 'docx' | 'html' | 'pdf' | 'pptx';
   artifacts?: string[];
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
@@ -39,8 +40,13 @@ export async function formatCommand(
     throw new Error(`Collection not found: ${collectionId}`);
   }
 
-  // Get format from options or default to docx
-  const format = options.format || 'docx';
+  // Get workflow-aware default format
+  const configDiscoveryInstance = options.configDiscovery || new ConfigDiscovery();
+  const systemRoot = configDiscoveryInstance.findSystemRoot(process.cwd()) || '';
+  const workflowDef = await loadWorkflowDefinition(systemRoot, workflowName);
+  const formatAction = workflowDef.workflow.actions.find((a) => a.name === 'format');
+  const defaultFormat = formatAction?.formats?.[0] || 'docx';
+  const format = options.format || defaultFormat;
 
   console.log(`Formatting collection: ${collectionId}`);
   console.log(`Format: ${format}`);

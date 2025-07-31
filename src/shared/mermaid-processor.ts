@@ -62,8 +62,40 @@ export class MermaidProcessor {
   }
 
   /**
+   * Parse layout attributes from attribute string
+   * Supports: {align=center, width=80%, layout=horizontal}
+   */
+  private parseLayoutAttributes(attributeString: string): {
+    width?: number;
+    height?: number;
+    layout?: string;
+  } {
+    const options: { width?: number; height?: number; layout?: string } = {};
+
+    if (!attributeString) return options;
+
+    // Remove braces and split by commas
+    const cleaned = attributeString.replace(/[{}]/g, '').trim();
+    const attributes = cleaned.split(',').map((attr) => attr.trim());
+
+    for (const attr of attributes) {
+      const [key, value] = attr.split('=').map((s) => s.trim());
+
+      if (key === 'layout') {
+        options.layout = value;
+      } else if (key === 'width' && value.includes('px')) {
+        options.width = parseInt(value.replace('px', ''));
+      } else if (key === 'height' && value.includes('px')) {
+        options.height = parseInt(value.replace('px', ''));
+      }
+    }
+
+    return options;
+  }
+
+  /**
    * Extract Mermaid blocks from markdown content
-   * Supports syntax: ```mermaid:diagram-name {align=center, width=80%}
+   * Supports syntax: ```mermaid:diagram-name {align=center, width=80%, layout=horizontal}
    */
   extractMermaidBlocks(markdown: string): MermaidBlock[] {
     const blocks: MermaidBlock[] = [];
@@ -88,7 +120,11 @@ export class MermaidProcessor {
   /**
    * Generate a diagram from Mermaid code using Mermaid CLI
    */
-  async generateDiagram(mermaidCode: string, outputPath: string): Promise<DiagramGenerationResult> {
+  async generateDiagram(
+    mermaidCode: string,
+    outputPath: string,
+    options?: { width?: number; height?: number; layout?: string },
+  ): Promise<DiagramGenerationResult> {
     const isAvailable = await MermaidProcessor.detectMermaidCLI();
 
     if (!isAvailable) {
@@ -115,7 +151,17 @@ export class MermaidProcessor {
         const theme = this.config.theme || 'default';
         const timeout = this.config.timeout * 1000;
 
-        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}`;
+        // Add size constraints based on layout hints
+        let sizeParams = '';
+        if (options?.layout === 'horizontal' || options?.width) {
+          const width = options?.width || 1200; // Max width for horizontal layouts
+          sizeParams += ` -w ${width}`;
+        } else if (options?.layout === 'layered' || options?.height) {
+          const height = options?.height || 800; // Max height for vertical layouts
+          sizeParams += ` -H ${height}`;
+        }
+
+        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}${sizeParams}`;
 
         execSync(command, {
           timeout,
@@ -200,7 +246,9 @@ export class MermaidProcessor {
         fs.writeFileSync(mermaidSourcePath, block.code);
       }
 
-      const result = await this.generateDiagram(block.code, outputPath);
+      // Parse layout attributes from block attributes
+      const layoutOptions = this.parseLayoutAttributes(block.attributes);
+      const result = await this.generateDiagram(block.code, outputPath, layoutOptions);
 
       if (result.success) {
         diagrams.push({
