@@ -7,14 +7,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn } from 'child_process';
-import { PlantUMLProcessor, type PlantUMLConfig } from './plantuml-processor.js';
+import { MermaidProcessor, type MermaidConfig } from './mermaid-processor.js';
 
 export interface ConversionOptions {
   inputFile: string;
   outputFile: string;
-  format: 'docx' | 'html' | 'pdf';
-  referenceDoc?: string; // For DOCX styling
-  plantumlConfig?: PlantUMLConfig; // For PlantUML diagram processing
+  format: 'docx' | 'html' | 'pdf' | 'pptx';
+  referenceDoc?: string; // For DOCX/PPTX styling
+  mermaidConfig?: MermaidConfig; // For Mermaid diagram processing
 }
 
 export interface ConversionResult {
@@ -29,7 +29,7 @@ export interface ConversionResult {
  * Supports mocking mode for deterministic testing via MOCK_PANDOC environment variable
  */
 export async function convertDocument(options: ConversionOptions): Promise<ConversionResult> {
-  const { inputFile, outputFile, format, referenceDoc, plantumlConfig } = options;
+  const { inputFile, outputFile, format, referenceDoc, mermaidConfig } = options;
 
   // Check if input file exists
   if (!fs.existsSync(inputFile)) {
@@ -51,17 +51,17 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
     return await mockPandocConversion(options);
   }
 
-  // Process PlantUML diagrams if configuration is provided
+  // Process Mermaid diagrams if configuration is provided
   let actualInputFile = inputFile;
   let tempProcessedFile: string | null = null;
 
-  if (plantumlConfig) {
-    const result = await processPlantUMLInFile(inputFile, outputDir, plantumlConfig);
+  if (mermaidConfig) {
+    const result = await processMermaidInFile(inputFile, outputDir, mermaidConfig);
     if (result.success && result.processedFile) {
       actualInputFile = result.processedFile;
       tempProcessedFile = result.processedFile;
     } else if (result.error) {
-      console.warn(`⚠️  PlantUML processing failed: ${result.error}`);
+      console.warn(`⚠️  Mermaid processing failed: ${result.error}`);
       // Continue with original file
     }
   }
@@ -72,6 +72,11 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
   // Add format-specific options first
   switch (format) {
     case 'docx':
+      if (referenceDoc && fs.existsSync(referenceDoc)) {
+        args.push('--reference-doc', referenceDoc);
+      }
+      break;
+    case 'pptx':
       if (referenceDoc && fs.existsSync(referenceDoc)) {
         args.push('--reference-doc', referenceDoc);
       }
@@ -196,6 +201,18 @@ Mock PDF - Hash: ${inputHash}`,
         'utf8',
       );
       break;
+    case 'pptx':
+      // Create mock PPTX content (minimal PowerPoint structure)
+      mockContent = Buffer.from(
+        `PK\\x03\\x04Mock PPTX File
+Content Hash: ${inputHash}
+This is a mock PPTX file created for testing purposes.
+The content is deterministic based on the input markdown file.
+This ensures consistent snapshot testing without pandoc dependency.
+PK\\x05\\x06Mock PPTX End`,
+        'utf8',
+      );
+      break;
     default:
       return {
         success: false,
@@ -284,13 +301,13 @@ async function runPandoc(
 }
 
 /**
- * Process PlantUML diagrams in a markdown file
+ * Process Mermaid diagrams in a markdown file
  * Returns a temporary processed file with diagrams replaced by image references
  */
-async function processPlantUMLInFile(
+async function processMermaidInFile(
   inputFile: string,
   outputDir: string,
-  plantumlConfig: PlantUMLConfig,
+  mermaidConfig: MermaidConfig,
 ): Promise<{
   success: boolean;
   processedFile?: string;
@@ -300,17 +317,18 @@ async function processPlantUMLInFile(
     // Read the input markdown file
     const markdownContent = fs.readFileSync(inputFile, 'utf8');
 
-    // Create PlantUML processor
-    const processor = new PlantUMLProcessor(plantumlConfig);
+    // Create Mermaid processor
+    const processor = new MermaidProcessor(mermaidConfig);
 
-    // Create assets directory for diagrams (relative to output directory)
+    // Create assets and intermediate directories
     const assetsDir = path.join(outputDir, 'assets');
+    const intermediateDir = path.join(outputDir, 'intermediate');
 
     // Process the markdown content
-    const result = await processor.processMarkdown(markdownContent, assetsDir);
+    const result = await processor.processMarkdown(markdownContent, assetsDir, intermediateDir);
 
     if (result.diagrams.length > 0) {
-      console.log(`🎨 Generated ${result.diagrams.length} PlantUML diagram(s):`);
+      console.log(`🎨 Generated ${result.diagrams.length} Mermaid diagram(s):`);
       result.diagrams.forEach((diagram) => {
         console.log(`  - ${diagram.name}: ${diagram.relativePath}`);
       });
@@ -318,10 +336,10 @@ async function processPlantUMLInFile(
 
     // Create a temporary processed file
     const tempFileName =
-      path.basename(inputFile, path.extname(inputFile)) + '_plantuml_processed.md';
-    const tempFile = path.join(outputDir, tempFileName);
+      path.basename(inputFile, path.extname(inputFile)) + '_mermaid_processed.md';
+    const tempFile = path.join(intermediateDir, tempFileName);
 
-    // Write the processed markdown to temp file
+    // Write the processed markdown to intermediate file for debugging
     fs.writeFileSync(tempFile, result.processedMarkdown, 'utf8');
 
     return {
@@ -331,7 +349,7 @@ async function processPlantUMLInFile(
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown PlantUML processing error',
+      error: error instanceof Error ? error.message : 'Unknown Mermaid processing error',
     };
   }
 }
@@ -343,6 +361,8 @@ export function getExtensionForFormat(format: string): string {
   switch (format) {
     case 'docx':
       return '.docx';
+    case 'pptx':
+      return '.pptx';
     case 'html':
       return '.html';
     case 'pdf':

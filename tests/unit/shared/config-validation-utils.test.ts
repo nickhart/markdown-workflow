@@ -44,6 +44,11 @@ describe('Config Validation Utils', () => {
             sanitize_spaces: '_',
             max_length: 50,
           },
+          mermaid: {
+            output_format: 'png',
+            theme: 'default',
+            timeout: 30,
+          },
           testing: {
             override_current_date: '2025-01-21T10:00:00.000Z',
             freeze_time: true,
@@ -284,6 +289,10 @@ describe('Config Validation Utils', () => {
             date_format: 'YYYYMMDD',
             sanitize_spaces: '_',
             max_length: 50,
+          },
+          mermaid: {
+            output_format: 'png',
+            timeout: 30,
           },
           testing: {
             deterministic_ids: true,

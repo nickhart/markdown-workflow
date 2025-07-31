@@ -45,12 +45,14 @@ next-env.d.ts
 CLAUDE.md
 .claude
 
+# exclude example so we can treat it like a playground
+example/
+
 # Test artifacts
 test-*
 .markdown-workflow
 tmp/
 migrate-reference/
-writing-repo/
 
 # turbo
 .turbo/

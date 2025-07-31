@@ -144,11 +144,9 @@ async function createDefaultConfig(configPath: string): Promise<void> {
         sanitize_spaces: '_',
         max_length: 50,
       },
-      plantuml: {
-        method: 'auto',
-        docker_image: 'plantuml/plantuml',
-        java_jar_path: '/usr/local/lib/plantuml.jar',
+      mermaid: {
         output_format: 'png',
+        theme: 'default',
         timeout: 30,
       },
       testing: {

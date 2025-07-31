@@ -306,7 +306,7 @@ export class WorkflowEngine {
     action: WorkflowAction,
     parameters: Record<string, unknown>,
   ): Promise<void> {
-    // Ensure project config is loaded for PlantUML and other settings
+    // Ensure project config is loaded for Mermaid and other settings
     await this.ensureProjectConfigLoaded();
 
     const formatType = parameters.format || 'docx';
@@ -374,18 +374,18 @@ export class WorkflowEngine {
           console.log(`\n⚠️  NO TEMPLATE TYPE DETECTED - using default pandoc styling\n`);
         }
 
-        // Get PlantUML configuration from project config
-        let plantumlConfig = undefined;
-        if (this.projectConfig?.system?.plantuml) {
-          plantumlConfig = this.projectConfig.system.plantuml;
+        // Get Mermaid configuration from project config
+        let mermaidConfig = undefined;
+        if (this.projectConfig?.system?.mermaid) {
+          mermaidConfig = this.projectConfig.system.mermaid;
         }
 
         const result = await convertDocument({
           inputFile: inputPath,
           outputFile: outputPath,
-          format: formatType as 'docx' | 'html' | 'pdf',
+          format: formatType as 'docx' | 'html' | 'pdf' | 'pptx',
           referenceDoc,
-          plantumlConfig,
+          mermaidConfig,
         });
 
         if (result.success) {
@@ -636,11 +636,9 @@ export class WorkflowEngine {
         sanitize_spaces: '_',
         max_length: 50,
       },
-      plantuml: {
-        method: 'auto' as const,
-        docker_image: 'plantuml/plantuml',
-        java_jar_path: '/usr/local/lib/plantuml.jar',
+      mermaid: {
         output_format: 'png' as const,
+        theme: 'default' as const,
         timeout: 30,
       },
     };
