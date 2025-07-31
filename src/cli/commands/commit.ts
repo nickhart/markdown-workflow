@@ -1,10 +1,10 @@
-import * as path from 'path';
-import * as YAML from 'yaml';
 import { execSync } from 'child_process';
 import Mustache from 'mustache';
 import { WorkflowEngine } from '../../core/workflow-engine.js';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
 import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
+import type { ProjectConfig } from '../../core/schemas.js';
+import type { Collection } from '../../core/types.js';
 
 interface CommitOptions {
   message?: string;
@@ -20,6 +20,7 @@ interface GitFileChanges {
 }
 
 interface CommitTemplateVariables {
+  workflow: string;
   collection_id: string;
   company: string;
   role: string;
@@ -79,7 +80,9 @@ function analyzeGitChanges(collectionPath: string): GitFileChanges {
     return changes;
   } catch (error) {
     // If git command fails, return empty changes
-    logError(`Failed to analyze git changes: ${error instanceof Error ? error.message : String(error)}`);
+    logError(
+      `Failed to analyze git changes: ${error instanceof Error ? error.message : String(error)}`,
+    );
     return {
       added: [],
       modified: [],
@@ -111,13 +114,14 @@ function getDefaultCommitTemplate(): string {
 /**
  * Resolve commit message template (workflow-specific → system default)
  */
-function resolveCommitTemplate(
-  workflowName: string,
-  projectConfig: any,
-): string {
+function resolveCommitTemplate(workflowName: string, projectConfig: ProjectConfig | null): string {
   // Try workflow-specific template first
   const workflowConfig = projectConfig?.workflows?.[workflowName];
-  if (workflowConfig?.commit_message_template) {
+  if (
+    workflowConfig &&
+    'commit_message_template' in workflowConfig &&
+    typeof workflowConfig.commit_message_template === 'string'
+  ) {
     return workflowConfig.commit_message_template;
   }
 
@@ -134,15 +138,17 @@ function resolveCommitTemplate(
  * Build template variables from collection and git analysis
  */
 function buildTemplateVariables(
-  collection: any,
+  collection: Collection,
   gitChanges: GitFileChanges,
+  workflowName: string,
 ): CommitTemplateVariables {
   const metadata = collection.metadata;
-  
+
   return {
+    workflow: workflowName,
     collection_id: metadata.collection_id,
-    company: metadata.company || 'Unknown',
-    role: metadata.role || 'Unknown',
+    company: String(metadata.company || 'Unknown'),
+    role: String(metadata.role || 'Unknown'),
     status: metadata.status,
     previous_status: undefined, // TODO: detect from status history
     files: gitChanges,
@@ -159,13 +165,13 @@ function executeGitCommit(message: string, collectionPath: string): void {
   try {
     // Add all files in the collection directory
     execSync('git add .', { cwd: collectionPath });
-    
+
     // Commit with the generated message
-    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, { 
+    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
       cwd: collectionPath,
       stdio: 'inherit',
     });
-    
+
     logSuccess(`Committed changes: ${message}`);
   } catch (error) {
     throw new Error(`Git commit failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -219,10 +225,13 @@ export async function commitCommand(
 
   // Analyze git changes in collection directory
   const gitChanges = analyzeGitChanges(collection.path);
-  logInfo(`Git changes detected: ${gitChanges.added.length} added, ${gitChanges.modified.length} modified, ${gitChanges.deleted.length} deleted`);
+  logInfo(
+    `Git changes detected: ${gitChanges.added.length} added, ${gitChanges.modified.length} modified, ${gitChanges.deleted.length} deleted`,
+  );
 
   // Check if there are any changes to commit
-  const hasChanges = gitChanges.added.length > 0 || gitChanges.modified.length > 0 || gitChanges.deleted.length > 0;
+  const hasChanges =
+    gitChanges.added.length > 0 || gitChanges.modified.length > 0 || gitChanges.deleted.length > 0;
   if (!hasChanges) {
     logInfo('No changes to commit');
     return;
@@ -232,7 +241,7 @@ export async function commitCommand(
   const projectConfig = await engine.getProjectConfig();
 
   // Build template variables
-  const templateVars = buildTemplateVariables(collection, gitChanges);
+  const templateVars = buildTemplateVariables(collection, gitChanges, workflowName);
 
   // Resolve and render commit message template
   const template = resolveCommitTemplate(workflowName, projectConfig);

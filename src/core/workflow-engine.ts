@@ -612,7 +612,8 @@ export class WorkflowEngine {
       output_formats: ['docx', 'html', 'pdf'],
       git: {
         auto_commit: false,
-        commit_message_template: '{{#status_changed}}updated status for {{company}} {{role}} ({{collection_id}}) to {{status}}{{/status_changed}}{{^status_changed}}updated {{company}} {{role}} ({{collection_id}}){{#has_markdown_changes}} - modified markdown files{{/has_markdown_changes}}{{/status_changed}}',
+        commit_message_template:
+          '{{#status_changed}}updated status for {{company}} {{role}} ({{collection_id}}) to {{status}}{{/status_changed}}{{^status_changed}}updated {{company}} {{role}} ({{collection_id}}){{#has_markdown_changes}} - modified markdown files{{/has_markdown_changes}}{{/status_changed}}',
       },
       collection_id: {
         date_format: 'MM/DD/YYYY',
