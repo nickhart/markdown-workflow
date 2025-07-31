@@ -1,0 +1,12 @@
+collection_id: test_corp_senior_developer_20250731
+workflow: job
+status: submitted
+date_created: 2025-07-31T01:20:49.415Z
+date_modified: 2025-07-31T01:24:50.710Z
+company: Test Corp
+role: Senior Developer
+status_history:
+  - status: active
+    date: 2025-07-31T01:20:49.415Z
+  - status: submitted
+    date: 2025-07-31T01:24:50.711Z
