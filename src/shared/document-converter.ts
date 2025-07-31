@@ -6,7 +6,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import { spawn, type SpawnOptions } from 'child_process';
 import { MermaidProcessor, type MermaidConfig } from './mermaid-processor.js';
 
 export interface ConversionOptions {
@@ -93,7 +93,9 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
   args.push('-o', outputFile, actualInputFile);
 
   try {
-    const result = await runPandoc(args);
+    // Set working directory to intermediate dir if using processed file
+    const workingDir = tempProcessedFile ? path.dirname(tempProcessedFile) : undefined;
+    const result = await runPandoc(args, workingDir);
 
     if (result.success && fs.existsSync(outputFile)) {
       return {
@@ -114,10 +116,13 @@ export async function convertDocument(options: ConversionOptions): Promise<Conve
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   } finally {
-    // Clean up temporary processed file
-    if (tempProcessedFile && fs.existsSync(tempProcessedFile)) {
-      fs.unlinkSync(tempProcessedFile);
-    }
+    // Keep processed file for debugging - don't clean up intermediary files per user request
+    // if (tempProcessedFile && fs.existsSync(tempProcessedFile)) {
+    //   // Only clean up if conversion was successful
+    //   if (fs.existsSync(outputFile)) {
+    //     fs.unlinkSync(tempProcessedFile);
+    //   }
+    // }
   }
 }
 
@@ -265,9 +270,14 @@ PK\x05\x06Mock DOCX End`;
  */
 async function runPandoc(
   args: string[],
+  cwd?: string,
 ): Promise<{ success: boolean; output?: string; error?: string }> {
   return new Promise((resolve) => {
-    const child = spawn('pandoc', args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const spawnOptions: SpawnOptions = { stdio: ['ignore', 'pipe', 'pipe'] };
+    if (cwd) {
+      spawnOptions.cwd = cwd;
+    }
+    const child = spawn('pandoc', args, spawnOptions);
 
     let stdout = '';
     let stderr = '';
@@ -320,9 +330,11 @@ async function processMermaidInFile(
     // Create Mermaid processor
     const processor = new MermaidProcessor(mermaidConfig);
 
-    // Create assets and intermediate directories
-    const assetsDir = path.join(outputDir, 'assets');
-    const intermediateDir = path.join(outputDir, 'intermediate');
+    // Create assets and intermediate directories at collection root
+    // outputDir is 'formatted/', so go up one level to collection root
+    const collectionRoot = path.dirname(outputDir);
+    const assetsDir = path.join(collectionRoot, 'assets');
+    const intermediateDir = path.join(collectionRoot, 'intermediate');
 
     // Process the markdown content
     const result = await processor.processMarkdown(markdownContent, assetsDir, intermediateDir);

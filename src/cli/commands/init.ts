@@ -230,6 +230,11 @@ system:
     sanitize_spaces: "_"
     max_length: 50
 
+  mermaid:
+    output_format: "png"
+    theme: "default"
+    timeout: 30
+
   # Testing Overrides (for predictable testing and snapshots)
   testing:
     # Uncomment to override current date for predictable testing

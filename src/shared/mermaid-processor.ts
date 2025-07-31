@@ -104,7 +104,6 @@ export class MermaidProcessor {
 
       try {
         // Build Mermaid CLI command
-        const format = this.config.output_format;
         const theme = this.config.theme || 'default';
         const timeout = this.config.timeout * 1000;
 
@@ -181,7 +180,11 @@ export class MermaidProcessor {
     for (const block of blocks.reverse()) {
       const outputFileName = `${block.name}.${this.config.output_format}`;
       const outputPath = path.join(assetsDir, outputFileName);
-      const relativePath = `assets/${outputFileName}`;
+
+      // Calculate relative path from intermediate directory to assets
+      const relativePath = intermediateDir
+        ? path.relative(intermediateDir, outputPath).replace(/\\/g, '/')
+        : `assets/${outputFileName}`;
 
       // Save intermediate Mermaid source file for debugging
       if (intermediateDir) {

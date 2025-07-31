@@ -358,7 +358,7 @@ export class WorkflowEngine {
         console.log(`🔄 Converting ${file} to ${formatTypeStr.toUpperCase()}...`);
 
         // Detect template type from filename (resume_nicholas_hart.md -> resume)
-        const templateType = this.detectTemplateType(baseName);
+        const templateType = this.detectTemplateType(baseName, workflow);
         let referenceDoc: string | undefined;
 
         if (formatType === 'docx' && templateType) {
@@ -675,27 +675,42 @@ export class WorkflowEngine {
 
   /**
    * Detect template type from filename (resume_nicholas_hart.md -> resume)
-   * Based on the original shell function logic
+   * Now workflow-aware - extracts template types from the workflow definition
    */
-  private detectTemplateType(baseName: string): string | null {
+  private detectTemplateType(baseName: string, workflow: WorkflowFile): string | null {
     console.log(`  🔍 Detecting template type from filename: ${baseName}`);
 
+    // Extract template types from workflow definition dynamically
+    const workflowTemplateTypes = workflow.workflow.templates?.map((t) => t.name) || [];
+    console.log(`  📋 Available template types in workflow: ${workflowTemplateTypes.join(', ')}`);
+
     // Handle patterns like "resume_nicholas_hart" -> "resume" or "cover_letter_john_doe" -> "cover_letter"
-    const _parts = baseName.split('_');
-
-    // Look for known template types
-    const knownTypes = ['resume', 'cover_letter', 'notes'];
-
-    for (const type of knownTypes) {
+    for (const type of workflowTemplateTypes) {
       if (baseName.startsWith(type + '_')) {
         console.log(`  ✅ Detected template type: ${type} (from pattern ${type}_*)`);
         return type;
       }
     }
 
-    // If no underscore pattern, check if the whole name is a known type
-    if (knownTypes.includes(baseName)) {
+    // If no underscore pattern, check if the whole name is a workflow template type
+    if (workflowTemplateTypes.includes(baseName)) {
       console.log(`  ✅ Detected template type: ${baseName} (exact match)`);
+      return baseName;
+    }
+
+    // Fallback to legacy hardcoded types for backward compatibility
+    const legacyTypes = ['resume', 'cover_letter', 'notes'];
+    console.log(`  📋 Falling back to legacy template types: ${legacyTypes.join(', ')}`);
+
+    for (const type of legacyTypes) {
+      if (baseName.startsWith(type + '_')) {
+        console.log(`  ✅ Detected template type: ${type} (from legacy pattern ${type}_*)`);
+        return type;
+      }
+    }
+
+    if (legacyTypes.includes(baseName)) {
+      console.log(`  ✅ Detected template type: ${baseName} (legacy exact match)`);
       return baseName;
     }
 
