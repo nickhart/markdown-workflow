@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { SystemConfig } from '../core/types.js';
+import type { SystemConfig } from '../core/schemas.js';
 
 export interface MermaidBlock {
   name: string;
@@ -38,7 +38,15 @@ export class MermaidProcessor {
    * Create processor from system configuration
    */
   static fromSystemConfig(systemConfig: SystemConfig): MermaidProcessor {
-    return new MermaidProcessor(systemConfig.mermaid);
+    // Provide default configuration if mermaid config is missing
+    const defaultConfig: MermaidConfig = {
+      output_format: 'png',
+      theme: 'default',
+      timeout: 30,
+    };
+
+    const mermaidConfig = systemConfig.mermaid || defaultConfig;
+    return new MermaidProcessor(mermaidConfig);
   }
 
   /**

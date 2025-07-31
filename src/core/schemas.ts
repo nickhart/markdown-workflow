@@ -122,11 +122,13 @@ export const SystemConfigSchema = z.object({
     sanitize_spaces: z.string(),
     max_length: z.number(),
   }),
-  mermaid: z.object({
-    output_format: z.enum(['png', 'svg']),
-    theme: z.enum(['default', 'dark', 'forest', 'neutral']).optional(),
-    timeout: z.number(),
-  }),
+  mermaid: z
+    .object({
+      output_format: z.enum(['png', 'svg']),
+      theme: z.enum(['default', 'dark', 'forest', 'neutral']).optional(),
+      timeout: z.number(),
+    })
+    .optional(),
   testing: z
     .object({
       // Date/Time overrides

@@ -144,11 +144,7 @@ async function createDefaultConfig(configPath: string): Promise<void> {
         sanitize_spaces: '_',
         max_length: 50,
       },
-      mermaid: {
-        output_format: 'png',
-        theme: 'default',
-        timeout: 30,
-      },
+      // mermaid config is optional - remove from default to show users it's optional
       testing: {
         // Uncomment to override current date for predictable testing
         // override_current_date: '2025-01-21T10:00:00.000Z',
@@ -230,10 +226,12 @@ system:
     sanitize_spaces: "_"
     max_length: 50
 
-  mermaid:
-    output_format: "png"
-    theme: "default"
-    timeout: 30
+  # Mermaid diagram support (optional)
+  # Uncomment and configure to enable Mermaid diagram processing
+  # mermaid:
+  #   output_format: "png"  # Options: "png", "svg"
+  #   theme: "default"       # Options: "default", "dark", "forest", "neutral"
+  #   timeout: 30
 
   # Testing Overrides (for predictable testing and snapshots)
   testing:

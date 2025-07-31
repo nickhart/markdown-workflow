@@ -1,4 +1,9 @@
 // Core types for the markdown-workflow system
+// Import the schema-generated types
+import type {
+  SystemConfig as SchemaSystemConfig,
+  ProjectConfig as SchemaProjectConfig,
+} from './schemas.js';
 
 export interface WorkflowStage {
   name: string;
@@ -82,34 +87,7 @@ export interface UserConfig {
   website: string;
 }
 
-export interface SystemConfig {
-  scraper: 'wget' | 'curl' | 'native';
-  web_download: {
-    timeout: number;
-    add_utf8_bom: boolean;
-    html_cleanup: 'none' | 'scripts' | 'markdown';
-  };
-  output_formats: string[];
-  git: {
-    auto_commit: boolean;
-    commit_message_template: string;
-  };
-  collection_id: {
-    date_format: string;
-    sanitize_spaces: string;
-    max_length: number;
-  };
-  mermaid: {
-    output_format: 'png' | 'svg';
-    theme?: 'default' | 'dark' | 'forest' | 'neutral';
-    timeout: number;
-  };
-  testing?: {
-    override_current_date?: string;
-    override_timezone?: string;
-    deterministic_ids?: boolean;
-  } | null;
-}
+// SystemConfig is now imported from schemas.js
 
 export interface WorkflowCustomField {
   name: string;
@@ -129,13 +107,9 @@ export interface WorkflowOverride {
   [key: string]: unknown;
 }
 
-export interface ProjectConfig {
-  user: UserConfig;
-  system: SystemConfig;
-  workflows: {
-    [workflowName: string]: WorkflowOverride;
-  };
-}
+// Re-export schema-generated types
+export type ProjectConfig = SchemaProjectConfig;
+export type SystemConfig = SchemaSystemConfig;
 
 // Discovery and resolution types
 export interface ConfigPaths {
