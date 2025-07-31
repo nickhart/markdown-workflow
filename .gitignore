@@ -50,7 +50,7 @@ example/
 
 # Test artifacts
 test-*
-.markdown-workflow
+.markdown-workflow/
 tmp/
 migrate-reference/
 
