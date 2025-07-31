@@ -14,6 +14,7 @@ import listCommand from './commands/list.js';
 import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
 import updateCommand from './commands/update.js';
 import { listAliasesCommand } from './commands/aliases.js';
+import commitCommand from './commands/commit.js';
 import { withErrorHandling } from './shared/error-handler.js';
 import { logError } from './shared/formatting-utils.js';
 import { ConfigDiscovery } from '../core/config-discovery.js';
@@ -332,6 +333,21 @@ program
   .action(
     withErrorHandling(async (options) => {
       await listAliasesCommand(options.workflow);
+    }),
+  );
+
+// wf-commit command
+program
+  .command('commit')
+  .description('Commit collection changes with generated message')
+  .argument('<workflow>', 'Workflow name (e.g., job, blog)')
+  .argument('<collection_id>', 'Collection ID to commit')
+  .option('-m, --message <message>', 'Custom commit message (overrides template)')
+  .action(
+    withErrorHandling(async (workflow, collectionId, options) => {
+      await commitCommand(workflow, collectionId, {
+        message: options.message,
+      });
     }),
   );
 

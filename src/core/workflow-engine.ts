@@ -599,10 +599,42 @@ export class WorkflowEngine {
   }
 
   /**
+   * Get default system configuration
+   */
+  private getDefaultSystemConfig() {
+    return {
+      scraper: 'wget' as const,
+      web_download: {
+        timeout: 30,
+        add_utf8_bom: true,
+        html_cleanup: 'scripts' as const,
+      },
+      output_formats: ['docx', 'html', 'pdf'],
+      git: {
+        auto_commit: false,
+        commit_message_template: '{{#status_changed}}updated status for {{company}} {{role}} ({{collection_id}}) to {{status}}{{/status_changed}}{{^status_changed}}updated {{company}} {{role}} ({{collection_id}}){{#has_markdown_changes}} - modified markdown files{{/has_markdown_changes}}{{/status_changed}}',
+      },
+      collection_id: {
+        date_format: 'MM/DD/YYYY',
+        sanitize_spaces: '_',
+        max_length: 50,
+      },
+    };
+  }
+
+  /**
    * Get available workflows
    */
   getAvailableWorkflows(): string[] {
     return this.availableWorkflows;
+  }
+
+  /**
+   * Get project configuration (loads if not already loaded)
+   */
+  async getProjectConfig(): Promise<ProjectConfig | null> {
+    await this.ensureProjectConfigLoaded();
+    return this.projectConfig;
   }
 
   /**
