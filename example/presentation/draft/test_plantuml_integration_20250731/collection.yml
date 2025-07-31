@@ -1,0 +1,18 @@
+# Collection Metadata
+collection_id: "test_plantuml_integration_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T04:09:16.528Z"
+date_modified: "2025-07-31T04:09:16.528Z"
+
+# Workflow Details
+title: "Test PlantUML Integration"
+template: "beginner"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T04:09:16.528Z"
+
+# Additional Fields
+# Add custom fields here as needed
