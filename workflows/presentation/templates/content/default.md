@@ -21,8 +21,8 @@ Describe the challenge or opportunity you're addressing.
 
 ## Solution Overview
 
-```mermaid:solution-overview {align=center, width=80%}
-flowchart TD
+```mermaid:solution-overview {align=center, width=80%, layout=horizontal}
+flowchart LR
     A[Identify Problem] --> B[Research Solutions]
     B --> C[Design Approach]
     C --> D[Implement Solution]
@@ -39,30 +39,30 @@ High-level approach to solving the problem.
 
 ## Technical Architecture
 
-```mermaid:architecture {align=center, width=90%}
+```mermaid:architecture {align=center, width=90%, layout=layered}
 graph TB
-    subgraph "Frontend"
+    subgraph "Frontend Layer"
         UI[User Interface]
         Router[Router]
+        UI --> Router
     end
 
-    subgraph "Backend"
-        API[API Layer]
-        BL[Business Logic]
+    subgraph "API Layer"
+        API[API Gateway]
         Auth[Authentication]
+        BL[Business Logic]
+        API --> Auth
+        API --> BL
     end
 
     subgraph "Data Layer"
         DB[(Database)]
         Cache[(Cache)]
+        BL --> DB
+        BL --> Cache
     end
 
-    UI --> Router
     Router --> API
-    API --> Auth
-    API --> BL
-    BL --> DB
-    BL --> Cache
 
     style UI fill:#e3f2fd
     style API fill:#fff3e0
