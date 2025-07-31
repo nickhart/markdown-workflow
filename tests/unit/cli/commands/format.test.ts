@@ -45,6 +45,10 @@ describe('formatCommand', () => {
     mockConfigDiscovery = {
       requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
       findSystemRoot: jest.fn().mockReturnValue('/mock/system'),
+      discoverSystemConfiguration: jest.fn().mockReturnValue({
+        systemRoot: '/mock/system',
+        availableWorkflows: ['job', 'blog', 'presentation'],
+      }),
     } as jest.Mocked<ConfigDiscovery>;
 
     // Mock WorkflowEngine
