@@ -21,21 +21,16 @@ Describe the challenge or opportunity you're addressing.
 
 ## Solution Overview
 
-```plantuml:solution-overview
-@startuml
-!theme plain
-skinparam defaultFontSize 14
+```mermaid:solution-overview {align=center, width=80%}
+flowchart TD
+    A[Identify Problem] --> B[Research Solutions]
+    B --> C[Design Approach]
+    C --> D[Implement Solution]
+    D --> E[Test & Validate]
+    E --> F[Deploy & Monitor]
 
-start
-:Identify problem;
-:Research solutions;
-:Design approach;
-:Implement solution;
-:Test & validate;
-:Deploy & monitor;
-stop
-
-@enduml
+    style A fill:#e1f5fe
+    style F fill:#c8e6c9
 ```
 
 High-level approach to solving the problem.
@@ -44,29 +39,34 @@ High-level approach to solving the problem.
 
 ## Technical Architecture
 
-```plantuml:architecture
-@startuml
-!theme plain
-skinparam componentStyle rectangle
+```mermaid:architecture {align=center, width=90%}
+graph TB
+    subgraph "Frontend"
+        UI[User Interface]
+        Router[Router]
+    end
 
-package "Frontend" {
-  [User Interface]
-}
+    subgraph "Backend"
+        API[API Layer]
+        BL[Business Logic]
+        Auth[Authentication]
+    end
 
-package "Backend" {
-  [API Layer]
-  [Business Logic]
-}
+    subgraph "Data Layer"
+        DB[(Database)]
+        Cache[(Cache)]
+    end
 
-package "Data" {
-  database "Database" as DB
-}
+    UI --> Router
+    Router --> API
+    API --> Auth
+    API --> BL
+    BL --> DB
+    BL --> Cache
 
-[User Interface] --> [API Layer]
-[API Layer] --> [Business Logic]
-[Business Logic] --> DB
-
-@enduml
+    style UI fill:#e3f2fd
+    style API fill:#fff3e0
+    style DB fill:#f3e5f5
 ```
 
 System components and their relationships.
