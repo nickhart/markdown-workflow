@@ -67,11 +67,13 @@ export function logNextSteps(
   workflowName: string,
   collectionId: string,
   collectionPath: string,
+  defaultFormat?: string,
 ): void {
+  const formatDisplay = defaultFormat ? defaultFormat.toUpperCase() : 'DOCX';
   console.log('');
   console.log('Next steps:');
   console.log(`  1. Edit files in ${collectionPath}`);
-  console.log(`  2. Run wf format ${workflowName} ${collectionId} to convert to DOCX`);
+  console.log(`  2. Run wf format ${workflowName} ${collectionId} to convert to ${formatDisplay}`);
   console.log(`  3. Run wf status ${workflowName} ${collectionId} <status> to update status`);
 }
 
