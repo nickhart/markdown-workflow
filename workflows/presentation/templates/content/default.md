@@ -39,6 +39,13 @@ High-level approach to solving the problem.
 
 ## Technical Architecture
 
+:::columns
+:::column
+System components and their relationships.
+
+:::
+:::column
+
 ```mermaid:architecture {align=center, width=90%, layout=layered}
 graph TB
     subgraph "Frontend Layer"
@@ -69,7 +76,8 @@ graph TB
     style DB fill:#f3e5f5
 ```
 
-System components and their relationships.
+:::
+:::
 
 ---
 
@@ -107,5 +115,5 @@ System components and their relationships.
 
 ## Questions & Discussion
 
-**Contact:** {{user.email}}  
+**Contact:** {{user.email}}
 **Date:** {{date}}
