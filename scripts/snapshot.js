@@ -48,7 +48,7 @@ function shouldUseDeterministicTimestamps(directory) {
 
     // Also check for TESTING environment variable
     return process.env.NODE_ENV === 'test' || process.env.TESTING === 'true';
-  } catch (error) {
+  } catch {
     // If we can't read config, default to real timestamps
     return false;
   }
