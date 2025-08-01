@@ -3,46 +3,59 @@ import { WorkflowEngine } from '@/core/workflow-engine';
 import { ConfigDiscovery } from '@/core/config-discovery';
 import * as fs from 'fs';
 import * as path from 'path';
-
-interface CreatePresentationRequest {
-  title: string;
-  templateName?: string;
-  content?: string;
-}
+import { validateInput, createPresentationSchema, type CreatePresentationInput } from '@/lib/input-validation';
+import { executeWithResourceLimits } from '@/lib/resource-monitor';
 
 /**
  * POST /api/presentations/create
  * Creates a new presentation collection using the WorkflowEngine
  */
 export async function POST(request: NextRequest) {
+  const processId = `create_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const clientIP = request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown';
+
   try {
-    const body: CreatePresentationRequest = await request.json();
-
-    if (!body.title) {
-      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    // Parse and validate input
+    const rawBody = await request.json();
+    const validation = validateInput(createPresentationSchema, rawBody);
+    
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed',
+          message: validation.error 
+        }, 
+        { status: 400 }
+      );
     }
 
-    const templateName = body.templateName || 'default';
+    const body: CreatePresentationInput = validation.data;
 
-    // Initialize WorkflowEngine
-    const configDiscovery = new ConfigDiscovery();
-    const _systemConfig = configDiscovery.discoverSystemConfiguration();
+    // Execute with resource limits and monitoring
+    const result = await executeWithResourceLimits(
+      processId,
+      'create',
+      clientIP,
+      async () => {
+        // Initialize WorkflowEngine
+        const configDiscovery = new ConfigDiscovery();
+        const _systemConfig = configDiscovery.discoverSystemConfiguration();
 
-    // Create a temporary project directory for the demo
-    // In a real app, this would be user-specific
-    const tempProjectDir = path.join(process.cwd(), 'tmp', 'presentation-demo');
-    if (!fs.existsSync(tempProjectDir)) {
-      fs.mkdirSync(tempProjectDir, { recursive: true });
-    }
+        // Create a temporary project directory for the demo
+        // In a real app, this would be user-specific
+        const tempProjectDir = path.join(process.cwd(), 'tmp', 'presentation-demo');
+        if (!fs.existsSync(tempProjectDir)) {
+          fs.mkdirSync(tempProjectDir, { recursive: true });
+        }
 
-    // Initialize project if needed
-    const projectMarker = path.join(tempProjectDir, '.markdown-workflow');
-    if (!fs.existsSync(projectMarker)) {
-      fs.mkdirSync(projectMarker, { recursive: true });
+        // Initialize project if needed
+        const projectMarker = path.join(tempProjectDir, '.markdown-workflow');
+        if (!fs.existsSync(projectMarker)) {
+          fs.mkdirSync(projectMarker, { recursive: true });
 
-      // Create minimal config
-      const configPath = path.join(projectMarker, 'config.yml');
-      const minimalConfig = `
+          // Create minimal config
+          const configPath = path.join(projectMarker, 'config.yml');
+          const minimalConfig = `
 user:
   name: "Demo User"  
   email: "demo@example.com"
@@ -53,22 +66,27 @@ system:
     theme: "default"
     timeout: 30
 `;
-      fs.writeFileSync(configPath, minimalConfig);
-    }
+          fs.writeFileSync(configPath, minimalConfig);
+        }
 
-    // Import the create command directly
-    const { createCommand } = await import('@/cli/commands/create');
+        // Import the create command directly
+        const { createCommand } = await import('@/cli/commands/create');
 
-    // Create the presentation collection using the CLI command
-    await createCommand('presentation', body.title, {
-      template_variant: templateName,
-      cwd: tempProjectDir,
-      configDiscovery,
-      force: true, // Always force recreate for the demo
-    });
+        // Create the presentation collection using the CLI command
+        await createCommand('presentation', body.title, {
+          template_variant: body.templateName,
+          cwd: tempProjectDir,
+          configDiscovery,
+          force: true, // Always force recreate for the demo
+        });
+
+        return { tempProjectDir, configDiscovery };
+      },
+      `create presentation '${body.title}'`
+    );
 
     // Find the created collection by looking for the most recent one
-    const workflowEngine = new WorkflowEngine(tempProjectDir);
+    const workflowEngine = new WorkflowEngine(result.tempProjectDir);
     const collections = await workflowEngine.getCollections('presentation');
 
     // Find the collection that matches our title (most recent should be first)
@@ -95,7 +113,7 @@ system:
     if (body.content) {
       try {
         const contentPath = path.join(
-          tempProjectDir,
+          result.tempProjectDir,
           'collections',
           'presentation',
           stage,
@@ -115,7 +133,7 @@ system:
     let templateContent = '';
     try {
       const contentPath = path.join(
-        tempProjectDir,
+        result.tempProjectDir,
         'collections',
         'presentation',
         stage,
@@ -137,11 +155,28 @@ system:
       message: 'Presentation created successfully',
     });
   } catch (error) {
-    console.error('Error creating presentation:', error);
+    console.error(`Error creating presentation (Process: ${processId}, IP: ${clientIP}):`, error);
+    
+    // Sanitize error message for security
+    let sanitizedMessage = 'Failed to create presentation';
+    
+    if (error instanceof Error) {
+      // Only expose certain types of errors to the client
+      if (error.message.includes('Resource limits exceeded') || 
+          error.message.includes('timed out') ||
+          error.message.includes('Validation failed')) {
+        sanitizedMessage = error.message;
+      } else if (error.message.includes('ENOSPC')) {
+        sanitizedMessage = 'Insufficient disk space. Please try again later.';
+      } else if (error.message.includes('ENOMEM')) {
+        sanitizedMessage = 'System memory full. Please try again later.';
+      }
+    }
+    
     return NextResponse.json(
       {
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        error: 'Creation failed',
+        message: sanitizedMessage,
       },
       { status: 500 },
     );
