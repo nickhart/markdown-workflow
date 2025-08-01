@@ -8,7 +8,7 @@ The presentation demo requires comprehensive security hardening before productio
 
 ### Critical Vulnerabilities Identified
 
-1. **No Rate Limiting** 
+1. **No Rate Limiting**
    - Allows unlimited API requests
    - Vulnerable to DoS attacks
    - No protection against abuse
@@ -46,13 +46,15 @@ The presentation demo requires comprehensive security hardening before productio
 ### Phase 1: Critical Security Hardening (High Priority)
 
 #### 1.1 Rate Limiting Implementation
+
 **Objective**: Prevent DoS attacks and API abuse
 
 **Implementation**:
+
 - Install `@upstash/ratelimit` with Redis backend
 - Configure per-IP limits:
   - Templates endpoint: 20 requests/minute
-  - Create endpoint: 10 requests/minute  
+  - Create endpoint: 10 requests/minute
   - Format endpoint: 5 requests/minute
   - Download endpoint: 10 requests/minute
 - Implement progressive penalties:
@@ -62,13 +64,16 @@ The presentation demo requires comprehensive security hardening before productio
   - 4th+ violations: 1-hour timeout
 
 **Files to Create**:
+
 - `src/middleware/rate-limiting.ts`
 - `src/lib/redis-client.ts`
 
 #### 1.2 Input Validation & Sanitization
+
 **Objective**: Prevent injection attacks and ensure data integrity
 
 **Implementation**:
+
 - Use existing Zod dependency for schema validation
 - Implement comprehensive validation schemas:
   - Title: 1-100 characters, alphanumeric + spaces only
@@ -79,13 +84,16 @@ The presentation demo requires comprehensive security hardening before productio
 - Validate Mermaid diagram syntax to prevent code injection
 
 **Files to Create**:
+
 - `src/lib/input-validation.ts`
 - `src/lib/content-sanitizer.ts`
 
 #### 1.3 Resource Usage Limits
+
 **Objective**: Prevent resource exhaustion attacks
 
 **Implementation**:
+
 - Processing timeout: 2 minutes maximum
 - Output file size limit: 10MB maximum
 - Concurrent processes: Maximum 3 simultaneous PPTX generations
@@ -93,15 +101,18 @@ The presentation demo requires comprehensive security hardening before productio
 - Automatic process termination for resource violations
 
 **Files to Create**:
+
 - `src/lib/resource-monitor.ts`
 - `src/middleware/resource-limiter.ts`
 
 ### Phase 2: Defense in Depth (High Priority)
 
 #### 2.1 Security Headers & CORS
+
 **Objective**: Implement browser-level security protections
 
 **Implementation**:
+
 - Install and configure `helmet` middleware
 - Security headers:
   - Content Security Policy (CSP)
@@ -114,13 +125,16 @@ The presentation demo requires comprehensive security hardening before productio
   - Production: Specific domain whitelist only
 
 **Files to Modify**:
+
 - `next.config.ts`
 - `src/middleware.ts` (create if doesn't exist)
 
 #### 2.2 Request Monitoring & Logging
+
 **Objective**: Detect and respond to suspicious activity
 
 **Implementation**:
+
 - Structured logging for all API requests
 - Track metrics:
   - Request frequency per IP
@@ -131,13 +145,16 @@ The presentation demo requires comprehensive security hardening before productio
 - IP-based blocking for severe violations
 
 **Files to Create**:
+
 - `src/lib/security-logger.ts`
 - `src/lib/threat-detection.ts`
 
 #### 2.3 Resource Management
+
 **Objective**: Prevent disk space and memory exhaustion
 
 **Implementation**:
+
 - Automatic temp file cleanup:
   - 1-hour TTL for all generated files
   - Immediate cleanup on successful download
@@ -149,15 +166,18 @@ The presentation demo requires comprehensive security hardening before productio
 - Disk usage monitoring with alerts
 
 **Files to Create**:
+
 - `src/lib/cleanup-manager.ts`
 - `src/lib/memory-monitor.ts`
 
 ### Phase 3: Error Handling & Testing (High Priority)
 
 #### 3.1 Error Message Sanitization
+
 **Objective**: Prevent information disclosure through error messages
 
 **Implementation**:
+
 - Remove internal paths from error responses
 - Standardize error message format
 - Log detailed errors server-side only
@@ -165,13 +185,16 @@ The presentation demo requires comprehensive security hardening before productio
 - Error correlation IDs for debugging
 
 **Files to Create**:
+
 - `src/lib/error-sanitizer.ts`
 - `src/types/api-responses.ts`
 
 #### 3.2 Security Testing Suite
+
 **Objective**: Validate all security measures
 
 **Implementation**:
+
 - Rate limiting tests:
   - Verify limits are enforced
   - Test progressive penalties
@@ -188,6 +211,7 @@ The presentation demo requires comprehensive security hardening before productio
 - Penetration testing automation
 
 **Files to Create**:
+
 - `tests/security/rate-limiting.test.ts`
 - `tests/security/input-validation.test.ts`
 - `tests/security/resource-limits.test.ts`
@@ -229,22 +253,22 @@ ALLOWED_ORIGINS=https://yourdomain.com,https://api.yourdomain.com
 
 ```typescript
 // src/middleware.ts
-import { rateLimit } from './middleware/rate-limiting'
-import { inputValidation } from './middleware/input-validation'
-import { resourceLimiter } from './middleware/resource-limiter'
+import { rateLimit } from './middleware/rate-limiting';
+import { inputValidation } from './middleware/input-validation';
+import { resourceLimiter } from './middleware/resource-limiter';
 
 export default async function middleware(request: NextRequest) {
   // Apply security middleware in order
-  const rateLimitResult = await rateLimit(request)
-  if (rateLimitResult) return rateLimitResult
-  
-  const validationResult = await inputValidation(request)
-  if (validationResult) return validationResult
-  
-  const resourceResult = await resourceLimiter(request)
-  if (resourceResult) return resourceResult
-  
-  return NextResponse.next()
+  const rateLimitResult = await rateLimit(request);
+  if (rateLimitResult) return rateLimitResult;
+
+  const validationResult = await inputValidation(request);
+  if (validationResult) return validationResult;
+
+  const resourceResult = await resourceLimiter(request);
+  if (resourceResult) return resourceResult;
+
+  return NextResponse.next();
 }
 ```
 
@@ -275,11 +299,13 @@ export default async function middleware(request: NextRequest) {
 ## Risk Assessment
 
 ### Before Implementation
+
 - **Risk Level**: CRITICAL
 - **Attack Vectors**: DoS, Injection, Resource Exhaustion, Information Disclosure
 - **Deployment Readiness**: NOT SAFE
 
-### After Implementation  
+### After Implementation
+
 - **Risk Level**: LOW
 - **Attack Vectors**: Mitigated through defense in depth
 - **Deployment Readiness**: PRODUCTION READY
@@ -287,23 +313,26 @@ export default async function middleware(request: NextRequest) {
 ## Implementation Timeline
 
 - **Phase 1**: 1-2 days (Critical security hardening)
-- **Phase 2**: 1 day (Defense in depth measures)  
+- **Phase 2**: 1 day (Defense in depth measures)
 - **Phase 3**: 1 day (Testing and validation)
 - **Total**: 3-4 days for complete security hardening
 
 ## Maintenance Requirements
 
 ### Daily
+
 - Monitor rate limit violations
 - Review security logs for anomalies
 - Check resource usage metrics
 
-### Weekly  
+### Weekly
+
 - Verify cleanup processes running
 - Review error rates and patterns
 - Update security signatures if needed
 
 ### Monthly
+
 - Run complete security test suite
 - Review and update rate limits if needed
 - Analyze attack patterns and adjust defenses

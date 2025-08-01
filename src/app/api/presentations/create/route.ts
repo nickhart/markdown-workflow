@@ -3,7 +3,11 @@ import { WorkflowEngine } from '@/core/workflow-engine';
 import { ConfigDiscovery } from '@/core/config-discovery';
 import * as fs from 'fs';
 import * as path from 'path';
-import { validateInput, createPresentationSchema, type CreatePresentationInput } from '@/lib/input-validation';
+import {
+  validateInput,
+  createPresentationSchema,
+  type CreatePresentationInput,
+} from '@/lib/input-validation';
 import { executeWithResourceLimits } from '@/lib/resource-monitor';
 
 /**
@@ -18,14 +22,14 @@ export async function POST(request: NextRequest) {
     // Parse and validate input
     const rawBody = await request.json();
     const validation = validateInput(createPresentationSchema, rawBody);
-    
+
     if (!validation.success) {
       return NextResponse.json(
-        { 
+        {
           error: 'Validation failed',
-          message: validation.error 
-        }, 
-        { status: 400 }
+          message: validation.error,
+        },
+        { status: 400 },
       );
     }
 
@@ -82,7 +86,7 @@ system:
 
         return { tempProjectDir, configDiscovery };
       },
-      `create presentation '${body.title}'`
+      `create presentation '${body.title}'`,
     );
 
     // Find the created collection by looking for the most recent one
@@ -156,15 +160,17 @@ system:
     });
   } catch (error) {
     console.error(`Error creating presentation (Process: ${processId}, IP: ${clientIP}):`, error);
-    
+
     // Sanitize error message for security
     let sanitizedMessage = 'Failed to create presentation';
-    
+
     if (error instanceof Error) {
       // Only expose certain types of errors to the client
-      if (error.message.includes('Resource limits exceeded') || 
-          error.message.includes('timed out') ||
-          error.message.includes('Validation failed')) {
+      if (
+        error.message.includes('Resource limits exceeded') ||
+        error.message.includes('timed out') ||
+        error.message.includes('Validation failed')
+      ) {
         sanitizedMessage = error.message;
       } else if (error.message.includes('ENOSPC')) {
         sanitizedMessage = 'Insufficient disk space. Please try again later.';
@@ -172,7 +178,7 @@ system:
         sanitizedMessage = 'System memory full. Please try again later.';
       }
     }
-    
+
     return NextResponse.json(
       {
         error: 'Creation failed',

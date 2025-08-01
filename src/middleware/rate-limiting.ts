@@ -8,7 +8,10 @@ import { Ratelimit } from '@upstash/ratelimit';
 import { getRedisClient } from '@/lib/redis-client';
 
 // In-memory storage for development when Redis is not available
-const memoryStorage = new Map<string, { count: number; reset: number; violations: number; blockedUntil?: number }>();
+const memoryStorage = new Map<
+  string,
+  { count: number; reset: number; violations: number; blockedUntil?: number }
+>();
 
 interface RateLimitConfig {
   requests: number;
@@ -47,8 +50,8 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
 
 // Progressive penalty timeouts (in milliseconds)
 const PENALTY_TIMEOUTS = [
-  60 * 1000,      // 1 minute
-  5 * 60 * 1000,  // 5 minutes  
+  60 * 1000, // 1 minute
+  5 * 60 * 1000, // 5 minutes
   15 * 60 * 1000, // 15 minutes
   60 * 60 * 1000, // 1 hour
 ];
@@ -93,7 +96,10 @@ function getRateLimitConfig(pathname: string): RateLimitConfig | null {
 /**
  * In-memory rate limiting for development
  */
-function checkInMemoryRateLimit(ip: string, config: RateLimitConfig): {
+function checkInMemoryRateLimit(
+  ip: string,
+  config: RateLimitConfig,
+): {
   success: boolean;
   limit: number;
   remaining: number;
@@ -106,7 +112,7 @@ function checkInMemoryRateLimit(ip: string, config: RateLimitConfig): {
   const key = ip;
 
   let entry = memoryStorage.get(key);
-  
+
   // Check if IP is currently blocked
   if (entry?.blockedUntil && now < entry.blockedUntil) {
     return {
@@ -135,9 +141,9 @@ function checkInMemoryRateLimit(ip: string, config: RateLimitConfig): {
     const penaltyIndex = Math.min(entry.violations - 1, PENALTY_TIMEOUTS.length - 1);
     const penaltyDuration = PENALTY_TIMEOUTS[penaltyIndex];
     entry.blockedUntil = now + penaltyDuration;
-    
+
     memoryStorage.set(key, entry);
-    
+
     return {
       success: false,
       limit: config.requests,
@@ -161,7 +167,6 @@ function checkInMemoryRateLimit(ip: string, config: RateLimitConfig): {
   };
 }
 
-
 /**
  * Rate limiting middleware
  */
@@ -178,7 +183,7 @@ export async function rateLimit(request: NextRequest): Promise<NextResponse | nu
 
   const { pathname } = request.nextUrl;
   const config = getRateLimitConfig(pathname);
-  
+
   // No rate limit configured for this endpoint
   if (!config) {
     return null;
@@ -206,7 +211,7 @@ export async function rateLimit(request: NextRequest): Promise<NextResponse | nu
       });
 
       const rateLimitResult = await ratelimit.limit(ip);
-      
+
       result = {
         success: rateLimitResult.success,
         limit: rateLimitResult.limit,
@@ -234,7 +239,7 @@ export async function rateLimit(request: NextRequest): Promise<NextResponse | nu
 
   // Rate limit exceeded
   if (!result.success) {
-    const message = result.blockedUntil 
+    const message = result.blockedUntil
       ? `Rate limit exceeded. IP temporarily blocked until ${result.blockedUntil.toISOString()}. Violation #${result.violations}.`
       : `Rate limit exceeded for ${config.description}. Try again after ${result.reset.toISOString()}.`;
 
@@ -246,10 +251,10 @@ export async function rateLimit(request: NextRequest): Promise<NextResponse | nu
         message,
         retryAfter: result.blockedUntil || result.reset,
       },
-      { 
+      {
         status: 429,
         headers,
-      }
+      },
     );
   }
 
@@ -265,7 +270,7 @@ export async function rateLimit(request: NextRequest): Promise<NextResponse | nu
  */
 export function cleanupInMemoryStorage(): void {
   const now = Date.now();
-  
+
   for (const [key, entry] of memoryStorage.entries()) {
     // Remove expired entries and unblocked IPs
     if (now >= entry.reset && (!entry.blockedUntil || now >= entry.blockedUntil)) {

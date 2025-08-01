@@ -11,30 +11,33 @@ const RESOURCE_LIMITS = {
   // Processing timeouts
   MAX_PROCESSING_TIME: 2 * 60 * 1000, // 2 minutes
   MAX_GENERATION_TIME: 3 * 60 * 1000, // 3 minutes (includes overhead)
-  
+
   // File size limits
   MAX_OUTPUT_FILE_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_INPUT_CONTENT_SIZE: 50 * 1024, // 50KB
-  
+
   // Concurrent process limits
   MAX_CONCURRENT_PROCESSES: parseInt(process.env.MAX_CONCURRENT_PROCESSES || '3'),
-  
+
   // Memory limits
   MAX_MEMORY_USAGE: 512 * 1024 * 1024, // 512MB per process
-  
+
   // Disk space limits
   MIN_FREE_DISK_SPACE: 100 * 1024 * 1024, // 100MB
   MAX_TEMP_DIR_SIZE: 1024 * 1024 * 1024, // 1GB
 };
 
 // Active process tracking
-const activeProcesses = new Map<string, {
-  startTime: number;
-  processId: string;
-  type: 'create' | 'format';
-  ip: string;
-  timeout?: NodeJS.Timeout;
-}>();
+const activeProcesses = new Map<
+  string,
+  {
+    startTime: number;
+    processId: string;
+    type: 'create' | 'format';
+    ip: string;
+    timeout?: NodeJS.Timeout;
+  }
+>();
 
 /**
  * Resource monitor singleton
@@ -77,7 +80,10 @@ class ResourceMonitor {
   /**
    * Check if we can start a new process
    */
-  canStartProcess(type: 'create' | 'format', ip: string): {
+  canStartProcess(
+    type: 'create' | 'format',
+    ip: string,
+  ): {
     allowed: boolean;
     reason?: string;
   } {
@@ -90,11 +96,12 @@ class ResourceMonitor {
     }
 
     // Check if same IP has too many active processes
-    const ipProcesses = Array.from(activeProcesses.values()).filter(p => p.ip === ip);
+    const ipProcesses = Array.from(activeProcesses.values()).filter((p) => p.ip === ip);
     if (ipProcesses.length >= 2) {
       return {
         allowed: false,
-        reason: 'Too many active processes from your IP address. Please wait for current operations to complete.',
+        reason:
+          'Too many active processes from your IP address. Please wait for current operations to complete.',
       };
     }
 
@@ -127,10 +134,13 @@ class ResourceMonitor {
    * Register a new process
    */
   registerProcess(processId: string, type: 'create' | 'format', ip: string): void {
-    const timeout = setTimeout(() => {
-      console.error(`Process ${processId} exceeded maximum processing time, terminating`);
-      this.terminateProcess(processId);
-    }, type === 'format' ? RESOURCE_LIMITS.MAX_GENERATION_TIME : RESOURCE_LIMITS.MAX_PROCESSING_TIME);
+    const timeout = setTimeout(
+      () => {
+        console.error(`Process ${processId} exceeded maximum processing time, terminating`);
+        this.terminateProcess(processId);
+      },
+      type === 'format' ? RESOURCE_LIMITS.MAX_GENERATION_TIME : RESOURCE_LIMITS.MAX_PROCESSING_TIME,
+    );
 
     activeProcesses.set(processId, {
       startTime: Date.now(),
@@ -140,7 +150,9 @@ class ResourceMonitor {
       timeout,
     });
 
-    console.log(`Process ${processId} registered (${type}) - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`);
+    console.log(
+      `Process ${processId} registered (${type}) - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`,
+    );
   }
 
   /**
@@ -153,9 +165,11 @@ class ResourceMonitor {
         clearTimeout(process.timeout);
       }
       activeProcesses.delete(processId);
-      
+
       const duration = Date.now() - process.startTime;
-      console.log(`Process ${processId} completed in ${duration}ms - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`);
+      console.log(
+        `Process ${processId} completed in ${duration}ms - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`,
+      );
     }
   }
 
@@ -169,9 +183,11 @@ class ResourceMonitor {
         clearTimeout(process.timeout);
       }
       activeProcesses.delete(processId);
-      
-      console.warn(`Process ${processId} terminated - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`);
-      
+
+      console.warn(
+        `Process ${processId} terminated - Active: ${activeProcesses.size}/${RESOURCE_LIMITS.MAX_CONCURRENT_PROCESSES}`,
+      );
+
       // TODO: Implement actual process termination if needed
       // This would require tracking child processes and killing them
     }
@@ -191,7 +207,7 @@ class ResourceMonitor {
     }>;
   } {
     const now = Date.now();
-    const processes = Array.from(activeProcesses.values()).map(p => ({
+    const processes = Array.from(activeProcesses.values()).map((p) => ({
       id: p.processId,
       type: p.type,
       duration: now - p.startTime,
@@ -213,8 +229,10 @@ class ResourceMonitor {
     const usagePercent = (memoryUsage.heapUsed / RESOURCE_LIMITS.MAX_MEMORY_USAGE) * 100;
 
     if (usagePercent > 80) {
-      console.warn(`High memory usage: ${Math.round(usagePercent)}% (${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB)`);
-      
+      console.warn(
+        `High memory usage: ${Math.round(usagePercent)}% (${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB)`,
+      );
+
       // Force garbage collection if usage is very high
       if (usagePercent > 90 && global.gc) {
         console.log('Forcing garbage collection due to high memory usage');
@@ -231,7 +249,7 @@ class ResourceMonitor {
       const tempDir = path.join(process.cwd(), 'tmp');
       if (fs.existsSync(tempDir)) {
         const tempDirSize = this.getDirSize(tempDir);
-        
+
         if (tempDirSize > RESOURCE_LIMITS.MAX_TEMP_DIR_SIZE) {
           console.warn(`Temp directory size exceeded: ${Math.round(tempDirSize / 1024 / 1024)}MB`);
           // Cleanup will be handled by the cleanup manager
@@ -261,14 +279,14 @@ class ResourceMonitor {
    */
   private getDirSize(dirPath: string): number {
     let totalSize = 0;
-    
+
     try {
       const items = fs.readdirSync(dirPath);
-      
+
       for (const item of items) {
         const itemPath = path.join(dirPath, item);
         const stats = fs.statSync(itemPath);
-        
+
         if (stats.isDirectory()) {
           totalSize += this.getDirSize(itemPath);
         } else {
@@ -278,7 +296,7 @@ class ResourceMonitor {
     } catch (_error) {
       console.warn(`Error calculating directory size for ${dirPath}:`, _error);
     }
-    
+
     return totalSize;
   }
 }
@@ -297,7 +315,7 @@ export function validateFileSize(filePath: string): {
   try {
     const stats = fs.statSync(filePath);
     const size = stats.size;
-    
+
     if (size > RESOURCE_LIMITS.MAX_OUTPUT_FILE_SIZE) {
       return {
         valid: false,
@@ -305,9 +323,9 @@ export function validateFileSize(filePath: string): {
         reason: `File size ${Math.round(size / 1024 / 1024)}MB exceeds maximum allowed size of ${Math.round(RESOURCE_LIMITS.MAX_OUTPUT_FILE_SIZE / 1024 / 1024)}MB`,
       };
     }
-    
+
     return { valid: true, size };
-  } catch (_error) {
+  } catch {
     return {
       valid: false,
       size: 0,
@@ -322,7 +340,7 @@ export function validateFileSize(filePath: string): {
 export function createTimeoutPromise<T>(
   promise: Promise<T>,
   timeoutMs: number,
-  operation: string
+  operation: string,
 ): Promise<T> {
   return Promise.race([
     promise,
@@ -342,7 +360,7 @@ export async function executeWithResourceLimits<T>(
   type: 'create' | 'format',
   ip: string,
   operation: () => Promise<T>,
-  operationName: string
+  operationName: string,
 ): Promise<T> {
   // Check if we can start the process
   const canStart = resourceMonitor.canStartProcess(type, ip);
@@ -355,15 +373,10 @@ export async function executeWithResourceLimits<T>(
 
   try {
     // Execute with timeout
-    const timeoutMs = type === 'format' 
-      ? RESOURCE_LIMITS.MAX_GENERATION_TIME 
-      : RESOURCE_LIMITS.MAX_PROCESSING_TIME;
-      
-    const result = await createTimeoutPromise(
-      operation(),
-      timeoutMs,
-      operationName
-    );
+    const timeoutMs =
+      type === 'format' ? RESOURCE_LIMITS.MAX_GENERATION_TIME : RESOURCE_LIMITS.MAX_PROCESSING_TIME;
+
+    const result = await createTimeoutPromise(operation(), timeoutMs, operationName);
 
     return result;
   } finally {
@@ -385,7 +398,7 @@ export function getResourceStats(): {
   limits: typeof RESOURCE_LIMITS;
 } {
   const memoryUsage = process.memoryUsage();
-  
+
   return {
     processes: resourceMonitor.getProcessStats(),
     memory: {
