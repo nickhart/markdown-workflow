@@ -12,23 +12,29 @@ This Postman collection provides comprehensive testing for the Presentation API 
 ## API Endpoints
 
 ### 1. GET /api/presentations/templates
+
 **Purpose**: Retrieve available presentation templates  
 **Tests**: Validates response structure and template properties
 
 ### 2. POST /api/presentations/create
+
 **Purpose**: Create a new presentation collection  
-**Body**: 
+**Body**:
+
 ```json
 {
   "title": "API Test Presentation",
   "templateName": "default"
 }
 ```
+
 **Tests**: Validates collection creation and auto-captures `collectionId`
 
 ### 3. POST /api/presentations/format
+
 **Purpose**: Format presentation to PPTX with custom content  
 **Body**:
+
 ```json
 {
   "collectionId": "{{collectionId}}",
@@ -40,19 +46,23 @@ This Postman collection provides comprehensive testing for the Presentation API 
   }
 }
 ```
+
 **Tests**: Validates formatting success and download URL
 
 ### 4. GET /api/presentations/download/{id}
+
 **Purpose**: Download the generated PPTX file  
 **Tests**: Validates file download headers and content type
 
 ## Running Tests
 
 ### Individual Requests
+
 Run requests in sequence (1 → 2 → 3 → 4) for full workflow testing.
 
 ### Collection Runner
-1. Click "Run Collection" 
+
+1. Click "Run Collection"
 2. Select all requests
 3. Run with 1-2 second delay between requests
 4. All tests should pass for successful API functionality
@@ -60,12 +70,14 @@ Run requests in sequence (1 → 2 → 3 → 4) for full workflow testing.
 ## Environment Variables
 
 ### Local Development
+
 ```
 baseUrl: http://localhost:3000
 collectionId: (auto-populated)
 ```
 
 ### Production (Railway)
+
 ```
 baseUrl: https://your-app.railway.app
 collectionId: (auto-populated)
@@ -100,6 +112,7 @@ collectionId: (auto-populated)
 ## Test Data
 
 The collection includes realistic test data:
+
 - Professional presentation title
 - Custom markdown content with Mermaid diagrams
 - Standard Mermaid configuration options
@@ -108,7 +121,8 @@ The collection includes realistic test data:
 ## Integration Testing
 
 This collection can be used for:
+
 - **Development**: Quick API validation during development
-- **CI/CD**: Automated testing in deployment pipelines  
+- **CI/CD**: Automated testing in deployment pipelines
 - **Documentation**: Living API examples and expected responses
 - **Debugging**: Isolate backend issues from frontend problems

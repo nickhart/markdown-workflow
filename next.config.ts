@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
       '.js': ['.js', '.ts'],
       '.jsx': ['.jsx', '.tsx'],
     };
-    
+
     return config;
   },
-  
+
   // External packages that should not be bundled
   serverExternalPackages: ['@mermaid-js/mermaid-cli'],
 };

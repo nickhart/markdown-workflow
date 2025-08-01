@@ -24,7 +24,7 @@ export default function PresentationDemo() {
   const [collectionId, setCollectionId] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [fileSize, setFileSize] = useState(0);
-  
+
   // Mermaid configuration
   const [mermaidOptions, setMermaidOptions] = useState<MermaidOptions>({
     theme: 'default',
@@ -39,27 +39,27 @@ export default function PresentationDemo() {
         setStatus('loading-templates');
         const response = await getTemplates();
         setTemplates(response.templates);
-        
+
         // Load default template content
-        const defaultTemplate = response.templates.find(t => t.name === 'default');
+        const defaultTemplate = response.templates.find((t) => t.name === 'default');
         if (defaultTemplate) {
           setContent(defaultTemplate.content);
         }
-        
+
         setStatus('idle');
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load templates');
         setStatus('error');
       }
     }
-    
+
     loadTemplates();
   }, []);
 
   // Handle template selection change
   const handleTemplateChange = (templateName: string) => {
     setSelectedTemplate(templateName);
-    const template = templates.find(t => t.name === templateName);
+    const template = templates.find((t) => t.name === templateName);
     if (template) {
       setContent(template.content);
     }
@@ -67,9 +67,9 @@ export default function PresentationDemo() {
 
   // Status log for debugging
   const [statusLog, setStatusLog] = useState<string[]>([]);
-  
+
   const addStatusLog = (message: string) => {
-    setStatusLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
+    setStatusLog((prev) => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
   // Handle form submission
@@ -84,7 +84,7 @@ export default function PresentationDemo() {
       setStatusLog([]);
       setStatus('creating');
       addStatusLog('Starting presentation creation...');
-      
+
       // Create presentation
       addStatusLog('Creating collection...');
       const createResponse = await createPresentation({
@@ -92,15 +92,15 @@ export default function PresentationDemo() {
         templateName: selectedTemplate,
         content: content || undefined,
       });
-      
+
       addStatusLog(`Collection created: ${createResponse.collectionId}`);
       setCollectionId(createResponse.collectionId);
       setStatus('formatting');
-      
+
       // Small delay to ensure collection is fully written
       addStatusLog('Waiting for collection to be ready...');
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Format to PPTX
       addStatusLog('Processing diagrams and formatting to PPTX...');
       const formatResponse = await formatPresentation({
@@ -108,12 +108,11 @@ export default function PresentationDemo() {
         content: content,
         mermaidOptions,
       });
-      
+
       addStatusLog('PPTX generation complete!');
       setDownloadUrl(formatResponse.downloadUrl);
       setFileSize(formatResponse.fileSize);
       setStatus('ready');
-      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       addStatusLog(`Error: ${errorMessage}`);
@@ -137,7 +136,7 @@ export default function PresentationDemo() {
     setCollectionId('');
     setDownloadUrl('');
     setFileSize(0);
-    const template = templates.find(t => t.name === selectedTemplate);
+    const template = templates.find((t) => t.name === selectedTemplate);
     if (template) {
       setContent(template.content);
     }
@@ -161,15 +160,14 @@ export default function PresentationDemo() {
     }
   };
 
-  const isProcessing = status === 'loading-templates' || status === 'creating' || status === 'formatting';
+  const isProcessing =
+    status === 'loading-templates' || status === 'creating' || status === 'formatting';
 
   return (
     <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">
-          Presentation Generator Demo
-        </h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">Presentation Generator Demo</h1>
         <p className="text-gray-600">
           Create professional presentations with Mermaid diagrams and export to PPTX
         </p>
@@ -195,9 +193,7 @@ export default function PresentationDemo() {
 
           {/* Template Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Template
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Template</label>
             <select
               value={selectedTemplate}
               onChange={(e) => handleTemplateChange(e.target.value)}
@@ -257,17 +253,18 @@ export default function PresentationDemo() {
           {/* Status Panel */}
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <h3 className="font-semibold text-gray-900 mb-3">Status</h3>
-            <div className="text-sm text-gray-700 mb-3">
-              {getStatusMessage()}
-            </div>
+            <div className="text-sm text-gray-700 mb-3">{getStatusMessage()}</div>
             {isProcessing && (
               <div className="mb-3">
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+                  <div
+                    className="bg-blue-600 h-2 rounded-full animate-pulse"
+                    style={{ width: '70%' }}
+                  ></div>
                 </div>
               </div>
             )}
-            
+
             {/* Status Log */}
             {statusLog.length > 0 && (
               <div className="mt-3">
@@ -289,7 +286,9 @@ export default function PresentationDemo() {
               <h3 className="font-semibold text-green-900 mb-3">Download Ready</h3>
               <div className="space-y-3">
                 <div className="text-sm text-green-700">
-                  <div>Collection ID: <code className="text-xs">{collectionId}</code></div>
+                  <div>
+                    Collection ID: <code className="text-xs">{collectionId}</code>
+                  </div>
                   <div>File Size: {(fileSize / 1024).toFixed(1)} KB</div>
                 </div>
                 <button
@@ -310,10 +309,12 @@ export default function PresentationDemo() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">Theme</label>
                 <select
                   value={mermaidOptions.theme}
-                  onChange={(e) => setMermaidOptions({
-                    ...mermaidOptions,
-                    theme: e.target.value as MermaidOptions['theme']
-                  })}
+                  onChange={(e) =>
+                    setMermaidOptions({
+                      ...mermaidOptions,
+                      theme: e.target.value as MermaidOptions['theme'],
+                    })
+                  }
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   disabled={isProcessing}
                 >
@@ -323,15 +324,19 @@ export default function PresentationDemo() {
                   <option value="neutral">Neutral</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Output Format</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Output Format
+                </label>
                 <select
                   value={mermaidOptions.output_format}
-                  onChange={(e) => setMermaidOptions({
-                    ...mermaidOptions,
-                    output_format: e.target.value as MermaidOptions['output_format']
-                  })}
+                  onChange={(e) =>
+                    setMermaidOptions({
+                      ...mermaidOptions,
+                      output_format: e.target.value as MermaidOptions['output_format'],
+                    })
+                  }
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   disabled={isProcessing}
                 >
@@ -339,18 +344,22 @@ export default function PresentationDemo() {
                   <option value="svg">SVG</option>
                 </select>
               </div>
-              
+
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Timeout (seconds)</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Timeout (seconds)
+                </label>
                 <input
                   type="number"
                   min="10"
                   max="120"
                   value={mermaidOptions.timeout}
-                  onChange={(e) => setMermaidOptions({
-                    ...mermaidOptions,
-                    timeout: parseInt(e.target.value) || 30
-                  })}
+                  onChange={(e) =>
+                    setMermaidOptions({
+                      ...mermaidOptions,
+                      timeout: parseInt(e.target.value) || 30,
+                    })
+                  }
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                   disabled={isProcessing}
                 />

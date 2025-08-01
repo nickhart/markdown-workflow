@@ -57,12 +57,12 @@ export interface ApiError {
  */
 export async function getTemplates(): Promise<TemplatesResponse> {
   const response = await fetch('/api/presentations/templates');
-  
+
   if (!response.ok) {
     const error: ApiError = await response.json();
     throw new Error(error.message || error.error || 'Failed to fetch templates');
   }
-  
+
   return response.json();
 }
 
@@ -70,7 +70,7 @@ export async function getTemplates(): Promise<TemplatesResponse> {
  * Create a new presentation collection
  */
 export async function createPresentation(
-  request: CreatePresentationRequest
+  request: CreatePresentationRequest,
 ): Promise<CreatePresentationResponse> {
   const response = await fetch('/api/presentations/create', {
     method: 'POST',
@@ -79,12 +79,12 @@ export async function createPresentation(
     },
     body: JSON.stringify(request),
   });
-  
+
   if (!response.ok) {
     const error: ApiError = await response.json();
     throw new Error(error.message || error.error || 'Failed to create presentation');
   }
-  
+
   return response.json();
 }
 
@@ -92,7 +92,7 @@ export async function createPresentation(
  * Format a presentation collection to PPTX
  */
 export async function formatPresentation(
-  request: FormatPresentationRequest
+  request: FormatPresentationRequest,
 ): Promise<FormatPresentationResponse> {
   const response = await fetch('/api/presentations/format', {
     method: 'POST',
@@ -101,12 +101,12 @@ export async function formatPresentation(
     },
     body: JSON.stringify(request),
   });
-  
+
   if (!response.ok) {
     const error: ApiError = await response.json();
     throw new Error(error.message || error.error || 'Failed to format presentation');
   }
-  
+
   return response.json();
 }
 
