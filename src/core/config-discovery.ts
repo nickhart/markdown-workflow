@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
+import _ from 'lodash';
 import { ConfigPaths, ResolvedConfig } from './types.js';
 import { ProjectConfigSchema, type ProjectConfig } from './schemas.js';
 import { SystemInterface, NodeSystemInterface } from './system-interface.js';
@@ -118,19 +119,75 @@ export class ConfigDiscovery {
   }
 
   /**
-   * Load and parse project configuration with Zod validation
-   * Reads config.yml from the project and validates its structure
+   * Load system default configuration
+   * Reads default-config.yml from the workflows directory
    */
-  async loadProjectConfig(configPath: string): Promise<ProjectConfig | null> {
+  private async loadSystemDefaults(systemRoot: string): Promise<ProjectConfig | null> {
     try {
-      if (!this.systemInterface.existsSync(configPath)) {
+      const defaultConfigPath = path.join(systemRoot, 'workflows', 'default-config.yml');
+
+      if (!this.systemInterface.existsSync(defaultConfigPath)) {
+        console.warn('System default config not found, using empty defaults');
         return null;
       }
 
-      const configContent = this.systemInterface.readFileSync(configPath);
+      const configContent = this.systemInterface.readFileSync(defaultConfigPath);
       const parsedYaml = YAML.parse(configContent);
 
       const validationResult = ProjectConfigSchema.safeParse(parsedYaml);
+
+      if (!validationResult.success) {
+        console.warn(`Invalid system default config: ${validationResult.error.message}`);
+        return null;
+      }
+
+      return validationResult.data;
+    } catch (error) {
+      console.warn(
+        `Error loading system defaults: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Load and parse project configuration with Zod validation
+   * Reads config.yml from the project, merges with system defaults, and validates structure
+   */
+  async loadProjectConfig(configPath: string, systemRoot?: string): Promise<ProjectConfig | null> {
+    try {
+      // Load system defaults first
+      let systemDefaults: ProjectConfig | null = null;
+      if (systemRoot) {
+        systemDefaults = await this.loadSystemDefaults(systemRoot);
+      }
+
+      // Load user config if it exists
+      let userConfig: unknown = null;
+      if (this.systemInterface.existsSync(configPath)) {
+        const configContent = this.systemInterface.readFileSync(configPath);
+        userConfig = YAML.parse(configContent);
+      }
+
+      // Merge user config over system defaults
+      let mergedConfig: unknown;
+      if (systemDefaults && userConfig) {
+        // User config takes precedence, system defaults fill in missing values
+        mergedConfig = _.defaultsDeep({}, userConfig, systemDefaults);
+        console.log('🔧 Config merged: user config + system defaults');
+      } else if (userConfig) {
+        mergedConfig = userConfig;
+        console.log('🔧 Config loaded: user config only (no system defaults)');
+      } else if (systemDefaults) {
+        mergedConfig = systemDefaults;
+        console.log('🔧 Config loaded: system defaults only (no user config)');
+      } else {
+        console.log('🔧 No configuration found');
+        return null;
+      }
+
+      // Validate the merged configuration
+      const validationResult = ProjectConfigSchema.safeParse(mergedConfig);
 
       if (!validationResult.success) {
         throw new Error(`Invalid configuration format: ${validationResult.error.message}`);
@@ -177,7 +234,7 @@ export class ConfigDiscovery {
 
     let projectConfig: ProjectConfig | null = null;
     if (paths.projectConfig) {
-      projectConfig = await this.loadProjectConfig(paths.projectConfig);
+      projectConfig = await this.loadProjectConfig(paths.projectConfig, paths.systemRoot);
     }
 
     return {

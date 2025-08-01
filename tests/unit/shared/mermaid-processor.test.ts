@@ -203,8 +203,9 @@ No mermaid diagrams here.
       expect(mockExecSync).toHaveBeenCalledWith(
         'npx @mermaid-js/mermaid-cli --version',
         expect.objectContaining({
-          stdio: 'ignore',
-          timeout: 5000,
+          stdio: 'pipe',
+          timeout: 10000,
+          encoding: 'utf8',
         }),
       );
     });

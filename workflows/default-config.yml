@@ -1,0 +1,93 @@
+# System Default Configuration
+# This file contains default values for all system configuration options.
+# User projects can override any of these values in their .markdown-workflow/config.yml
+
+# User Information Template (will be overridden by user config)
+user:
+  name: "Your Name"
+  preferred_name: "Your Name"
+  email: "your.email@example.com"
+  phone: "(555) 123-4567"
+  address: "123 Main Street"
+  city: "Your City"
+  state: "ST"
+  zip: "12345"
+  linkedin: "linkedin.com/in/yourname"
+  github: "github.com/yourusername"
+  website: "yourwebsite.com"
+
+# System Configuration Defaults
+system:
+  # Web scraping preferences
+  scraper: "wget"  # Options: "wget", "curl", "chrome"
+  web_download:
+    timeout: 30
+    add_utf8_bom: true
+    html_cleanup: "scripts"  # Options: "none", "scripts", "markdown"
+
+  # Supported output formats
+  output_formats:
+    - "docx"
+    - "html"
+    - "pdf"
+    - "pptx"
+
+  # Git integration settings
+  git:
+    auto_commit: true
+    commit_message_template: "Add {{workflow}} collection: {{collection_id}}"
+
+  # Collection ID generation settings
+  collection_id:
+    date_format: "YYYYMMDD"
+    sanitize_spaces: "_"
+    max_length: 50
+
+  # Mermaid diagram generation settings
+  mermaid:
+    output_format: "png"  # Options: "png", "svg"
+    theme: "default"      # Options: "default", "dark", "forest", "neutral"
+    timeout: 30
+
+  # Testing overrides (normally disabled)
+  testing:
+    # Uncomment to override current date for predictable testing
+    # override_current_date: "2025-01-21T10:00:00.000Z"
+    # override_timezone: "UTC"
+    # deterministic_ids: true
+
+# Workflow-specific default overrides
+workflows:
+  job:
+    templates:
+      resume:
+        default_template: "default"
+        available_templates:
+          - "default"
+          - "mobile"
+          - "frontend"
+
+    custom_fields:
+      - name: "salary_range"
+        type: "string"
+        description: "Expected salary range"
+      - name: "remote_preference"
+        type: "enum"
+        options: ["remote", "hybrid", "onsite"]
+        description: "Work location preference"
+
+  blog:
+    custom_fields:
+      - name: "estimated_reading_time"
+        type: "number"
+        description: "Estimated reading time in minutes"
+
+  presentation:
+    custom_fields:
+      - name: "presentation_duration"
+        type: "number"
+        description: "Expected presentation duration in minutes"
+      - name: "audience_type"
+        type: "enum"
+        options: ["technical", "business", "mixed", "academic"]
+        description: "Target audience type"
