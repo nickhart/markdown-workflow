@@ -54,9 +54,17 @@ export class MermaidProcessor {
    */
   static async detectMermaidCLI(): Promise<boolean> {
     try {
-      execSync('npx @mermaid-js/mermaid-cli --version', { stdio: 'ignore', timeout: 5000 });
+      // Try to run the Mermaid CLI version command
+      execSync('npx @mermaid-js/mermaid-cli --version', {
+        stdio: 'pipe',
+        timeout: 10000,
+        encoding: 'utf8',
+      });
       return true;
-    } catch {
+    } catch (error) {
+      console.warn(
+        `⚠️  Mermaid CLI detection failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return false;
     }
   }

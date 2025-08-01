@@ -374,11 +374,8 @@ export class WorkflowEngine {
           console.log(`\n⚠️  NO TEMPLATE TYPE DETECTED - using default pandoc styling\n`);
         }
 
-        // Get Mermaid configuration from project config
-        let mermaidConfig = undefined;
-        if (this.projectConfig?.system?.mermaid) {
-          mermaidConfig = this.projectConfig.system.mermaid;
-        }
+        // Get Mermaid configuration from project config (with system defaults already merged)
+        const mermaidConfig = this.projectConfig?.system?.mermaid;
 
         const result = await convertDocument({
           inputFile: inputPath,
