@@ -7,7 +7,7 @@ import * as path from 'path';
  * GET /api/presentations/templates
  * Returns available presentation templates with their content
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const configDiscovery = new ConfigDiscovery();
     const systemConfig = configDiscovery.discoverSystemConfiguration();
