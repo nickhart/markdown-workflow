@@ -188,7 +188,7 @@ program
   .argument('<workflow>', 'Workflow name (e.g., job, blog)')
   .argument('<collection_id>', 'Collection ID to format')
   .argument('[artifacts...]', 'Optional artifact names to format (e.g., resume, cover_letter)')
-  .option('-f, --format <format>', 'Output format (docx, html, pdf)', 'docx')
+  .option('-f, --format <format>', 'Output format (docx, html, pdf)')
   .action(
     withErrorHandling(async (workflow, collectionId, artifacts, options) => {
       await formatCommand(workflow, collectionId, {

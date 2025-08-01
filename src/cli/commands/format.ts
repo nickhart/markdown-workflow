@@ -49,13 +49,13 @@ export async function formatCommand(
   const format = options.format || defaultFormat;
 
   console.log(`Formatting collection: ${collectionId}`);
-  console.log(`Format: ${format}`);
   if (options.artifacts && options.artifacts.length > 0) {
     console.log(`Artifacts: ${options.artifacts.join(', ')}`);
   } else {
     console.log(`Artifacts: all available`);
   }
   console.log(`Location: ${collection.path}`);
+  console.log(`Format: ${format}`);
 
   try {
     // Execute format action with optional artifact filtering
