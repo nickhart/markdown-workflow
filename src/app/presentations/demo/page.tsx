@@ -5,7 +5,6 @@ import {
   getTemplates,
   createPresentation,
   formatPresentation,
-  downloadPresentation,
   downloadFile,
   type Template,
   type MermaidOptions,

@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { SystemInterface } from '../../src/core/system-interface';
+import { SystemInterface } from '../../../src/core/system-interface.js';
 
 type _FileSystemContent = {
   name: string;

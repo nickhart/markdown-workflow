@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Initialize WorkflowEngine
     const configDiscovery = new ConfigDiscovery();
-    const systemConfig = configDiscovery.discoverSystemConfiguration();
+    const _systemConfig = configDiscovery.discoverSystemConfiguration();
 
     // Create a temporary project directory for the demo
     // In a real app, this would be user-specific
