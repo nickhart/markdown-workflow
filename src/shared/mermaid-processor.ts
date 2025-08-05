@@ -203,8 +203,50 @@ export class MermaidProcessor {
   }
 
   /**
+   * Check if intermediate file content has changed
+   */
+  private hasIntermediateContentChanged(intermediateFile: string, newContent: string): boolean {
+    if (!fs.existsSync(intermediateFile)) {
+      return true; // File doesn't exist, so content has "changed"
+    }
+
+    const existingContent = fs.readFileSync(intermediateFile, 'utf8');
+    return existingContent !== newContent;
+  }
+
+  /**
+   * Check if image file needs regeneration based on timestamps
+   */
+  private needsImageRegeneration(imageFile: string, intermediateFile: string): boolean {
+    if (!fs.existsSync(imageFile)) {
+      return true; // Image doesn't exist, need to generate
+    }
+
+    if (!fs.existsSync(intermediateFile)) {
+      return true; // Source doesn't exist, need to generate
+    }
+
+    try {
+      const imageStats = fs.statSync(imageFile);
+      const intermediateStats = fs.statSync(intermediateFile);
+
+      // Handle mocked fs in tests where mtime might be undefined
+      if (!imageStats.mtime || !intermediateStats.mtime) {
+        return true; // Default to regenerating if we can't get timestamps
+      }
+
+      // Regenerate if intermediate file is newer than image
+      return intermediateStats.mtime > imageStats.mtime;
+    } catch {
+      // If we can't get stats, default to regenerating
+      return true;
+    }
+  }
+
+  /**
    * Process markdown content by extracting Mermaid blocks, generating diagrams,
-   * and replacing blocks with image references including layout attributes
+   * and replacing blocks with image references including layout attributes.
+   * Implements caching based on content changes and file timestamps.
    */
   async processMarkdown(
     markdown: string,
@@ -248,15 +290,47 @@ export class MermaidProcessor {
         ? path.relative(intermediateDir, outputPath).replace(/\\/g, '/')
         : `assets/${outputFileName}`;
 
-      // Save intermediate Mermaid source file for debugging
+      let shouldGenerateImage = true;
+
+      // Save intermediate Mermaid source file with caching logic
       if (intermediateDir) {
         const mermaidSourcePath = path.join(intermediateDir, `${block.name}.mmd`);
-        fs.writeFileSync(mermaidSourcePath, block.code);
+
+        // Check if content has changed
+        const contentChanged = this.hasIntermediateContentChanged(mermaidSourcePath, block.code);
+
+        if (contentChanged) {
+          // Content changed, update the intermediate file
+          fs.writeFileSync(mermaidSourcePath, block.code);
+          console.info(`📝 Updated intermediate file: ${block.name}.mmd`);
+        } else {
+          console.info(`⏭️  Skipped intermediate file (unchanged): ${block.name}.mmd`);
+        }
+
+        // Check if image needs regeneration based on timestamps
+        shouldGenerateImage = this.needsImageRegeneration(outputPath, mermaidSourcePath);
+
+        if (!shouldGenerateImage) {
+          console.info(`⚡ Skipped image generation (up to date): ${outputFileName}`);
+        }
+      } else {
+        // No intermediate directory, always generate
+        shouldGenerateImage = true;
       }
 
-      // Parse layout attributes from block attributes
-      const layoutOptions = this.parseLayoutAttributes(block.attributes);
-      const result = await this.generateDiagram(block.code, outputPath, layoutOptions);
+      let result;
+      if (shouldGenerateImage) {
+        // Parse layout attributes from block attributes
+        const layoutOptions = this.parseLayoutAttributes(block.attributes);
+        result = await this.generateDiagram(block.code, outputPath, layoutOptions);
+
+        if (result.success) {
+          console.info(`🎨 Generated diagram: ${outputFileName}`);
+        }
+      } else {
+        // Skip generation, assume success since file exists
+        result = { success: true, outputPath };
+      }
 
       if (result.success) {
         diagrams.push({
