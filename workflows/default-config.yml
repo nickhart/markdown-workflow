@@ -45,9 +45,12 @@ system:
 
   # Mermaid diagram generation settings
   mermaid:
-    output_format: "png"  # Options: "png", "svg"
-    theme: "default"      # Options: "default", "dark", "forest", "neutral"
+    output_format: "png"         # Options: "png", "svg"
+    theme: "default"             # Options: "default", "dark", "forest", "neutral"
     timeout: 30
+    scale: 2                     # Scale factor for high-DPI images (2x for crisp presentations)
+    backgroundColor: "white"     # Background color for diagrams
+    fontFamily: "arial,sans-serif"  # Web-safe font family for SVG text rendering
 
   # Testing overrides (normally disabled)
   testing:
