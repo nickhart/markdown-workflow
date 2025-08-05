@@ -127,6 +127,9 @@ export const SystemConfigSchema = z.object({
       output_format: z.enum(['png', 'svg']),
       theme: z.enum(['default', 'dark', 'forest', 'neutral']).optional(),
       timeout: z.number(),
+      scale: z.number().optional(),
+      backgroundColor: z.string().optional(),
+      fontFamily: z.string().optional(),
     })
     .optional(),
   testing: z

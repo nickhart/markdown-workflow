@@ -16,6 +16,9 @@ export interface MermaidConfig {
   output_format: 'png' | 'svg';
   theme?: 'default' | 'dark' | 'forest' | 'neutral';
   timeout: number;
+  scale?: number; // Scale factor for high-DPI images (default: 2 for PNG, 1 for SVG)
+  backgroundColor?: string; // Background color (default: 'white')
+  fontFamily?: string; // Font family for SVG text (default: 'arial,sans-serif')
 }
 
 export interface DiagramGenerationResult {
@@ -43,9 +46,12 @@ export class MermaidProcessor {
       output_format: 'png',
       theme: 'default',
       timeout: 30,
+      scale: 2, // 2x scale for crisp images in presentations
+      backgroundColor: 'white',
+      fontFamily: 'arial,sans-serif', // Web-safe font for SVG compatibility
     };
 
-    const mermaidConfig = systemConfig.mermaid || defaultConfig;
+    const mermaidConfig = { ...defaultConfig, ...systemConfig.mermaid };
     return new MermaidProcessor(mermaidConfig);
   }
 
@@ -158,6 +164,8 @@ export class MermaidProcessor {
         // Build Mermaid CLI command
         const theme = this.config.theme || 'default';
         const timeout = this.config.timeout * 1000;
+        const scale = this.config.scale || (this.config.output_format === 'png' ? 2 : 1);
+        const backgroundColor = this.config.backgroundColor || 'white';
 
         // Add size constraints based on layout hints
         let sizeParams = '';
@@ -169,7 +177,35 @@ export class MermaidProcessor {
           sizeParams += ` -H ${height}`;
         }
 
-        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}${sizeParams}`;
+        // Add quality parameters
+        let qualityParams = '';
+        qualityParams += ` -s ${scale}`; // Scale factor for high-DPI
+        qualityParams += ` -b ${backgroundColor}`; // Background color
+
+        // Add SVG-specific font configuration
+        if (this.config.output_format === 'svg' && this.config.fontFamily) {
+          // Create a config file for SVG font settings
+          const configContent = JSON.stringify({
+            fontFamily: this.config.fontFamily,
+            theme: {
+              primaryColor: '#000000',
+              primaryTextColor: '#000000',
+              fontFamily: this.config.fontFamily,
+            },
+          });
+          const configFile = path.join(tempDir, `mermaid-config-${Date.now()}.json`);
+          fs.writeFileSync(configFile, configContent);
+          qualityParams += ` -c "${configFile}"`;
+
+          // Clean up config file after execution
+          setTimeout(() => {
+            if (fs.existsSync(configFile)) {
+              fs.unlinkSync(configFile);
+            }
+          }, 5000);
+        }
+
+        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}${sizeParams}${qualityParams}`;
 
         execSync(command, {
           timeout,
