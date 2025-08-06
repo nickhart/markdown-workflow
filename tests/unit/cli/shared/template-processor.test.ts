@@ -434,6 +434,110 @@ describe('TemplateProcessor', () => {
         expect.stringMatching(/Created on: \w+, \w+ \d{1,2}, \d{4}/),
       );
     });
+
+    it('should use provided project config instead of loading from file', async () => {
+      const providedConfig: ProjectConfig = {
+        user: {
+          name: 'Jane Smith',
+          preferred_name: 'jane smith',
+          email: 'jane@example.com',
+          phone: '(555) 987-6543',
+          address: '456 Oak Ave',
+          city: 'Test City',
+          state: 'TX',
+          zip: '54321',
+          linkedin: 'linkedin.com/in/janesmith',
+          github: 'github.com/janesmith',
+          website: 'janesmith.dev',
+        },
+        system: {
+          scraper: 'wget',
+          web_download: {
+            timeout: 30,
+            add_utf8_bom: true,
+            html_cleanup: 'scripts',
+          },
+        },
+      };
+
+      mockFs.readFileSync.mockReturnValue('# {{user.name}} Resume\n\nEmail: {{user.email}}');
+
+      await TemplateProcessor.processTemplate(template, '/collection/path', {
+        systemRoot: '/system',
+        workflowName: 'job',
+        variables: { company: 'TestCorp', role: 'Engineer' },
+        projectConfig: providedConfig, // Provide config directly
+        projectPaths: {
+          workflowsDir: '/project/.markdown-workflow/workflows',
+          configFile: '/project/config.yml',
+        },
+      });
+
+      // Should use the provided config (Jane Smith) not load from file or use defaults
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        '/collection/path/resume_jane_smith.md',
+        expect.stringContaining('# Jane Smith Resume'),
+      );
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.stringContaining('Email: jane@example.com'),
+      );
+
+      // Should NOT call loadProjectConfig since we provided the config
+      expect(mockConfigDiscovery.loadProjectConfig).not.toHaveBeenCalled();
+    });
+
+    it('should fallback to loading config from file when not provided in options', async () => {
+      const fileConfig: ProjectConfig = {
+        user: {
+          name: 'Config From File',
+          preferred_name: 'config user',
+          email: 'file@example.com',
+          phone: '(555) 111-2222',
+          address: '789 Pine St',
+          city: 'File City',
+          state: 'FC',
+          zip: '11111',
+          linkedin: 'linkedin.com/in/fileuser',
+          github: 'github.com/fileuser',
+          website: 'fileuser.com',
+        },
+        system: {
+          scraper: 'wget',
+          web_download: {
+            timeout: 30,
+            add_utf8_bom: true,
+            html_cleanup: 'scripts',
+          },
+        },
+      };
+
+      mockFs.readFileSync.mockReturnValue('# {{user.name}} Resume');
+      mockConfigDiscovery.loadProjectConfig.mockResolvedValue(fileConfig);
+
+      await TemplateProcessor.processTemplate(template, '/collection/path', {
+        systemRoot: '/system',
+        workflowName: 'job',
+        variables: { company: 'TestCorp', role: 'Engineer' },
+        // No projectConfig provided - should load from file
+        projectPaths: {
+          workflowsDir: '/project/.markdown-workflow/workflows',
+          configFile: '/project/config.yml',
+        },
+      });
+
+      // Should load config from file and pass systemRoot for proper merging
+      expect(mockConfigDiscovery.loadProjectConfig).toHaveBeenCalledWith(
+        '/project/config.yml',
+        '/system', // systemRoot should be passed for proper merging with defaults
+      );
+
+      // Should use the config loaded from file
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        '/collection/path/resume_config_user.md',
+        expect.stringContaining('# Config From File Resume'),
+      );
+    });
   });
 
   describe('loadPartials', () => {

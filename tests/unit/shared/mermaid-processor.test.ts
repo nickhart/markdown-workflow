@@ -86,15 +86,14 @@ flowchart TD
       expect(blocks[0]).toEqual({
         name: 'diagram-name',
         code: 'flowchart TD\n  A --> B',
-        attributes: '',
         startIndex: expect.any(Number),
         endIndex: expect.any(Number),
       });
     });
 
-    it('should extract mermaid blocks with attributes', () => {
+    it('should extract mermaid blocks (attributes no longer supported)', () => {
       const markdown = `
-\`\`\`mermaid:solution-overview {align=center, width=80%, layout=horizontal}
+\`\`\`mermaid:solution-overview
 flowchart LR
   A --> B --> C
 \`\`\`
@@ -105,7 +104,6 @@ flowchart LR
       expect(blocks[0]).toEqual({
         name: 'solution-overview',
         code: 'flowchart LR\n  A --> B --> C',
-        attributes: '{align=center, width=80%, layout=horizontal}',
         startIndex: expect.any(Number),
         endIndex: expect.any(Number),
       });
@@ -120,7 +118,7 @@ flowchart TD
 
 Some text
 
-\`\`\`mermaid:second-diagram {width=1000px}
+\`\`\`mermaid:second-diagram
 graph LR
   X --> Y
 \`\`\`
@@ -130,7 +128,7 @@ graph LR
       expect(blocks).toHaveLength(2);
       expect(blocks[0].name).toBe('first-diagram');
       expect(blocks[1].name).toBe('second-diagram');
-      expect(blocks[1].attributes).toBe('{width=1000px}');
+      // Attributes no longer supported in simplified implementation
     });
 
     it('should return empty array when no mermaid blocks found', () => {
@@ -142,55 +140,6 @@ No mermaid diagrams here.
 
       const blocks = processor.extractMermaidBlocks(markdown);
       expect(blocks).toHaveLength(0);
-    });
-  });
-
-  describe('layout attribute processing (tested through generateDiagram)', () => {
-    const mockMermaidCode = 'flowchart TD\n  A --> B';
-    const mockOutputPath = '/path/to/output.png';
-
-    beforeEach(() => {
-      mockExecSync.mockReturnValue(Buffer.from('10.6.1'));
-    });
-
-    it('should parse and apply horizontal layout attributes', async () => {
-      const options = { layout: 'horizontal', width: 1000 };
-      await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-w 1000'),
-        expect.any(Object),
-      );
-    });
-
-    it('should parse and apply vertical layout attributes', async () => {
-      const options = { layout: 'layered', height: 800 };
-      await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-H 800'),
-        expect.any(Object),
-      );
-    });
-
-    it('should handle custom width values', async () => {
-      const options = { width: 1500 };
-      await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-w 1500'),
-        expect.any(Object),
-      );
-    });
-
-    it('should handle custom height values', async () => {
-      const options = { height: 600 };
-      await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-H 600'),
-        expect.any(Object),
-      );
     });
   });
 
@@ -237,39 +186,6 @@ No mermaid diagrams here.
       expect(mockFs.writeFileSync).toHaveBeenCalled(); // temp file creation
       expect(mockExecSync).toHaveBeenCalledWith(
         expect.stringContaining('npx @mermaid-js/mermaid-cli'),
-        expect.any(Object),
-      );
-    });
-
-    it('should generate diagram with horizontal layout constraints', async () => {
-      const options = { layout: 'horizontal', width: 1200 };
-      const result = await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(result.success).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-w 1200'),
-        expect.any(Object),
-      );
-    });
-
-    it('should generate diagram with vertical layout constraints', async () => {
-      const options = { layout: 'layered', height: 800 };
-      const result = await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(result.success).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-H 800'),
-        expect.any(Object),
-      );
-    });
-
-    it('should use default width for horizontal layout when not specified', async () => {
-      const options = { layout: 'horizontal' };
-      const result = await processor.generateDiagram(mockMermaidCode, mockOutputPath, options);
-
-      expect(result.success).toBe(true);
-      expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('-w 1200'), // default width
         expect.any(Object),
       );
     });
@@ -322,7 +238,7 @@ No mermaid diagrams here.
       const markdown = `
 # Test Presentation
 
-\`\`\`mermaid:solution-overview {layout=horizontal, width=1000px}
+\`\`\`mermaid:solution-overview
 flowchart LR
   A --> B --> C
 \`\`\`
@@ -340,7 +256,7 @@ Some description text.
       });
 
       expect(result.processedMarkdown).toContain('![solution-overview]');
-      expect(result.processedMarkdown).toContain('{layout=horizontal, width=1000px}');
+      // Layout attributes no longer supported
     });
 
     it('should return original markdown when no mermaid blocks found', async () => {
