@@ -7,7 +7,6 @@ import type { SystemConfig } from '../core/schemas.js';
 export interface MermaidBlock {
   name: string;
   code: string;
-  attributes: string; // Layout attributes like "{align=center, width=80%}"
   startIndex: number;
   endIndex: number;
 }
@@ -76,53 +75,20 @@ export class MermaidProcessor {
   }
 
   /**
-   * Parse layout attributes from attribute string
-   * Supports: {align=center, width=80%, layout=horizontal}
-   */
-  private parseLayoutAttributes(attributeString: string): {
-    width?: number;
-    height?: number;
-    layout?: string;
-  } {
-    const options: { width?: number; height?: number; layout?: string } = {};
-
-    if (!attributeString) return options;
-
-    // Remove braces and split by commas
-    const cleaned = attributeString.replace(/[{}]/g, '').trim();
-    const attributes = cleaned.split(',').map((attr) => attr.trim());
-
-    for (const attr of attributes) {
-      const [key, value] = attr.split('=').map((s) => s.trim());
-
-      if (key === 'layout') {
-        options.layout = value;
-      } else if (key === 'width' && value.includes('px')) {
-        options.width = parseInt(value.replace('px', ''));
-      } else if (key === 'height' && value.includes('px')) {
-        options.height = parseInt(value.replace('px', ''));
-      }
-    }
-
-    return options;
-  }
-
-  /**
    * Extract Mermaid blocks from markdown content
-   * Supports syntax: ```mermaid:diagram-name {align=center, width=80%, layout=horizontal}
+   * Supports syntax: ```mermaid:diagram-name
    */
   extractMermaidBlocks(markdown: string): MermaidBlock[] {
     const blocks: MermaidBlock[] = [];
 
-    // Match mermaid:name with optional attributes code blocks
-    const regex = /```mermaid:([\w-]+)(\s*\{[^}]*\})?\s*\n([\s\S]*?)\n```/g;
+    // Match mermaid:name code blocks
+    const regex = /```mermaid:([\w-]+)\s*\n([\s\S]*?)\n```/g;
     let match;
 
     while ((match = regex.exec(markdown)) !== null) {
       blocks.push({
         name: match[1],
-        attributes: match[2]?.trim() || '', // Optional attributes like {align=center, width=80%}
-        code: match[3],
+        code: match[2],
         startIndex: match.index,
         endIndex: match.index + match[0].length,
       });
@@ -134,11 +100,7 @@ export class MermaidProcessor {
   /**
    * Generate a diagram from Mermaid code using Mermaid CLI
    */
-  async generateDiagram(
-    mermaidCode: string,
-    outputPath: string,
-    options?: { width?: number; height?: number; layout?: string },
-  ): Promise<DiagramGenerationResult> {
+  async generateDiagram(mermaidCode: string, outputPath: string): Promise<DiagramGenerationResult> {
     const isAvailable = await MermaidProcessor.detectMermaidCLI();
 
     if (!isAvailable) {
@@ -167,34 +129,24 @@ export class MermaidProcessor {
         const scale = this.config.scale || (this.config.output_format === 'png' ? 2 : 1);
         const backgroundColor = this.config.backgroundColor || 'white';
 
-        // Add size constraints based on layout hints
-        let sizeParams = '';
-        if (options?.layout === 'horizontal' || options?.width) {
-          const width = options?.width || 1200; // Max width for horizontal layouts
-          sizeParams += ` -w ${width}`;
-        } else if (options?.layout === 'layered' || options?.height) {
-          const height = options?.height || 800; // Max height for vertical layouts
-          sizeParams += ` -H ${height}`;
-        }
-
         // Add quality parameters
         let qualityParams = '';
         qualityParams += ` -s ${scale}`; // Scale factor for high-DPI
         qualityParams += ` -b ${backgroundColor}`; // Background color
 
-        // Add SVG-specific font configuration
+        // Add configuration file for SVG fonts if needed
         if (this.config.output_format === 'svg' && this.config.fontFamily) {
-          // Create a config file for SVG font settings
-          const configContent = JSON.stringify({
+          const configContent = {
             fontFamily: this.config.fontFamily,
             theme: {
               primaryColor: '#000000',
               primaryTextColor: '#000000',
               fontFamily: this.config.fontFamily,
             },
-          });
+          };
+
           const configFile = path.join(tempDir, `mermaid-config-${Date.now()}.json`);
-          fs.writeFileSync(configFile, configContent);
+          fs.writeFileSync(configFile, JSON.stringify(configContent));
           qualityParams += ` -c "${configFile}"`;
 
           // Clean up config file after execution
@@ -205,7 +157,7 @@ export class MermaidProcessor {
           }, 5000);
         }
 
-        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}${sizeParams}${qualityParams}`;
+        const command = `npx @mermaid-js/mermaid-cli -i "${tempInputFile}" -o "${outputPath}" -t ${theme}${qualityParams}`;
 
         execSync(command, {
           timeout,
@@ -281,7 +233,7 @@ export class MermaidProcessor {
 
   /**
    * Process markdown content by extracting Mermaid blocks, generating diagrams,
-   * and replacing blocks with image references including layout attributes.
+   * and replacing blocks with image references.
    * Implements caching based on content changes and file timestamps.
    */
   async processMarkdown(
@@ -356,9 +308,7 @@ export class MermaidProcessor {
 
       let result;
       if (shouldGenerateImage) {
-        // Parse layout attributes from block attributes
-        const layoutOptions = this.parseLayoutAttributes(block.attributes);
-        result = await this.generateDiagram(block.code, outputPath, layoutOptions);
+        result = await this.generateDiagram(block.code, outputPath);
 
         if (result.success) {
           console.info(`🎨 Generated diagram: ${outputFileName}`);
@@ -375,8 +325,8 @@ export class MermaidProcessor {
           relativePath,
         });
 
-        // Replace Mermaid block with image reference including layout attributes
-        const imageMarkdown = `![${block.name}](${relativePath})${block.attributes}`;
+        // Replace Mermaid block with image reference
+        const imageMarkdown = `![${block.name}](${relativePath})`;
         processedMarkdown =
           processedMarkdown.slice(0, block.startIndex) +
           imageMarkdown +

@@ -41,11 +41,18 @@ export class TemplateProcessor {
     collectionPath: string,
     options: TemplateProcessingOptions,
   ): Promise<void> {
-    // Load user configuration if project paths are available
+    // Use the provided project config or load it if not available
     let userConfig = null;
-    if (options.projectPaths?.configFile && fs.existsSync(options.projectPaths.configFile)) {
+    if (options.projectConfig?.user) {
+      // Use the already loaded and merged project config
+      userConfig = options.projectConfig.user;
+    } else if (options.projectPaths?.configFile && fs.existsSync(options.projectPaths.configFile)) {
+      // Fallback: load config directly if not provided
       const configDiscovery = new ConfigDiscovery();
-      const config = await configDiscovery.loadProjectConfig(options.projectPaths.configFile);
+      const config = await configDiscovery.loadProjectConfig(
+        options.projectPaths.configFile,
+        options.systemRoot,
+      );
       userConfig = config?.user;
     }
 
