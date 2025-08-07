@@ -100,6 +100,14 @@ workflow:
       description: "Generate diagrams and create presentation files"
       converter: "presentation"
       formats: ["pptx", "html", "pdf"]
+      processors:
+        - name: "mermaid"
+          enabled: true
+          config:
+            output_format: "png"
+            theme: "default"
+            scale: 2
+            backgroundColor: "white"
       parameters:
         - name: "theme"
           type: "enum"

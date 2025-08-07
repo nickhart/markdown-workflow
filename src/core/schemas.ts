@@ -31,6 +31,12 @@ export const WorkflowActionParameterSchema = z.object({
   description: z.string(),
 });
 
+export const WorkflowProcessorSchema = z.object({
+  name: z.string(),
+  enabled: z.boolean().optional().default(true),
+  config: z.record(z.string(), z.any()).optional(),
+});
+
 export const WorkflowActionSchema = z.object({
   name: z.string(),
   description: z.string(),
@@ -38,6 +44,7 @@ export const WorkflowActionSchema = z.object({
   templates: z.array(z.string()).optional(),
   converter: z.string().optional(),
   formats: z.array(z.string()).optional(),
+  processors: z.array(WorkflowProcessorSchema).optional(),
   parameters: z.array(WorkflowActionParameterSchema).optional(),
   metadata_file: z.string().optional(),
   create_directories: z.array(z.string()).optional(),
@@ -220,6 +227,7 @@ export type WorkflowStage = z.infer<typeof WorkflowStageSchema>;
 export type WorkflowTemplate = z.infer<typeof WorkflowTemplateSchema>;
 export type WorkflowStatic = z.infer<typeof WorkflowStaticSchema>;
 export type WorkflowActionParameter = z.infer<typeof WorkflowActionParameterSchema>;
+export type WorkflowProcessor = z.infer<typeof WorkflowProcessorSchema>;
 export type WorkflowAction = z.infer<typeof WorkflowActionSchema>;
 export type WorkflowMetadata = z.infer<typeof WorkflowMetadataSchema>;
 export type WorkflowCollectionId = z.infer<typeof WorkflowCollectionIdSchema>;

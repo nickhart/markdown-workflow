@@ -97,8 +97,15 @@ workflow:
 
     - name: "format"
       description: "Convert blog post to HTML"
-      converter: "markdown"
+      converter: "pandoc"
       formats: ["html"]
+      processors:
+        - name: "mermaid"
+          enabled: false  # Disabled by default for blogs, can be enabled per collection
+          config:
+            output_format: "svg"
+            theme: "default"
+            scale: 1
       parameters:
         - name: "include_toc"
           type: "boolean"
