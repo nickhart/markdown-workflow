@@ -14,6 +14,8 @@ import { Collection, type CollectionMetadata } from './types.js';
 import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/date-utils.js';
 import { sanitizeForFilename, normalizeTemplateName } from '../shared/file-utils.js';
 import { convertDocument } from '../shared/document-converter.js';
+import { defaultConverterRegistry, registerDefaultConverters } from '../shared/converters/index.js';
+import { registerDefaultProcessors } from '../shared/processors/index.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -52,6 +54,10 @@ export class WorkflowEngine {
     // Initialize synchronously using system config
     const systemConfig = this.configDiscovery.discoverSystemConfiguration();
     this.availableWorkflows = systemConfig.availableWorkflows;
+
+    // Initialize processors and converters
+    registerDefaultProcessors();
+    registerDefaultConverters();
   }
 
   /**
@@ -374,16 +380,46 @@ export class WorkflowEngine {
           console.log(`\n⚠️  NO TEMPLATE TYPE DETECTED - using default pandoc styling\n`);
         }
 
-        // Get Mermaid configuration from project config (with system defaults already merged)
-        const mermaidConfig = this.projectConfig?.system?.mermaid;
+        // Use new converter system if available
+        const converterName = action.converter || 'pandoc';
+        const enabledProcessors = this.getEnabledProcessors(action, workflow);
 
-        const result = await convertDocument({
-          inputFile: inputPath,
-          outputFile: outputPath,
-          format: formatType as 'docx' | 'html' | 'pdf' | 'pptx',
-          referenceDoc,
-          mermaidConfig,
-        });
+        // Try new converter system first
+        const converter = defaultConverterRegistry.get(converterName);
+        let result;
+
+        if (converter) {
+          console.log(
+            `🔧 Using ${converterName} converter with processors: ${enabledProcessors.join(', ') || 'none'}`,
+          );
+
+          const conversionContext = {
+            collectionPath: collection.path,
+            inputFile: inputPath,
+            outputFile: outputPath,
+            format: formatType as string,
+            referenceDoc,
+            assetsDir: path.join(collection.path, 'assets'),
+            intermediateDir: path.join(collection.path, 'intermediate'),
+            enabledProcessors,
+          };
+
+          result = await converter.convert(conversionContext);
+        } else {
+          console.log(
+            `⚠️  Converter '${converterName}' not found, falling back to legacy convertDocument`,
+          );
+
+          // Fallback to legacy system
+          const mermaidConfig = this.projectConfig?.system?.mermaid;
+          result = await convertDocument({
+            inputFile: inputPath,
+            outputFile: outputPath,
+            format: formatType as 'docx' | 'html' | 'pdf' | 'pptx',
+            referenceDoc,
+            mermaidConfig,
+          });
+        }
 
         if (result.success) {
           const relativePath = path.relative(collection.path, result.outputFile);
@@ -814,6 +850,24 @@ export class WorkflowEngine {
 
     console.log(`  ❌ No reference document found for template type: ${templateType}`);
     return undefined;
+  }
+
+  /**
+   * Get enabled processors for an action based on workflow configuration
+   */
+  private getEnabledProcessors(action: WorkflowAction, _workflow: WorkflowFile): string[] {
+    // Check if action has processors configuration
+    if (action.processors) {
+      return action.processors.filter((p) => p.enabled !== false).map((p) => p.name);
+    }
+
+    // Default processors based on converter type
+    if (action.converter === 'presentation') {
+      return ['mermaid']; // Presentations default to using Mermaid
+    }
+
+    // Default to no processors for other converters (like job applications)
+    return [];
   }
 }
 

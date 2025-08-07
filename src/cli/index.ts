@@ -15,6 +15,7 @@ import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
 import updateCommand from './commands/update.js';
 import { listAliasesCommand } from './commands/aliases.js';
 import commitCommand from './commands/commit.js';
+import cleanCommand from './commands/clean.js';
 import { withErrorHandling } from './shared/error-handler.js';
 import { logError } from './shared/formatting-utils.js';
 import { ConfigDiscovery } from '../core/config-discovery.js';
@@ -350,6 +351,9 @@ program
       });
     }),
   );
+
+// Add the clean command
+program.addCommand(cleanCommand());
 
 // Handle unknown commands
 program.on('command:*', () => {
