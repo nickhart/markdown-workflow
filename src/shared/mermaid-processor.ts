@@ -3,7 +3,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 import type { SystemConfig } from '../core/schemas.js';
+import {
+  BaseProcessor,
+  ProcessorBlock,
+  ProcessingContext,
+  ProcessingResult,
+} from './processors/base-processor.js';
 
+// Legacy interface for backward compatibility
 export interface MermaidBlock {
   name: string;
   code: string;
@@ -18,6 +25,7 @@ export interface MermaidConfig {
   scale?: number; // Scale factor for high-DPI images (default: 2 for PNG, 1 for SVG)
   backgroundColor?: string; // Background color (default: 'white')
   fontFamily?: string; // Font family for SVG text (default: 'arial,sans-serif')
+  [key: string]: unknown; // Make it compatible with ProcessorConfig
 }
 
 export interface DiagramGenerationResult {
@@ -27,13 +35,23 @@ export interface DiagramGenerationResult {
 }
 
 /**
- * Mermaid detection and processing utilities
+ * Mermaid diagram processor
+ * Processes Mermaid blocks and generates diagram images
  */
-export class MermaidProcessor {
-  private config: MermaidConfig;
+export class MermaidProcessor extends BaseProcessor {
+  readonly name = 'mermaid';
+  readonly description = 'Process Mermaid diagrams and generate images';
+  readonly version = '1.0.0';
+  readonly intermediateExtension = '.mmd';
+  readonly supportedInputExtensions = ['.md', '.markdown'];
+  readonly outputExtensions = ['.png', '.svg'];
+  readonly supportedOutputFormats = ['png', 'svg'];
+
+  private mermaidConfig: MermaidConfig;
 
   constructor(config: MermaidConfig) {
-    this.config = config;
+    super(config);
+    this.mermaidConfig = config;
   }
 
   /**
@@ -75,8 +93,39 @@ export class MermaidProcessor {
   }
 
   /**
-   * Extract Mermaid blocks from markdown content
+   * Check if content contains Mermaid blocks
+   */
+  canProcess(content: string): boolean {
+    const regex = /```mermaid:[\w-]+\s*\n[\s\S]*?\n```/g;
+    return regex.test(content);
+  }
+
+  /**
+   * Detect and extract Mermaid blocks from markdown content
    * Supports syntax: ```mermaid:diagram-name
+   */
+  detectBlocks(markdown: string): ProcessorBlock[] {
+    const blocks: ProcessorBlock[] = [];
+
+    // Match mermaid:name code blocks
+    const regex = /```mermaid:([\w-]+)\s*\n([\s\S]*?)\n```/g;
+    let match;
+
+    while ((match = regex.exec(markdown)) !== null) {
+      blocks.push({
+        name: match[1],
+        content: match[2],
+        startIndex: match.index,
+        endIndex: match.index + match[0].length,
+      });
+    }
+
+    return blocks;
+  }
+
+  /**
+   * Extract Mermaid blocks from markdown content (legacy method)
+   * @deprecated Use detectBlocks instead
    */
   extractMermaidBlocks(markdown: string): MermaidBlock[] {
     const blocks: MermaidBlock[] = [];
@@ -124,10 +173,11 @@ export class MermaidProcessor {
 
       try {
         // Build Mermaid CLI command
-        const theme = this.config.theme || 'default';
-        const timeout = this.config.timeout * 1000;
-        const scale = this.config.scale || (this.config.output_format === 'png' ? 2 : 1);
-        const backgroundColor = this.config.backgroundColor || 'white';
+        const theme = this.mermaidConfig.theme || 'default';
+        const timeout = this.mermaidConfig.timeout * 1000;
+        const scale =
+          this.mermaidConfig.scale || (this.mermaidConfig.output_format === 'png' ? 2 : 1);
+        const backgroundColor = this.mermaidConfig.backgroundColor || 'white';
 
         // Add quality parameters
         let qualityParams = '';
@@ -135,13 +185,13 @@ export class MermaidProcessor {
         qualityParams += ` -b ${backgroundColor}`; // Background color
 
         // Add configuration file for SVG fonts if needed
-        if (this.config.output_format === 'svg' && this.config.fontFamily) {
+        if (this.mermaidConfig.output_format === 'svg' && this.mermaidConfig.fontFamily) {
           const configContent = {
-            fontFamily: this.config.fontFamily,
+            fontFamily: this.mermaidConfig.fontFamily,
             theme: {
               primaryColor: '#000000',
               primaryTextColor: '#000000',
-              fontFamily: this.config.fontFamily,
+              fontFamily: this.mermaidConfig.fontFamily,
             },
           };
 
@@ -191,44 +241,98 @@ export class MermaidProcessor {
   }
 
   /**
-   * Check if intermediate file content has changed
+   * Process content using the BaseProcessor interface
    */
-  private hasIntermediateContentChanged(intermediateFile: string, newContent: string): boolean {
-    if (!fs.existsSync(intermediateFile)) {
-      return true; // File doesn't exist, so content has "changed"
+  async process(content: string, context: ProcessingContext): Promise<ProcessingResult> {
+    const blocks = this.detectBlocks(content);
+
+    if (blocks.length === 0) {
+      return {
+        success: true,
+        processedContent: content,
+        artifacts: [],
+        blocksProcessed: 0,
+      };
     }
 
-    const existingContent = fs.readFileSync(intermediateFile, 'utf8');
-    return existingContent !== newContent;
-  }
+    this.ensureDirectories(context);
 
-  /**
-   * Check if image file needs regeneration based on timestamps
-   */
-  private needsImageRegeneration(imageFile: string, intermediateFile: string): boolean {
-    if (!fs.existsSync(imageFile)) {
-      return true; // Image doesn't exist, need to generate
-    }
+    let processedContent = content;
+    const artifacts: ProcessingResult['artifacts'] = [];
 
-    if (!fs.existsSync(intermediateFile)) {
-      return true; // Source doesn't exist, need to generate
-    }
+    // Process blocks in reverse order to maintain correct indices
+    for (const block of blocks.reverse()) {
+      const intermediateFile = this.getIntermediateFilePath(block.name, context);
+      const assetFile = this.getAssetFilePath(
+        block.name,
+        context,
+        `.${this.mermaidConfig.output_format}`,
+      );
+      const relativePath = this.getRelativePath(assetFile, context);
 
-    try {
-      const imageStats = fs.statSync(imageFile);
-      const intermediateStats = fs.statSync(intermediateFile);
+      // Check if content has changed and update intermediate file
+      const contentChanged = this.hasContentChanged(intermediateFile, block.content);
 
-      // Handle mocked fs in tests where mtime might be undefined
-      if (!imageStats.mtime || !intermediateStats.mtime) {
-        return true; // Default to regenerating if we can't get timestamps
+      if (contentChanged) {
+        fs.writeFileSync(intermediateFile, block.content);
+        console.info(`📝 Updated intermediate file: ${block.name}.mmd`);
+      } else {
+        console.info(`⏭️  Skipped intermediate file (unchanged): ${block.name}.mmd`);
       }
 
-      // Regenerate if intermediate file is newer than image
-      return intermediateStats.mtime > imageStats.mtime;
-    } catch {
-      // If we can't get stats, default to regenerating
-      return true;
+      // Check if image needs regeneration
+      const shouldGenerate = this.needsRegeneration(assetFile, intermediateFile);
+
+      let result;
+      if (shouldGenerate) {
+        result = await this.generateDiagram(block.content, assetFile);
+        if (result.success) {
+          console.info(`🎨 Generated diagram: ${path.basename(assetFile)}`);
+        }
+      } else {
+        result = { success: true, outputPath: assetFile };
+        console.info(`⚡ Skipped image generation (up to date): ${path.basename(assetFile)}`);
+      }
+
+      if (result.success) {
+        artifacts.push({
+          name: block.name,
+          path: assetFile,
+          relativePath,
+          type: 'asset',
+        });
+
+        artifacts.push({
+          name: `${block.name}.mmd`,
+          path: intermediateFile,
+          relativePath: this.getRelativePath(intermediateFile, context),
+          type: 'intermediate',
+        });
+
+        // Replace Mermaid block with image reference
+        const imageMarkdown = `![${block.name}](${relativePath})`;
+        processedContent =
+          processedContent.slice(0, block.startIndex) +
+          imageMarkdown +
+          processedContent.slice(block.endIndex);
+      } else {
+        // Leave the block in place but add an error comment
+        const errorComment = `<!-- Mermaid Error: ${result.error} -->`;
+        processedContent =
+          processedContent.slice(0, block.startIndex) +
+          errorComment +
+          '\n' +
+          processedContent.slice(block.startIndex, block.endIndex) +
+          processedContent.slice(block.endIndex);
+      }
     }
+
+    return {
+      success: true,
+      processedContent,
+      artifacts,
+      blocksProcessed: blocks.length,
+    };
   }
 
   /**
@@ -270,7 +374,7 @@ export class MermaidProcessor {
 
     // Process blocks in reverse order to maintain correct indices
     for (const block of blocks.reverse()) {
-      const outputFileName = `${block.name}.${this.config.output_format}`;
+      const outputFileName = `${block.name}.${this.mermaidConfig.output_format}`;
       const outputPath = path.join(assetsDir, outputFileName);
 
       // Calculate relative path from intermediate directory to assets
@@ -285,7 +389,7 @@ export class MermaidProcessor {
         const mermaidSourcePath = path.join(intermediateDir, `${block.name}.mmd`);
 
         // Check if content has changed
-        const contentChanged = this.hasIntermediateContentChanged(mermaidSourcePath, block.code);
+        const contentChanged = this.hasContentChanged(mermaidSourcePath, block.code);
 
         if (contentChanged) {
           // Content changed, update the intermediate file
@@ -296,7 +400,7 @@ export class MermaidProcessor {
         }
 
         // Check if image needs regeneration based on timestamps
-        shouldGenerateImage = this.needsImageRegeneration(outputPath, mermaidSourcePath);
+        shouldGenerateImage = this.needsRegeneration(outputPath, mermaidSourcePath);
 
         if (!shouldGenerateImage) {
           console.info(`⚡ Skipped image generation (up to date): ${outputFileName}`);
