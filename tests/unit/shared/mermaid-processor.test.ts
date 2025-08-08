@@ -1,5 +1,6 @@
 import { MermaidProcessor, type MermaidConfig } from '../../../src/shared/mermaid-processor.js';
 import type { SystemConfig } from '../../../src/core/schemas.js';
+import { ProcessingContext } from '../../../src/shared/processors/base-processor.js';
 import { jest } from '@jest/globals';
 import * as fs from 'fs';
 import { execSync } from 'child_process';
@@ -70,7 +71,86 @@ describe('MermaidProcessor', () => {
     });
   });
 
-  describe('extractMermaidBlocks', () => {
+  describe('BaseProcessor interface methods', () => {
+    describe('canProcess', () => {
+      it('should detect content with mermaid blocks', () => {
+        const content = `
+# Test
+
+\`\`\`mermaid:diagram-name
+flowchart TD
+  A --> B
+\`\`\`
+`;
+        expect(processor.canProcess(content)).toBe(true);
+      });
+
+      it('should not detect content without mermaid blocks', () => {
+        const content = `
+# Regular Markdown
+
+No mermaid diagrams here.
+`;
+        expect(processor.canProcess(content)).toBe(false);
+      });
+    });
+
+    describe('detectBlocks', () => {
+      it('should extract basic mermaid blocks', () => {
+        const markdown = `
+# Test
+
+\`\`\`mermaid:diagram-name
+flowchart TD
+  A --> B
+\`\`\`
+`;
+
+        const blocks = processor.detectBlocks(markdown);
+        expect(blocks).toHaveLength(1);
+        expect(blocks[0]).toEqual({
+          name: 'diagram-name',
+          content: 'flowchart TD\n  A --> B',
+          startIndex: expect.any(Number),
+          endIndex: expect.any(Number),
+        });
+      });
+
+      it('should extract multiple mermaid blocks', () => {
+        const markdown = `
+\`\`\`mermaid:first-diagram
+flowchart TD
+  A --> B
+\`\`\`
+
+Some text
+
+\`\`\`mermaid:second-diagram
+graph LR
+  X --> Y
+\`\`\`
+`;
+
+        const blocks = processor.detectBlocks(markdown);
+        expect(blocks).toHaveLength(2);
+        expect(blocks[0].name).toBe('first-diagram');
+        expect(blocks[1].name).toBe('second-diagram');
+      });
+
+      it('should return empty array when no mermaid blocks found', () => {
+        const markdown = `
+# Regular Markdown
+
+No mermaid diagrams here.
+`;
+
+        const blocks = processor.detectBlocks(markdown);
+        expect(blocks).toHaveLength(0);
+      });
+    });
+  });
+
+  describe('extractMermaidBlocks (legacy)', () => {
     it('should extract basic mermaid blocks', () => {
       const markdown = `
 # Test
@@ -225,7 +305,92 @@ No mermaid diagrams here.
     });
   });
 
-  describe('processMarkdown', () => {
+  describe('process (BaseProcessor interface)', () => {
+    let mockContext: ProcessingContext;
+
+    beforeEach(() => {
+      mockContext = {
+        collectionPath: '/test/collection',
+        assetsDir: '/test/collection/assets',
+        intermediateDir: '/test/collection/intermediate',
+      };
+
+      // Mock successful CLI detection and execution
+      mockExecSync.mockReturnValue(Buffer.from('10.6.1'));
+    });
+
+    it('should process content with mermaid blocks successfully', async () => {
+      const content = `
+# Test Presentation
+
+\`\`\`mermaid:solution-overview
+flowchart LR
+  A --> B --> C
+\`\`\`
+
+Some description text.
+`;
+
+      const result = await processor.process(content, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(result.blocksProcessed).toBe(1);
+      expect(result.artifacts).toHaveLength(2); // Asset + intermediate file
+      expect(result.processedContent).toContain('![solution-overview]');
+      expect(result.processedContent).not.toContain('```mermaid:solution-overview');
+    });
+
+    it('should return original content when no blocks found', async () => {
+      const content = '# Simple document with no diagrams';
+
+      const result = await processor.process(content, mockContext);
+
+      expect(result.success).toBe(true);
+      expect(result.blocksProcessed).toBe(0);
+      expect(result.artifacts).toHaveLength(0);
+      expect(result.processedContent).toBe(content);
+    });
+
+    it('should create intermediate and asset files', async () => {
+      const content = `
+\`\`\`mermaid:test-diagram
+flowchart TD
+  A --> B
+\`\`\`
+`;
+
+      await processor.process(content, mockContext);
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        expect.stringContaining('test-diagram.mmd'),
+        'flowchart TD\n  A --> B',
+      );
+    });
+
+    it('should handle processing errors gracefully', async () => {
+      mockExecSync.mockImplementation((cmd) => {
+        if (cmd.toString().includes('--version')) {
+          throw new Error('CLI not found');
+        }
+        return Buffer.from('');
+      });
+
+      const content = `
+\`\`\`mermaid:failing-diagram
+flowchart TD
+  A --> B
+\`\`\`
+`;
+
+      const result = await processor.process(content, mockContext);
+
+      expect(result.success).toBe(true); // Overall processing still succeeds
+      expect(result.processedContent).toContain('<!-- Mermaid Error:');
+      expect(result.processedContent).toContain('mermaid:failing-diagram');
+    });
+  });
+
+  describe('processMarkdown (legacy)', () => {
     const mockAssetsDir = '/path/to/assets';
     const mockIntermediateDir = '/path/to/intermediate';
 

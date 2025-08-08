@@ -18,9 +18,12 @@ const EMOJI_MAP: Record<string, string> = {
   ':fire:': '🔥',
   ':heart:': '❤️',
   ':thumbsup:': '👍',
+  ':thumbs_up:': '👍',
   ':thumbsdown:': '👎',
+  ':thumbs_down:': '👎',
   ':warning:': '⚠️',
   ':check:': '✅',
+  ':white_check_mark:': '✅',
   ':x:': '❌',
   ':info:': 'ℹ️',
   ':lightbulb:': '💡',
@@ -137,6 +140,25 @@ const EMOJI_MAP: Record<string, string> = {
   ':crossed_flags:': '🎌',
   ':waving_flag:': '🏴',
   ':pirate_flag:': '🏴‍☠️',
+  ':bust_in_silhouette:': '👤',
+  ':speech_balloon:': '💬',
+  ':world:': '🌍',
+  ':ok_hand:': '👌',
+  ':muscle:': '💪',
+  ':clap:': '👏',
+  ':wave:': '👋',
+  ':pray:': '🙏',
+  ':point_right:': '👉',
+  ':point_left:': '👈',
+  ':heavy_plus_sign:': '➕',
+  ':heavy_minus_sign:': '➖',
+  ':smile:': '😊',
+  ':electric_plug:': '🔌',
+  ':bulb:': '💡', // Also mapped as :lightbulb:
+  ':mag:': '🔍', // Also mapped as :search:
+  ':information_source:': 'ℹ️', // Also mapped as :info:
+  ':question:': '❓',
+  ':exclamation:': '❗',
 };
 
 export class EmojiProcessor extends BaseProcessor {
