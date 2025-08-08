@@ -38,12 +38,8 @@ export class PresentationConverter extends PandocConverter {
     const defaultProcessors = ['mermaid'];
 
     // Merge with any explicitly enabled processors
-    const enabledProcessors = context.enabledProcessors || defaultProcessors;
-
-    // Ensure mermaid is included unless explicitly disabled
-    if (!enabledProcessors.includes('mermaid') && !context.enabledProcessors?.length) {
-      enabledProcessors.push('mermaid');
-    }
+    const enabledProcessors =
+      context.enabledProcessors !== undefined ? context.enabledProcessors : defaultProcessors;
 
     console.info(`🎯 Presentation processing with processors: ${enabledProcessors.join(', ')}`);
 
@@ -79,8 +75,6 @@ export class PresentationConverter extends PandocConverter {
           // Look for presentation reference document in workflow templates
           const potentialRef = path.join(
             path.dirname(context.collectionPath),
-            '..',
-            '..',
             'workflows',
             'presentation',
             'templates',
