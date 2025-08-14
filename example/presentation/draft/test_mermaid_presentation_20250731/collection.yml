@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "test_mermaid_presentation_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T05:49:19.914Z"
+date_modified: "2025-07-31T05:49:19.914Z"
+
+# Workflow Details
+title: "Test Mermaid Presentation"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T05:49:19.914Z"
+
+# Additional Fields
+# Add custom fields here as needed

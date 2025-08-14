@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "directory_test_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T06:12:09.182Z"
+date_modified: "2025-07-31T06:12:09.182Z"
+
+# Workflow Details
+title: "Directory Test"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T06:12:09.182Z"
+
+# Additional Fields
+# Add custom fields here as needed

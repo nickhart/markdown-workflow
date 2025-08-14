@@ -1,0 +1,18 @@
+# Collection Metadata
+collection_id: "test_corp_senior_developer_20250806"
+workflow: "job"
+status: "active"
+date_created: "2025-08-06T20:48:45.771Z"
+date_modified: "2025-08-06T20:48:45.771Z"
+
+# Workflow Details
+company: "Test Corp"
+role: "Senior Developer"
+
+# Status History
+status_history:
+  - status: "active"
+    date: "2025-08-06T20:48:45.771Z"
+
+# Additional Fields
+# Add custom fields here as needed

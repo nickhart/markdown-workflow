@@ -1,0 +1,18 @@
+# Collection Metadata
+collection_id: "layout_test_demo_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T16:28:05.327Z"
+date_modified: "2025-07-31T16:28:05.327Z"
+
+# Workflow Details
+title: "Layout Test Demo"
+template: "layout-optimized"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T16:28:05.327Z"
+
+# Additional Fields
+# Add custom fields here as needed

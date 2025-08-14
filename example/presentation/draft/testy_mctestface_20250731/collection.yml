@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "testy_mctestface_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T05:58:56.680Z"
+date_modified: "2025-07-31T05:58:56.680Z"
+
+# Workflow Details
+title: "Testy McTestface"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T05:58:56.680Z"
+
+# Additional Fields
+# Add custom fields here as needed

@@ -1,0 +1,12 @@
+collection_id: acme_engineer_20250731
+workflow: job
+status: submitted
+date_created: 2025-07-31T17:14:22.964Z
+date_modified: 2025-08-14T23:10:27.900Z
+company: Acme
+role: Engineer
+status_history:
+  - status: active
+    date: 2025-07-31T17:14:22.964Z
+  - status: submitted
+    date: 2025-08-14T23:10:27.900Z

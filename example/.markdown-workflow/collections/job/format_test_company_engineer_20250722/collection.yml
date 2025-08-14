@@ -1,0 +1,19 @@
+# Collection Metadata
+collection_id: "format_test_company_engineer_20250722"
+workflow: "job"
+status: "active"
+date_created: "2025-07-22T19:31:29.731Z"
+date_modified: "2025-07-22T19:31:29.731Z"
+
+# Application Details
+company: "Format Test Company"
+role: "Engineer"
+
+
+# Status History
+status_history:
+  - status: "active"
+    date: "2025-07-22T19:31:29.731Z"
+
+# Additional Fields
+# Add custom fields here as needed

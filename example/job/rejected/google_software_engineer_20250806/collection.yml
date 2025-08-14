@@ -1,0 +1,12 @@
+collection_id: google_software_engineer_20250806
+workflow: job
+status: rejected
+date_created: 2025-08-06T20:49:10.876Z
+date_modified: 2025-08-14T23:15:50.797Z
+company: Google
+role: Software Engineer
+status_history:
+  - status: active
+    date: 2025-08-06T20:49:10.876Z
+  - status: rejected
+    date: 2025-08-14T23:15:50.797Z

@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "my_first_markdown_presentation_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T05:47:06.039Z"
+date_modified: "2025-07-31T05:47:06.039Z"
+
+# Workflow Details
+title: "My First Markdown Presentation"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T05:47:06.039Z"
+
+# Additional Fields
+# Add custom fields here as needed
