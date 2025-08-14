@@ -1,4 +1,5 @@
 import { execSync } from 'child_process';
+import * as path from 'path';
 import Mustache from 'mustache';
 import { WorkflowEngine } from '../../core/workflow-engine.js';
 import { ConfigDiscovery } from '../../core/config-discovery.js';
@@ -33,13 +34,13 @@ interface CommitTemplateVariables {
 }
 
 /**
- * Analyze git status in collection directory to detect file changes
+ * Analyze git status to detect file changes, checking both collection directory and project-wide
  */
-function analyzeGitChanges(collectionPath: string): GitFileChanges {
+function analyzeGitChanges(collectionPath: string, projectRoot: string): GitFileChanges {
   try {
-    // Get git status for the collection directory
-    const gitStatus = execSync('git status --porcelain .', {
-      cwd: collectionPath,
+    // Get git status from project root to catch moved files
+    const gitStatus = execSync('git status --porcelain', {
+      cwd: projectRoot,
       encoding: 'utf8',
     }).trim();
 
@@ -54,26 +55,35 @@ function analyzeGitChanges(collectionPath: string): GitFileChanges {
       return changes;
     }
 
-    // Parse git status output
+    // Parse git status output and filter for collection-related changes
     const lines = gitStatus.split('\n');
+    const collectionId = path.basename(collectionPath);
+    
     for (const line of lines) {
-      if (line.length < 3) continue;
+      if (line.length < 4) continue;
 
-      const status = line.substring(0, 2);
-      const fileName = line.substring(3);
+      // Git porcelain format: XY filename (where XY is 2-char status, followed by space, then filename)
+      const match = line.match(/^(..) (.+)$/);
+      if (!match) continue;
+      
+      const status = match[1];
+      const fileName = match[2];
+      
+      // Only include changes related to this collection ID anywhere in the repository
+      if (fileName.includes(collectionId)) {
+        // Track file changes by status
+        if (status.includes('A') || status.includes('?')) {
+          changes.added.push(fileName);
+        } else if (status.includes('M')) {
+          changes.modified.push(fileName);
+        } else if (status.includes('D')) {
+          changes.deleted.push(fileName);
+        }
 
-      // Track file changes by status
-      if (status.includes('A') || status.includes('?')) {
-        changes.added.push(fileName);
-      } else if (status.includes('M')) {
-        changes.modified.push(fileName);
-      } else if (status.includes('D')) {
-        changes.deleted.push(fileName);
-      }
-
-      // Track markdown files specifically
-      if (fileName.endsWith('.md')) {
-        changes.markdownFiles.push(fileName);
+        // Track markdown files specifically
+        if (fileName.endsWith('.md')) {
+          changes.markdownFiles.push(fileName);
+        }
       }
     }
 
@@ -159,16 +169,26 @@ function buildTemplateVariables(
 }
 
 /**
- * Execute git commit with the generated message
+ * Execute git commit with the generated message, adding specific collection-related changes
  */
-function executeGitCommit(message: string, collectionPath: string): void {
+function executeGitCommit(message: string, gitChanges: GitFileChanges, projectRoot: string): void {
   try {
-    // Add all files in the collection directory
-    execSync('git add .', { cwd: collectionPath });
+    // Add all collection-related changes (including deletions from moves)
+    const allChanges = [...gitChanges.added, ...gitChanges.modified, ...gitChanges.deleted];
+    
+    if (allChanges.length === 0) {
+      logInfo('No changes to commit');
+      return;
+    }
 
-    // Commit with the generated message
+    // Add each changed file/directory
+    for (const change of allChanges) {
+      execSync(`git add "${change}"`, { cwd: projectRoot });
+    }
+
+    // Commit with the generated message from project root
     execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
-      cwd: collectionPath,
+      cwd: projectRoot,
       stdio: 'inherit',
     });
 
@@ -217,17 +237,17 @@ export async function commitCommand(
   logInfo(`Found collection: ${collection.metadata.company} ${collection.metadata.role}`);
   logInfo(`Collection path: ${collection.path}`);
 
-  // Use custom message if provided
-  if (options.message) {
-    executeGitCommit(options.message, collection.path);
-    return;
-  }
-
-  // Analyze git changes in collection directory
-  const gitChanges = analyzeGitChanges(collection.path);
+  // Analyze git changes from project root to catch moved collections
+  const gitChanges = analyzeGitChanges(collection.path, projectRoot);
   logInfo(
     `Git changes detected: ${gitChanges.added.length} added, ${gitChanges.modified.length} modified, ${gitChanges.deleted.length} deleted`,
   );
+
+  // Use custom message if provided
+  if (options.message) {
+    executeGitCommit(options.message, gitChanges, projectRoot);
+    return;
+  }
 
   // Check if there are any changes to commit
   const hasChanges =
@@ -250,7 +270,7 @@ export async function commitCommand(
   logInfo(`Generated commit message: ${commitMessage}`);
 
   // Execute git commit
-  executeGitCommit(commitMessage, collection.path);
+  executeGitCommit(commitMessage, gitChanges, projectRoot);
 }
 
 export default commitCommand;
