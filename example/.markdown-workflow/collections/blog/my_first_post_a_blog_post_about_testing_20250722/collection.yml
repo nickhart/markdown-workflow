@@ -1,0 +1,19 @@
+# Collection Metadata
+collection_id: "my_first_post_a_blog_post_about_testing_20250722"
+workflow: "blog"
+status: "draft"
+date_created: "2025-07-22T18:46:28.257Z"
+date_modified: "2025-07-22T18:46:28.257Z"
+
+# Application Details
+company: "My First Post"
+role: "A blog post about testing"
+
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-22T18:46:28.257Z"
+
+# Additional Fields
+# Add custom fields here as needed

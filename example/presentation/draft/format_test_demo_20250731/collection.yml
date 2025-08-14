@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "format_test_demo_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T20:49:29.426Z"
+date_modified: "2025-07-31T20:49:29.426Z"
+
+# Workflow Details
+title: "Format Test Demo"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T20:49:29.426Z"
+
+# Additional Fields
+# Add custom fields here as needed

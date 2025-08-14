@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "test_columns_20250731"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-07-31T19:40:03.797Z"
+date_modified: "2025-07-31T19:40:03.797Z"
+
+# Workflow Details
+title: "Test Columns"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-07-31T19:40:03.797Z"
+
+# Additional Fields
+# Add custom fields here as needed
