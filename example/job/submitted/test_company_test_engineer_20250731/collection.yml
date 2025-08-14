@@ -1,0 +1,12 @@
+collection_id: test_company_test_engineer_20250731
+workflow: job
+status: submitted
+date_created: 2025-07-31T15:32:12.367Z
+date_modified: 2025-08-14T23:23:11.876Z
+company: Test Company
+role: Test Engineer
+status_history:
+  - status: active
+    date: 2025-07-31T15:32:12.367Z
+  - status: submitted
+    date: 2025-08-14T23:23:11.876Z
