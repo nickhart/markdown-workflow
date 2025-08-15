@@ -58,17 +58,17 @@ function analyzeGitChanges(collectionPath: string, projectRoot: string): GitFile
     // Parse git status output and filter for collection-related changes
     const lines = gitStatus.split('\n');
     const collectionId = path.basename(collectionPath);
-    
+
     for (const line of lines) {
       if (line.length < 4) continue;
 
       // Git porcelain format: XY filename (where XY is 2-char status, followed by space, then filename)
       const match = line.match(/^(..) (.+)$/);
       if (!match) continue;
-      
+
       const status = match[1];
       const fileName = match[2];
-      
+
       // Only include changes related to this collection ID anywhere in the repository
       if (fileName.includes(collectionId)) {
         // Track file changes by status
@@ -175,7 +175,7 @@ function executeGitCommit(message: string, gitChanges: GitFileChanges, projectRo
   try {
     // Add all collection-related changes (including deletions from moves)
     const allChanges = [...gitChanges.added, ...gitChanges.modified, ...gitChanges.deleted];
-    
+
     if (allChanges.length === 0) {
       logInfo('No changes to commit');
       return;
