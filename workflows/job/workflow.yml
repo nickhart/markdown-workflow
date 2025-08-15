@@ -151,6 +151,9 @@ workflow:
       description: "Convert documents to various formats"
       converter: "pandoc"
       formats: ["docx", "html", "pdf"]
+      processors:
+        - name: "emoji"
+          enabled: true   # Enable thoughtful emoji usage in job applications
       parameters:
         - name: "format"
           type: "enum"

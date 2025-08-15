@@ -62,3 +62,8 @@ Thank you for considering my application. I am excited about the possibility of 
 _Attachments: Resume, Portfolio_  
 _Contact: [your.email@example.com](mailto:your.email@example.com) | (555) 123-4567_  
 _LinkedIn: [linkedin.com/in/yourname](https://linkedin.com/in/yourname) | GitHub: [github.com/yourusername](https://github.com/yourusername/)_
+
+
+Looking forward to helping DoorDash deliver amazing experiences :takeout_box: to customers everywhere!
+
+

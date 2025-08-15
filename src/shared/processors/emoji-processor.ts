@@ -1,6 +1,11 @@
 /**
  * Emoji processor
  * Converts emoji shortcodes like :rocket: to Unicode emoji 🚀
+ *
+ * Uses GitHub's standard emoji shortcode names as the primary mapping,
+ * with additional convenient aliases for frequently used emojis.
+ *
+ * Standard names source: https://api.github.com/emojis
  */
 
 import * as fs from 'fs';
@@ -11,23 +16,28 @@ import {
   ProcessingResult,
 } from './base-processor.js';
 
-// Common emoji mappings
+// GitHub standard emoji mappings with convenient aliases
+// Priority: GitHub standard names first, then convenient aliases for frequently used emojis
 const EMOJI_MAP: Record<string, string> = {
+  // === BASIC EMOJI (GitHub standard) ===
   ':rocket:': '🚀',
   ':star:': '⭐',
   ':fire:': '🔥',
   ':heart:': '❤️',
   ':thumbsup:': '👍',
-  ':thumbs_up:': '👍',
   ':thumbsdown:': '👎',
-  ':thumbs_down:': '👎',
   ':warning:': '⚠️',
+  ':information_source:': 'ℹ️',
+  ':gear:': '⚙️',
+
+  // === CONVENIENT ALIASES ===
+  ':thumbs_up:': '👍', // alias for :thumbsup:
+  ':thumbs_down:': '👎', // alias for :thumbsdown:
+  ':info:': 'ℹ️', // alias for :information_source:
   ':check:': '✅',
   ':white_check_mark:': '✅',
   ':x:': '❌',
-  ':info:': 'ℹ️',
   ':lightbulb:': '💡',
-  ':gear:': '⚙️',
   ':folder:': '📂',
   ':file:': '📄',
   ':link:': '🔗',
@@ -77,6 +87,7 @@ const EMOJI_MAP: Record<string, string> = {
   ':store:': '🏪',
   ':restaurant:': '🍽️',
   ':pizza:': '🍕',
+  ':takeout_box:': '🥡',
   ':coffee:': '☕',
   ':beer:': '🍺',
   ':wine:': '🍷',
@@ -154,9 +165,6 @@ const EMOJI_MAP: Record<string, string> = {
   ':heavy_minus_sign:': '➖',
   ':smile:': '😊',
   ':electric_plug:': '🔌',
-  ':bulb:': '💡', // Also mapped as :lightbulb:
-  ':mag:': '🔍', // Also mapped as :search:
-  ':information_source:': 'ℹ️', // Also mapped as :info:
   ':question:': '❓',
   ':exclamation:': '❗',
 };
