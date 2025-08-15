@@ -48,6 +48,8 @@ Each ADR should follow this structure:
 | Number | Title                                                               | Status   |
 | ------ | ------------------------------------------------------------------- | -------- |
 | 001    | [Workflow Engine Architecture](001-workflow-engine-architecture.md) | Accepted |
+| 002    | [Simplicity Over Completeness](002-simplicity-over-completeness.md) | Accepted |
+| 003    | [Processor Modularization](003-processor-modularization.md)         | Accepted |
 
 ## Creating New ADRs
 

@@ -96,7 +96,7 @@ export class MermaidProcessor extends BaseProcessor {
    * Check if content contains Mermaid blocks
    */
   canProcess(content: string): boolean {
-    const regex = /```mermaid:[\w-]+\s*\n[\s\S]*?\n```/g;
+    const regex = /```mermaid:[\w-]+.*?\n[\s\S]*?\n```/g;
     return regex.test(content);
   }
 
@@ -107,8 +107,8 @@ export class MermaidProcessor extends BaseProcessor {
   detectBlocks(markdown: string): ProcessorBlock[] {
     const blocks: ProcessorBlock[] = [];
 
-    // Match mermaid:name code blocks
-    const regex = /```mermaid:([\w-]+)\s*\n([\s\S]*?)\n```/g;
+    // Match mermaid:name code blocks (with optional parameters)
+    const regex = /```mermaid:([\w-]+).*?\n([\s\S]*?)\n```/g;
     let match;
 
     while ((match = regex.exec(markdown)) !== null) {
@@ -130,8 +130,8 @@ export class MermaidProcessor extends BaseProcessor {
   extractMermaidBlocks(markdown: string): MermaidBlock[] {
     const blocks: MermaidBlock[] = [];
 
-    // Match mermaid:name code blocks
-    const regex = /```mermaid:([\w-]+)\s*\n([\s\S]*?)\n```/g;
+    // Match mermaid:name code blocks (with optional parameters)
+    const regex = /```mermaid:([\w-]+).*?\n([\s\S]*?)\n```/g;
     let match;
 
     while ((match = regex.exec(markdown)) !== null) {
