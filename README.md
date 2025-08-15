@@ -9,7 +9,7 @@
 
 A TypeScript-based workflow system for managing document templates and collections. Automate your job applications, blog posts, and other document workflows with customizable templates and status tracking.
 
-**Status:** v1.0.0 Release Candidate - Job application workflow is fully functional and tested.
+**Status:** v1.0.0 Release Candidate - Job application and presentation workflows are fully functional and tested.
 
 ## 🎯 What It Does
 
@@ -41,7 +41,8 @@ And if you're using Git to track your repository (recommended!) you can commit c
 - 🔄 **Status tracking** - Move collections through workflow stages (active → submitted → interview → offered)
 - 📁 **Project-specific customization** - Override templates and workflows per project
 - 🌐 **Web scraping** - Automatically fetch job descriptions from URLs
-- 📦 **Document formatting** - Convert markdown to DOCX, HTML, PDF via pandoc
+- 📦 **Modular document processing** - Pluggable processors for different content types (Mermaid, PlantUML, Emoji)
+- 🔧 **Smart converters** - Workflow-specific processing (clean documents for jobs, rich diagrams for presentations)
 - 🔧 **Repository-agnostic** - Works from any directory, like git
 
 ### Job Application Workflow (Fully Implemented)
@@ -54,12 +55,44 @@ And if you're using Git to track your repository (recommended!) you can commit c
 - **Update metadata:** `wf update job collection_id --url "https://new-url"`
 - **Migration tool:** `wf migrate` (from legacy bash-based system)
 
+### Presentation Workflow (New!)
+
+- **Create presentations:** `wf create presentation "My Presentation Title"`
+- **Mermaid diagrams:** Automatic processing of `mermaid:name` code blocks
+- **Rich formatting:** Convert to PPTX with embedded diagrams
+- **Status tracking:** Draft → review → published
+- **Asset management:** Auto-generated images in `assets/` directory
+
+Example Mermaid block:
+
+````markdown
+```mermaid:architecture {align=center, width=90%}
+graph TB
+    Frontend --> Backend
+    Backend --> Database
+```
+````
+
 ### Template System
 
 - **Inheritance:** Project templates override system defaults
 - **Variables:** `{{user.name}}`, `{{company}}`, `{{role}}`, `{{date}}`, etc.
 - **Multiple variants:** Default, mobile-focused, frontend-specific templates
 - **Flexible:** Add your own templates and variables
+
+### Processor System
+
+- **Modular Processing:** Each workflow specifies which processors to use
+- **Job Applications:** Clean documents with no special processing
+- **Presentations:** Rich diagrams with Mermaid, PlantUML support
+- **Extensible:** Add custom processors for your specific needs
+
+Available processors:
+
+- 🧩 **Mermaid** - Generate diagrams from code blocks
+- 🌱 **PlantUML** - Create UML diagrams and flowcharts
+- 😀 **Emoji** - Convert shortcodes to Unicode emoji
+- 🔌 **Custom** - Build your own processors
 
 ## 🚀 Quick Start
 

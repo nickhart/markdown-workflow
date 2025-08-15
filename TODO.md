@@ -6,11 +6,12 @@
 
 ### Documentation & Polish
 
-- [ ] **Update README.md**
-  - [ ] Reflect current working features accurately
-  - [ ] Remove references to unimplemented features
+- [x] **Update README.md**
+  - [x] Reflect current working features accurately
+  - [x] Added processor system documentation
+  - [x] Added presentation workflow documentation
   - [ ] Add clear installation instructions
-  - [ ] Include realistic examples and use cases
+  - [x] Include realistic examples and use cases
 
 - [ ] **Create Release Documentation**
   - [ ] Write CHANGELOG.md for v1.0.0
@@ -66,11 +67,13 @@
 - ✅ **CLI Commands**
   - `wf init` - Initialize project with workflows
   - `wf create job` - Create job applications with templates
+  - `wf create presentation` - Create presentations with Mermaid support
   - `wf status` - Update collection status (active → submitted → interview → etc.)
   - `wf list` - List collections with filtering
-  - `wf format` - Convert markdown to DOCX via pandoc
+  - `wf format` - Convert markdown to DOCX/PPTX with smart processor selection
   - `wf add` - Add items (like interview notes) to existing collections
   - `wf update` - Update collection metadata and scrape URLs
+  - `wf commit` - Git commit with proper handling of moved files
   - `wf migrate` - Migrate from legacy bash-based system
 
 - ✅ **Template System**
@@ -78,6 +81,14 @@
   - Project-specific template overrides
   - Template inheritance (project → system fallback)
   - Support for multiple template variants
+
+- ✅ **Processor System**
+  - Modular processor architecture with registry
+  - Workflow-specific processor configuration
+  - Mermaid diagram processing with PNG/SVG output
+  - Emoji shortcode conversion
+  - PlantUML diagram support
+  - Smart processor selection (none for jobs, mermaid for presentations)
 
 - ✅ **Web Scraping**
   - Reliable fallback chain: wget → curl → native HTTP
