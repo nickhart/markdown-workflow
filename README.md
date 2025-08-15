@@ -234,6 +234,25 @@ wf format job collection_id --format pdf
 wf format job collection_id --format html
 ```
 
+### Emoji Processing
+
+The emoji processor converts shortcodes like `:rocket:` to Unicode emoji 🚀. It uses GitHub's standard emoji names with convenient aliases for frequently used emojis.
+
+**Examples:**
+
+```markdown
+Looking forward to working at DoorDash :takeout_box:!
+This project is :fire: and I'm :thumbsup: about it!
+More info available here :information_source:
+```
+
+**Naming Convention:**
+
+- **GitHub Standard Names** (preferred): `:rocket:`, `:fire:`, `:thumbsup:`, `:takeout_box:`
+- **Convenient Aliases**: `:thumbs_up:` (alias for `:thumbsup:`), `:info:` (alias for `:information_source:`)
+
+The processor supports 100+ emojis covering tech, food, emotions, and professional contexts. For the complete list, see the [GitHub Emoji API](https://api.github.com/emojis).
+
 ### Migration & Utilities
 
 ```bash
