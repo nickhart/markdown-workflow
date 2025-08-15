@@ -288,6 +288,7 @@ content 2
 
     it('should not require regeneration when output is up to date', () => {
       mockFs.existsSync.mockReturnValue(true);
+      // @ts-expect-error - Mock implementation for testing, doesn't need full Stats interface
       mockFs.statSync.mockImplementation((path) => {
         if (path === '/test/output.png') return { mtime: new Date('2023-01-02') } as fs.Stats;
         if (path === '/test/input.test') return { mtime: new Date('2023-01-01') } as fs.Stats;
