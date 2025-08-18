@@ -59,18 +59,43 @@ And if you're using Git to track your repository (recommended!) you can commit c
 ### Presentation Workflow (New!)
 
 - **Create presentations:** `wf create presentation "My Presentation Title"`
-- **Mermaid diagrams:** Automatic processing of `mermaid:name` code blocks
+- **Multi-engine diagrams:** Automatic processing of Mermaid, PlantUML, and Graphviz code blocks
 - **Rich formatting:** Convert to PPTX with embedded diagrams
 - **Status tracking:** Draft → review → published
 - **Asset management:** Auto-generated images in `assets/` directory
 
-Example Mermaid block:
+Example diagram blocks:
 
+**Mermaid (flowcharts, sequence diagrams):**
 ````markdown
 ```mermaid:architecture {align=center, width=90%}
 graph TB
     Frontend --> Backend
     Backend --> Database
+```
+````
+
+**PlantUML (UML diagrams):**
+````markdown
+```plantuml:class-diagram
+@startuml
+class User {
+  +name: string
+  +email: string
+  +login()
+}
+@enduml
+```
+````
+
+**Graphviz (network graphs, decision trees):**
+````markdown
+```graphviz:network {layout=dot}
+digraph {
+  rankdir=LR;
+  A -> B -> C;
+  A -> D -> C;
+}
 ```
 ````
 
@@ -84,16 +109,17 @@ graph TB
 ### Processor System
 
 - **Modular Processing:** Each workflow specifies which processors to use
-- **Job Applications:** Clean documents with no special processing
-- **Presentations:** Rich diagrams with Mermaid, PlantUML support
+- **Job Applications:** Clean documents with emoji processing only
+- **Presentations:** Rich diagrams with multiple diagram engines and emoji support
 - **Extensible:** Add custom processors for your specific needs
 
 Available processors:
 
-- 🧩 **Mermaid** - Generate diagrams from code blocks
-- 🌱 **PlantUML** - Create UML diagrams and flowcharts
-- 😀 **Emoji** - Convert shortcodes to Unicode emoji
-- 🔌 **Custom** - Build your own processors
+- 🧩 **Mermaid** - Generate flowcharts, sequence diagrams, and more from code blocks
+- 🌱 **PlantUML** - Create UML diagrams, activity diagrams, and flowcharts
+- 📊 **Graphviz** - Generate professional network graphs, decision trees, and complex diagrams
+- 😀 **Emoji** - Convert shortcodes to Unicode emoji (`:rocket:` → 🚀)
+- 🔌 **Custom** - Build your own processors for specialized content
 
 ## 🚀 Quick Start
 
@@ -103,6 +129,11 @@ Available processors:
 - pnpm (for package management)
 - pandoc (for document formatting)
 - turbo (for monorepo build orchestration)
+
+**Optional (for diagram processing):**
+- graphviz (for Graphviz processor)
+- plantuml (for PlantUML processor)
+- @mermaid-js/mermaid-cli (for Mermaid processor - installed automatically)
 
 ### Installation
 
@@ -235,6 +266,63 @@ wf format job collection_id
 wf format job collection_id --format pdf
 wf format job collection_id --format html
 ```
+
+### Diagram Processing
+
+The system supports three powerful diagram engines for different use cases:
+
+#### 🧩 Mermaid - Interactive Diagrams
+
+Best for: flowcharts, sequence diagrams, Gantt charts, mindmaps
+
+```markdown
+```mermaid:system-flow
+graph TB
+    A[User Request] --> B{Auth Check}
+    B -->|Valid| C[Process Request]
+    B -->|Invalid| D[Return Error]
+    C --> E[Response]
+```
+```
+
+**Supported diagram types:** flowchart, sequence, gantt, pie, journey, gitgraph, mindmap, timeline
+
+#### 🌱 PlantUML - Professional UML
+
+Best for: class diagrams, activity diagrams, use case diagrams, component diagrams
+
+```markdown
+```plantuml:auth-sequence
+@startuml
+User -> AuthService: login(credentials)
+AuthService -> Database: validateUser()
+Database --> AuthService: userInfo
+AuthService --> User: token
+@enduml
+```
+```
+
+**Supported diagram types:** class, sequence, usecase, activity, component, state, object, deployment
+
+#### 📊 Graphviz - Technical Graphs
+
+Best for: network topologies, decision trees, dependency graphs, org charts
+
+```markdown
+```graphviz:dependency-graph {layout=dot}
+digraph Dependencies {
+    rankdir=LR;
+    node [shape=box];
+    
+    Frontend -> API;
+    API -> Database;
+    API -> Cache;
+    Frontend -> CDN;
+}
+```
+```
+
+**Layout engines:** dot (hierarchical), neato (spring), fdp (force-directed), circo (circular), twopi (radial)
 
 ### Emoji Processing
 
