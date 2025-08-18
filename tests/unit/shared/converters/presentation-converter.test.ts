@@ -40,7 +40,7 @@ describe('PresentationConverter', () => {
       success: true,
       processedContent: 'processed content',
       artifacts: [],
-      blocksProcessed: 0,
+      blocksProcessed: 1, // Process at least one block to trigger file creation
     });
   });
 
@@ -122,6 +122,7 @@ describe('PresentationConverter', () => {
         inputFile: '/test/input.md',
         outputFile: '/test/output.pptx',
         format: 'pptx' as const,
+        enabledProcessors: ['mermaid'], // Enable processors to trigger file processing
         collectionPath: '/test/collection',
         assetsDir: '/test/assets',
         intermediateDir: '/test/intermediate',
@@ -138,6 +139,15 @@ describe('PresentationConverter', () => {
         if (filePath === '/test/intermediate') return true; // Intermediate dir
         if (filePath === '/test/assets') return true; // Assets dir
         return false;
+      });
+
+      // Mock the processor registry to return processed content with processed file path
+      const processedFilePath = '/test/intermediate/input_processed.md';
+      jest.spyOn(mockProcessorRegistry, 'processContent').mockResolvedValue({
+        success: true,
+        processedContent: 'processed content',
+        artifacts: [],
+        blocksProcessed: 1,
       });
 
       await converter.convert(context);
@@ -163,6 +173,7 @@ describe('PresentationConverter', () => {
         inputFile: '/test/input.md',
         outputFile: '/test/output.pptx',
         format: 'pptx' as const,
+        enabledProcessors: ['mermaid'], // Enable processors to trigger file processing
         collectionPath: '/test',
         assetsDir: '/test/assets',
         intermediateDir: '/test/intermediate',
@@ -196,6 +207,7 @@ describe('PresentationConverter', () => {
         inputFile: '/test/input.md',
         outputFile: '/test/output.html',
         format: 'html' as const,
+        enabledProcessors: ['mermaid'], // Enable processors to trigger file processing
         collectionPath: '/test',
         assetsDir: '/test/assets',
         intermediateDir: '/test/intermediate',
@@ -273,6 +285,7 @@ flowchart TD
         inputFile: '/test/input.md',
         outputFile: '/test/output.pdf',
         format: 'pdf' as const,
+        enabledProcessors: ['mermaid'], // Enable processors to trigger file processing
         collectionPath: '/test',
         assetsDir: '/test/assets',
         intermediateDir: '/test/intermediate',
@@ -309,6 +322,7 @@ flowchart TD
         inputFile: '/test/input.md',
         outputFile: '/test/output.html',
         format: 'html' as const,
+        enabledProcessors: ['mermaid'], // Enable processors to trigger file processing
         collectionPath: '/test',
         assetsDir: '/test/assets',
         intermediateDir: '/test/intermediate',
