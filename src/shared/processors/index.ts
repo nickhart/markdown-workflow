@@ -15,11 +15,13 @@ export type {
 export { MermaidProcessor } from '../mermaid-processor.js';
 export { EmojiProcessor } from './emoji-processor.js';
 export { PlantUMLProcessor } from './plantuml-processor.js';
+export { GraphvizProcessor } from './graphviz-processor.js';
 
 import { defaultProcessorRegistry } from './base-processor.js';
 import { MermaidProcessor } from '../mermaid-processor.js';
 import { EmojiProcessor } from './emoji-processor.js';
 import { PlantUMLProcessor } from './plantuml-processor.js';
+import { GraphvizProcessor } from './graphviz-processor.js';
 
 // Convenience function to register default processors
 export function registerDefaultProcessors() {
@@ -38,21 +40,34 @@ export function registerDefaultProcessors() {
     timeout: 30,
   };
 
+  const graphvizConfig = {
+    output_format: 'png' as const,
+    layout_engine: 'dot' as const,
+    timeout: 30,
+    dpi: 96,
+    theme: 'default' as const,
+    backgroundColor: 'white',
+    fontFamily: 'arial,sans-serif',
+  };
+
   const mermaidProcessor = new MermaidProcessor(mermaidConfig);
   const emojiProcessor = new EmojiProcessor({});
   const plantUMLProcessor = PlantUMLProcessor.create(plantUMLConfig);
+  const graphvizProcessor = new GraphvizProcessor(graphvizConfig);
 
   // Register processors in order (emoji first, then diagrams)
   defaultProcessorRegistry.register(emojiProcessor);
   defaultProcessorRegistry.register(mermaidProcessor);
   defaultProcessorRegistry.register(plantUMLProcessor);
+  defaultProcessorRegistry.register(graphvizProcessor);
 
   // Set processing order
-  defaultProcessorRegistry.setProcessorOrder(['emoji', 'mermaid', 'plantuml']);
+  defaultProcessorRegistry.setProcessorOrder(['emoji', 'mermaid', 'plantuml', 'graphviz']);
 
   return {
     emoji: emojiProcessor,
     mermaid: mermaidProcessor,
     plantuml: plantUMLProcessor,
+    graphviz: graphvizProcessor,
   };
 }
