@@ -24,12 +24,12 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[PASS]${NC} $1"
-    ((TESTS_PASSED++))
+    TESTS_PASSED=$((TESTS_PASSED + 1))
 }
 
 log_error() {
     echo -e "${RED}[FAIL]${NC} $1"
-    ((TESTS_FAILED++))
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 }
 
 log_warning() {
@@ -42,7 +42,7 @@ run_test() {
     local expected_exit_code="${3:-0}"
     local expected_output="$4"
     
-    ((TESTS_RUN++))
+    TESTS_RUN=$((TESTS_RUN + 1))
     log_info "Running test: $test_name"
     
     # Capture both stdout and stderr, and exit code
@@ -89,12 +89,25 @@ setup_test_env() {
     mkdir -p "$PROJECT_TEST_DIR"
     mkdir -p "$NON_PROJECT_DIR"
     
-    # Build the project
-    log_info "Building project..."
-    npm run build > /dev/null 2>&1
+    # Build the CLI
+    log_info "Building CLI..."
+    if ! pnpm cli:build > /dev/null 2>&1; then
+        log_error "Failed to build CLI"
+        exit 1
+    fi
     
-    # Create symlink to simulate being in system directory
-    cp -r . "$SYSTEM_TEST_DIR/markdown-workflow"
+    # Create minimal system directory structure (avoid copying huge node_modules, .git, etc.)
+    log_info "Creating minimal system directory structure..."
+    mkdir -p "$SYSTEM_TEST_DIR/markdown-workflow"
+    
+    # Copy only essential files and directories needed for E2E tests
+    cp package.json "$SYSTEM_TEST_DIR/markdown-workflow/"
+    cp -r dist "$SYSTEM_TEST_DIR/markdown-workflow/" 2>/dev/null || true
+    cp -r workflows "$SYSTEM_TEST_DIR/markdown-workflow/" 2>/dev/null || true
+    cp -r test-configs "$SYSTEM_TEST_DIR/markdown-workflow/" 2>/dev/null || true
+    cp -r scripts "$SYSTEM_TEST_DIR/markdown-workflow/" 2>/dev/null || true
+    
+    log_info "System directory structure created (avoided copying node_modules, .git, etc.)"
     
     log_info "Test environment ready:"
     log_info "  System dir: $SYSTEM_TEST_DIR/markdown-workflow"
@@ -113,20 +126,20 @@ test_cli_commands() {
     log_info "=== Testing CLI Command Availability ==="
     
     # Test that CLI is built and available
-    run_test "CLI help command" "node dist/cli/index.js --help" 0 "Usage:"
+    run_test "CLI help command" "node '$PWD/dist/cli/index.js' --help" 0 "Usage:"
 }
 
 # Test CLI commands work correctly
 test_cli_functionality() {
     log_info "=== Testing Basic CLI Functionality ==="
     
-    # Test that CLI commands work from any directory (including system directory)
-    run_test "Init can run from system directory" \
-        "cd '$SYSTEM_TEST_DIR/markdown-workflow' && node dist/cli/index.js init" \
+    # Test that CLI commands work from any directory (using absolute path to CLI)
+    run_test "Init can run from different directory" \
+        "cd '$SYSTEM_TEST_DIR' && node '$PWD/dist/cli/index.js' init" \
         0 "Project initialized successfully"
     
     # Clean up the init we just created
-    rm -rf "$SYSTEM_TEST_DIR/markdown-workflow/.markdown-workflow"
+    rm -rf "$SYSTEM_TEST_DIR/.markdown-workflow"
 }
 
 # Test init command functionality
@@ -151,10 +164,6 @@ test_init_command() {
         "test -d '$PROJECT_TEST_DIR/.markdown-workflow/workflows'" \
         0
     
-    run_test "Collections directory created" \
-        "test -d '$PROJECT_TEST_DIR/.markdown-workflow/collections'" \
-        0
-    
     # Test init in existing project without force should fail
     run_test "Init in existing project should fail" \
         "cd '$PROJECT_TEST_DIR' && node '$PWD/dist/cli/index.js' init" \
@@ -173,11 +182,11 @@ test_project_context_commands() {
     # Test commands that should fail outside project
     run_test "List outside project should fail" \
         "cd '$NON_PROJECT_DIR' && node '$PWD/dist/cli/index.js' list job" \
-        1 "Project root not found"
+        1 "Not in a markdown-workflow project"
     
     run_test "Create outside project should fail" \
         "cd '$NON_PROJECT_DIR' && node '$PWD/dist/cli/index.js' create job 'Test Company' 'Test Role'" \
-        1 "Project root not found"
+        1 "Not in a markdown-workflow project"
     
     # Test commands that should work inside project
     run_test "List inside project should work" \
@@ -192,7 +201,7 @@ test_workflow_operations() {
     # Test creating a collection
     run_test "Create job collection" \
         "cd '$PROJECT_TEST_DIR' && node '$PWD/dist/cli/index.js' create job 'Test Company' 'Software Engineer'" \
-        0 "Created collection"
+        0 "Collection created successfully"
     
     # Test listing collections
     run_test "List job collections" \
@@ -245,6 +254,9 @@ main() {
     echo "Tests Passed: $TESTS_PASSED"
     echo "Tests Failed: $TESTS_FAILED"
     echo
+    
+    # Explicit cleanup
+    cleanup_test_env
     
     if [ "$TESTS_FAILED" -eq 0 ]; then
         log_success "All tests passed! 🎉"

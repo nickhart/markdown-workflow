@@ -167,6 +167,9 @@ const EMOJI_MAP: Record<string, string> = {
   ':electric_plug:': '🔌',
   ':question:': '❓',
   ':exclamation:': '❗',
+  // === ADDITIONAL ALIASES FOR TESTING ===
+  ':bulb:': '💡', // alias for :lightbulb:
+  ':mag:': '🔍', // alias for :search:
 };
 
 export class EmojiProcessor extends BaseProcessor {
