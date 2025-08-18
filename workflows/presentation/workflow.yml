@@ -20,25 +20,25 @@ workflow:
         required: false
         description: "Template variant (default, technical, layout-optimized, compact, beginner)"
         help_text: "Choose a template that matches your presentation style and layout needs"
-    
+
     description: "Create technical presentations with Mermaid diagrams"
     usage: "{alias} \"Presentation Title\" [template]"
     help_text: |
       Create professional technical presentations with auto-generated diagrams.
-      
+
       Features:
       - Mermaid diagram generation (flowcharts, sequences, architectures)
       - Layout-optimized templates (horizontal flows, compact layouts)
       - Multiple output formats (PPTX, HTML, PDF)
       - Professional styling with size constraints
       - Version control friendly markdown source
-      
+
       The presentation system processes Mermaid blocks with layout hints:
       ```mermaid:diagram-name {layout=horizontal, width=1000px}
       flowchart LR
         A --> B --> C
       ```
-    
+
     examples:
       - "pres \"System Architecture Overview\""
       - "pres \"API Documentation\" layout-optimized"
@@ -66,24 +66,19 @@ workflow:
   templates:
     - name: "content"
       file: "templates/content/default.md"
-      output: "content.md"
+      output: "{{user.name_sanitized}}_{{title_sanitized}}.md"
       description: "Main presentation content"
-    
-    - name: "slides"
-      file: "templates/slides/default.md"
-      output: "slides.md"
-      description: "Slide-specific formatting template"
 
   # Static resources
   statics:
     - name: "pptx_template"
       file: "templates/static/reference.pptx"
       description: "PowerPoint reference template for styling"
-    
+
     - name: "html_styles"
       file: "templates/static/styles.css"
       description: "CSS styles for HTML output"
-    
+
     - name: "plantuml_config"
       file: "templates/static/plantuml-config.txt"
       description: "PlantUML configuration settings"
@@ -114,13 +109,13 @@ workflow:
           options: ["corporate", "technical", "minimal"]
           default: "technical"
           description: "Presentation theme"
-        
+
         - name: "diagram_format"
           type: "enum"
           options: ["png", "svg"]
           default: "png"
           description: "Diagram output format"
-        
+
         - name: "slide_layout"
           type: "enum"
           options: ["standard", "widescreen"]

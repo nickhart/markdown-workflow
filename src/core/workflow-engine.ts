@@ -9,6 +9,7 @@ import {
   type ProjectConfig,
   type WorkflowAction,
   type WorkflowStatic,
+  type WorkflowTemplate,
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
 import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/date-utils.js';
@@ -351,13 +352,76 @@ export class WorkflowEngine {
       if (filesToConvert.length === 0) {
         throw new Error(`No files found for requested artifacts: ${requestedArtifacts.join(', ')}`);
       }
+    } else {
+      // Default behavior: convert all workflow templates except notes/personal templates
+      const templateToFileMap = await this.getTemplateArtifactMap(workflow, collection);
+      
+      // Get all template names from workflow, excluding personal/note templates
+      const excludedTemplates = ['notes']; // Templates that shouldn't be converted by default
+      const mainDocumentTemplates = workflow.workflow.templates
+        .map((template) => template.name)
+        .filter((name) => !excludedTemplates.includes(name));
+      
+      const defaultFiles = new Set<string>();
+      
+      for (const templateName of mainDocumentTemplates) {
+        const files = templateToFileMap.get(templateName);
+        if (files) {
+          files.forEach((file) => defaultFiles.add(file));
+        }
+      }
+      
+      filesToConvert = markdownFiles.filter((file) => defaultFiles.has(file));
+      
+      if (filesToConvert.length === 0) {
+        console.log(`ℹ️  No main document artifacts found to convert (${mainDocumentTemplates.join(', ')})`);
+        return;
+      }
+      
+      console.log(`📄 Converting main documents: ${filesToConvert.join(', ')}`);
     }
 
     // Convert the filtered files
     for (const file of filesToConvert) {
       const inputPath = path.join(collection.path, file);
       const baseName = path.basename(file, '.md');
-      const outputPath = path.join(outputDir, `${baseName}.${formatType}`);
+      
+      // Generate output filename using template output pattern with variable substitution
+      let outputFileName = `${baseName}.${formatType}`; // fallback to simple naming
+      
+      // Try to generate smart output filename using template patterns
+      try {
+        // Find matching template by examining the artifact filename
+        let matchingTemplate: WorkflowTemplate | null = null;
+        
+        // Simple matching: find template whose name appears in the filename
+        for (const template of workflow.workflow.templates) {
+          if (file.includes(template.name)) {
+            matchingTemplate = template;
+            break;
+          }
+        }
+        
+        if (matchingTemplate && matchingTemplate.output) {
+          console.log(`🔧 Using template '${matchingTemplate.name}' output pattern: ${matchingTemplate.output}`);
+          
+          // Build template variables (same as template processing)
+          const templateVariables = this.buildTemplateVariables(collection);
+          
+          // Apply variable substitution to template output pattern
+          const processedFileName = Mustache.render(matchingTemplate.output, templateVariables);
+          
+          // Replace .md extension with target format
+          outputFileName = processedFileName.replace(/\.md$/, `.${formatType}`);
+          console.log(`🎯 Generated output filename: ${outputFileName}`);
+        } else {
+          console.log(`⚠️  No template found for ${file}, using fallback naming`);
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not determine template for ${file}, using fallback naming:`, error);
+      }
+      
+      const outputPath = path.join(outputDir, outputFileName);
 
       try {
         const formatTypeStr = String(formatType);
@@ -563,19 +627,28 @@ export class WorkflowEngine {
     await this.ensureProjectConfigLoaded();
     const templateMap = new Map<string, string[]>();
 
+    console.log(`🔍 Template-to-artifact mapping debug:`);
+    console.log(`📋 Available templates: ${workflow.workflow.templates.map(t => `${t.name} (output: ${t.output})`).join(', ')}`);
+    console.log(`📁 Collection artifacts: ${collection.artifacts.join(', ')}`);
+
     // For each template in the workflow, resolve its output filename
     for (const template of workflow.workflow.templates) {
+      console.log(`\n🔍 Processing template: ${template.name}`);
+      console.log(`   Template output pattern: ${template.output}`);
+      
       try {
         // Find all collection artifacts that match this template pattern
         const matchingFiles = collection.artifacts.filter((artifact) => {
-          // Simple approach: check if the artifact filename starts with the template name
-          // This handles cases like "resume" -> "resume_nicholas_hart.md"
+          console.log(`   🔍 Checking artifact: ${artifact}`);
+          // Pattern 1: Template name prefix (e.g., "resume_*.md")
           if (artifact.startsWith(`${template.name}_`) && artifact.endsWith('.md')) {
+            console.log(`      ✅ MATCH: Prefix pattern (${template.name}_*)`);
             return true;
           }
 
-          // For dynamic templates (like notes with prefixes), we need pattern matching
+          // Pattern 2: Prefix templates (e.g., "{{prefix}}_notes.md")
           if (template.output.includes('{{prefix}}')) {
+            console.log(`      🔍 Trying prefix pattern matching...`);
             // Match any file that could have been generated from this template
             // Example: "{{prefix}}_notes.md" should match "recruiter_notes.md"
             const basePattern = template.output.replace('{{prefix}}', '(.+)');
@@ -587,14 +660,21 @@ export class WorkflowEngine {
                     .replace('\\(\\.\\+\\)', '(.+)') +
                   '$',
               );
-              return regex.test(artifact);
-            } catch {
+              if (regex.test(artifact)) {
+                console.log(`      ✅ MATCH: Prefix template pattern`);
+                return true;
+              } else {
+                console.log(`      ❌ No match: Prefix template pattern`);
+              }
+            } catch (error) {
+              console.log(`      ❌ Error in prefix pattern: ${error}`);
               return false;
             }
           }
 
-          // Fallback: try to match the exact template output pattern
+          // Pattern 3: Template output pattern with variable substitution
           if (template.output && !template.output.includes('{{prefix}}')) {
+            console.log(`      🔍 Trying output pattern matching...`);
             // For templates with user variables, try to match flexibly
             let pattern = template.output;
 
@@ -608,24 +688,87 @@ export class WorkflowEngine {
                   pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace('\\(\\.\\+\\)', '(.+)') +
                   '$',
               );
-              return regex.test(artifact);
-            } catch {
+              if (regex.test(artifact)) {
+                console.log(`      ✅ MATCH: Output pattern (${template.output})`);
+                return true;
+              } else {
+                console.log(`      ❌ No match: Output pattern (${template.output})`);
+              }
+            } catch (error) {
+              console.log(`      ❌ Error in output pattern: ${error}`);
               return false;
             }
           }
 
+          // Pattern 4: Exact template name match (fallback for legacy compatibility)
+          if (artifact === `${template.name}.md`) {
+            console.log(`      ✅ MATCH: Exact template name (${template.name}.md)`);
+            return true;
+          }
+
+          console.log(`      ❌ NO MATCHES: All patterns failed`);
           return false;
         });
 
         if (matchingFiles.length > 0) {
+          console.log(`   ✅ Template '${template.name}' → [${matchingFiles.join(', ')}]`);
           templateMap.set(template.name, matchingFiles);
+        } else {
+          console.log(`   ❌ Template '${template.name}' → No matching artifacts`);
         }
       } catch (error) {
         console.warn(`Warning: Could not resolve output for template ${template.name}:`, error);
       }
     }
 
+    console.log(`\n📄 Final template-to-artifact mapping:`);
+    for (const [templateName, artifacts] of templateMap.entries()) {
+      console.log(`   ${templateName} → [${artifacts.join(', ')}]`);
+    }
+    
     return templateMap;
+  }
+
+  /**
+   * Build template variables for variable substitution
+   * Includes user config, collection metadata, and sanitized versions
+   */
+  private buildTemplateVariables(collection: Collection) {
+    // Get user config
+    const userConfig = this.projectConfig?.user || this.getDefaultUserConfig();
+    
+    // Extract title from collection metadata or collection ID
+    let title = '';
+    if (collection.metadata.title && typeof collection.metadata.title === 'string') {
+      title = collection.metadata.title;
+    } else {
+      // Derive title from collection ID (e.g., "cloud_schedules_retrospective_20250801" -> "cloud_schedules_retrospective")
+      const collectionId = collection.metadata.collection_id;
+      const idParts = collectionId.split('_');
+      const datePart = idParts[idParts.length - 1];
+      if (/^\d{8}$/.test(datePart)) {
+        // Remove date part if it's 8 digits (YYYYMMDD format)
+        title = idParts.slice(0, -1).join(' ');
+      } else {
+        title = collectionId;
+      }
+    }
+    
+    return {
+      date: formatDate(getCurrentDate(this.projectConfig || undefined), 'LONG_DATE', this.projectConfig || undefined),
+      user: {
+        ...userConfig,
+        // Add sanitized versions for filenames
+        name_sanitized: sanitizeForFilename(userConfig.name),
+        preferred_name_sanitized: sanitizeForFilename(userConfig.preferred_name),
+      },
+      // Collection-specific variables
+      title: title,
+      title_sanitized: sanitizeForFilename(title),
+      collection_id: collection.metadata.collection_id,
+      company: (typeof collection.metadata.company === 'string' ? collection.metadata.company : ''),
+      role: (typeof collection.metadata.role === 'string' ? collection.metadata.role : ''),
+    };
   }
 
   /**
