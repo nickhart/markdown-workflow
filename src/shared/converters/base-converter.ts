@@ -160,6 +160,20 @@ export abstract class BaseConverter {
         };
       }
 
+      // If no blocks were actually processed, don't create intermediate files
+      if (result.blocksProcessed === 0) {
+        return {
+          success: true,
+          // No processedFile - use original input file
+          artifacts: result.artifacts,
+        };
+      }
+
+      // Ensure intermediate directory exists before writing
+      if (!fs.existsSync(context.intermediateDir)) {
+        fs.mkdirSync(context.intermediateDir, { recursive: true });
+      }
+
       // Write processed content to temporary file
       const processedFileName =
         path.basename(context.inputFile, path.extname(context.inputFile)) + '_processed.md';

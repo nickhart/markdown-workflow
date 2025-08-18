@@ -4,6 +4,7 @@
 [![Tests](https://img.shields.io/badge/Tests-145%20passing-brightgreen)](https://github.com/nickhart/markdown-workflow/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-10+-blue)](https://pnpm.io/)
+[![Turbo](https://img.shields.io/badge/Turbo-2+-red)](https://turbo.build/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)](https://www.typescriptlang.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -99,8 +100,9 @@ Available processors:
 ### Prerequisites
 
 - Node.js 20+
-- pnpm (recommended) or npm
+- pnpm (for package management)
 - pandoc (for document formatting)
+- turbo (for monorepo build orchestration)
 
 ### Installation
 
@@ -110,7 +112,7 @@ Available processors:
 git clone https://github.com/yourusername/markdown-workflow.git
 cd markdown-workflow
 pnpm install
-pnpm cli:build
+turbo cli:build
 
 # CLI is now available at dist/cli/index.js
 # Use with: node dist/cli/index.js <command>
@@ -325,25 +327,24 @@ rejected  rejected   rejected   rejected  declined
 
 ```bash
 pnpm install                    # Install dependencies
-pnpm cli:build                  # Build CLI (cached with TurboRepo)
-pnpm test                       # Run unit tests
-pnpm test:e2e:snapshots         # Run E2E snapshot tests
+turbo cli:build                 # Build CLI (cached with TurboRepo)
+turbo test                      # Run unit tests
+turbo test:e2e:snapshots        # Run E2E snapshot tests
 ```
 
 ### Quality Assurance Commands
 
 ```bash
 # Quick validation (essential checks only)
-pnpm preflight                 # Build + unit tests + lint + format check
+turbo preflight                 # Build + unit tests + lint + format check
 
 # Comprehensive validation (includes E2E tests)
-pnpm preflight:full             # Build + unit tests + lint + format check + E2E snapshots
-turbo preflight:full            # Same as above, runs via Turbo
+turbo preflight:full            # Build + unit tests + lint + format check + E2E snapshots
 
 # Individual quality checks
-pnpm lint                       # ESLint code quality
-pnpm format:check               # Prettier formatting check
-pnpm format                     # Auto-fix formatting issues
+turbo lint                      # ESLint code quality
+turbo format:check              # Prettier formatting check
+turbo format                    # Auto-fix formatting issues
 ```
 
 ### Testing
@@ -415,7 +416,7 @@ Get AI-powered code reviews on your pull requests using Claude:
 1. Fork the repository
 2. Create a feature branch
 3. Add tests for new functionality
-4. Run quality checks: `pnpm preflight:full` (includes all tests, linting, and formatting)
+4. Run quality checks: `turbo preflight:full` (includes all tests, linting, and formatting)
 5. Submit a pull request
 6. _Optional_: Request AI review with `/claude-review` for additional feedback
 

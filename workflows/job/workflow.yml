@@ -101,11 +101,6 @@ workflow:
       output: "cover_letter_{{user.name_sanitized}}.md"
       description: "Cover letter for this application"
 
-    - name: "notes"
-      file: "templates/notes/default.md"
-      output: "{{#prefix}}{{prefix}}_{{/prefix}}notes.md"
-      description: "Notes template for interviews, meetings, or general notes"
-
   # Define static files (no variable substitution)
   statics:
     - name: "resume_reference"
@@ -153,7 +148,7 @@ workflow:
       formats: ["docx", "html", "pdf"]
       processors:
         - name: "emoji"
-          enabled: true   # Enable thoughtful emoji usage in job applications
+          enabled: true   # Re-enabled for debugging
       parameters:
         - name: "format"
           type: "enum"
