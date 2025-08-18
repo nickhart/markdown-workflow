@@ -142,7 +142,6 @@ describe('PresentationConverter', () => {
       });
 
       // Mock the processor registry to return processed content with processed file path
-      const processedFilePath = '/test/intermediate/input_processed.md';
       jest.spyOn(mockProcessorRegistry, 'processContent').mockResolvedValue({
         success: true,
         processedContent: 'processed content',
