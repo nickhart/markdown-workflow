@@ -139,6 +139,17 @@ export const SystemConfigSchema = z.object({
       fontFamily: z.string().optional(),
     })
     .optional(),
+  graphviz: z
+    .object({
+      output_format: z.enum(['png', 'svg', 'pdf', 'jpeg']),
+      layout_engine: z.enum(['dot', 'neato', 'fdp', 'sfdp', 'twopi', 'circo']),
+      timeout: z.number(),
+      dpi: z.number().optional(),
+      theme: z.enum(['default', 'dark', 'light']).optional(),
+      backgroundColor: z.string().optional(),
+      fontFamily: z.string().optional(),
+    })
+    .optional(),
   testing: z
     .object({
       // Date/Time overrides
