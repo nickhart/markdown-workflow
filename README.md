@@ -67,6 +67,7 @@ And if you're using Git to track your repository (recommended!) you can commit c
 Example diagram blocks:
 
 **Mermaid (flowcharts, sequence diagrams):**
+
 ````markdown
 ```mermaid:architecture {align=center, width=90%}
 graph TB
@@ -76,6 +77,7 @@ graph TB
 ````
 
 **PlantUML (UML diagrams):**
+
 ````markdown
 ```plantuml:class-diagram
 @startuml
@@ -89,6 +91,7 @@ class User {
 ````
 
 **Graphviz (network graphs, decision trees):**
+
 ````markdown
 ```graphviz:network {layout=dot}
 digraph {
@@ -131,6 +134,7 @@ Available processors:
 - turbo (for monorepo build orchestration)
 
 **Optional (for diagram processing):**
+
 - graphviz (for Graphviz processor)
 - plantuml (for PlantUML processor)
 - @mermaid-js/mermaid-cli (for Mermaid processor - installed automatically)
@@ -275,7 +279,7 @@ The system supports three powerful diagram engines for different use cases:
 
 Best for: flowcharts, sequence diagrams, Gantt charts, mindmaps
 
-```markdown
+````markdown
 ```mermaid:system-flow
 graph TB
     A[User Request] --> B{Auth Check}
@@ -283,7 +287,9 @@ graph TB
     B -->|Invalid| D[Return Error]
     C --> E[Response]
 ```
-```
+````
+
+````
 
 **Supported diagram types:** flowchart, sequence, gantt, pie, journey, gitgraph, mindmap, timeline
 
@@ -299,8 +305,9 @@ AuthService -> Database: validateUser()
 Database --> AuthService: userInfo
 AuthService --> User: token
 @enduml
-```
-```
+````
+
+````
 
 **Supported diagram types:** class, sequence, usecase, activity, component, state, object, deployment
 
@@ -313,14 +320,15 @@ Best for: network topologies, decision trees, dependency graphs, org charts
 digraph Dependencies {
     rankdir=LR;
     node [shape=box];
-    
+
     Frontend -> API;
     API -> Database;
     API -> Cache;
     Frontend -> CDN;
 }
-```
-```
+````
+
+````
 
 **Layout engines:** dot (hierarchical), neato (spring), fdp (force-directed), circo (circular), twopi (radial)
 
@@ -334,7 +342,7 @@ The emoji processor converts shortcodes like `:rocket:` to Unicode emoji 🚀. I
 Looking forward to working at DoorDash :takeout_box:!
 This project is :fire: and I'm :thumbsup: about it!
 More info available here :information_source:
-```
+````
 
 **Naming Convention:**
 
