@@ -5,8 +5,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { WorkflowFileSchema, type WorkflowFile } from '../../core/schemas.js';
-import { scrapeUrl } from '../../shared/web-scraper.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../../engine/schemas.js';
+import { scrapeUrl } from '../../services/web-scraper.js';
 import { logInfo, logSuccess, logError } from './formatting-utils.js';
 
 /**

@@ -10,7 +10,10 @@ jest.mock('child_process', () => ({
 jest.mock('fs');
 
 import { spawn } from 'child_process';
-import { convertDocument, getExtensionForFormat } from '../../../src/shared/document-converter.js';
+import {
+  convertDocument,
+  getExtensionForFormat,
+} from '../../../src/services/document-converter.js';
 
 const mockSpawn = spawn as jest.MockedFunction<typeof spawn>;
 const mockFs = fs as jest.Mocked<typeof fs>;

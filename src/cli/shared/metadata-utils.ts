@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import type { CollectionMetadata } from '../../core/types.js';
+import type { CollectionMetadata } from '../../engine/types.js';
 
 /**
  * Generate YAML content for collection metadata

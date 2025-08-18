@@ -1,13 +1,13 @@
 import { addCommand, listTemplatesCommand } from '../../../../src/cli/commands/add.js';
-import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { WorkflowEngine } from '../../../../src/engine/workflow-engine.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 
 // Mock the WorkflowEngine
-jest.mock('../../../../src/core/workflow-engine.js');
+jest.mock('../../../../src/engine/workflow-engine.js');
 const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
 
 // Mock the ConfigDiscovery
-jest.mock('../../../../src/core/config-discovery.js');
+jest.mock('../../../../src/engine/config-discovery.js');
 const MockedConfigDiscovery = ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>;
 
 // Mock console methods

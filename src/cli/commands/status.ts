@@ -1,5 +1,5 @@
-import { WorkflowEngine } from '../../core/workflow-engine.js';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
 import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
 
 interface StatusOptions {

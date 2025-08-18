@@ -8,7 +8,7 @@ import {
   formatValidationResult,
   generateSampleTestingConfig,
   checkE2EOptimization,
-} from '../../../src/shared/config-validation-utils.js';
+} from '../../../src/utils/config-validation-utils.js';
 
 describe('Config Validation Utils', () => {
   describe('validateProjectConfig', () => {

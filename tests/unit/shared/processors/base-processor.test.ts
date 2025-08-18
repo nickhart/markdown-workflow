@@ -6,7 +6,7 @@ import {
   ProcessingContext,
   ProcessorBlock,
   ProcessingResult,
-} from '../../../../src/shared/processors/base-processor.js';
+} from '../../../../src/services/processors/base-processor.js';
 
 // Mock fs module
 jest.mock('fs');

@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { withErrorHandling } from '../shared/error-handler.js';
 import { logSuccess, logInfo } from '../shared/formatting-utils.js';
-import WorkflowEngine from '../../core/workflow-engine.js';
+import WorkflowEngine from '../../engine/workflow-engine.js';
 
 /**
  * Clean intermediate files for a specific collection

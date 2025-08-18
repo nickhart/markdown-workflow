@@ -3,7 +3,7 @@ import * as YAML from 'yaml';
 import { SystemInterface, NodeSystemInterface } from './system-interface.js';
 import { ConfigDiscovery } from './config-discovery.js';
 import type { CollectionMetadata } from './types.js';
-import { sanitizeForFilename } from '../shared/file-utils.js';
+import { sanitizeForFilename } from '../utils/file-utils.js';
 
 interface LegacyApplication {
   company: string;

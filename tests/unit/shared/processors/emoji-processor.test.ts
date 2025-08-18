@@ -1,5 +1,5 @@
-import { EmojiProcessor } from '../../../../src/shared/processors/emoji-processor.js';
-import { ProcessingContext } from '../../../../src/shared/processors/base-processor.js';
+import { EmojiProcessor } from '../../../../src/services/processors/emoji-processor.js';
+import { ProcessingContext } from '../../../../src/services/processors/base-processor.js';
 import * as fs from 'fs';
 import { jest } from '@jest/globals';
 

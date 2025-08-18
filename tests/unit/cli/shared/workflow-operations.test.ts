@@ -6,8 +6,8 @@ import {
   scrapeUrlForCollection,
   findCollectionPath,
 } from '../../../../src/cli/shared/workflow-operations.js';
-import { WorkflowFileSchema, type WorkflowFile } from '../../../../src/core/schemas.js';
-import { scrapeUrl } from '../../../../src/shared/web-scraper.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../../../../src/engine/schemas.js';
+import { scrapeUrl } from '../../../../src/services/web-scraper.js';
 
 type WorkflowDefinition = {
   workflow: {
@@ -25,7 +25,7 @@ type WorkflowDefinition = {
 jest.mock('fs');
 jest.mock('path');
 jest.mock('yaml');
-jest.mock('../../../../src/shared/web-scraper.js');
+jest.mock('../../../../src/services/web-scraper.js');
 
 const mockFs = fs as jest.Mocked<typeof fs>;
 const mockPath = path as jest.Mocked<typeof path>;

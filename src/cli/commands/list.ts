@@ -1,7 +1,7 @@
 import * as YAML from 'yaml';
-import { WorkflowEngine } from '../../core/workflow-engine.js';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { Collection } from '../../core/types.js';
+import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { Collection } from '../../engine/types.js';
 
 interface ListOptions {
   status?: string;

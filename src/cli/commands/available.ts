@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { WorkflowFileSchema } from '../../core/schemas.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { WorkflowFileSchema } from '../../engine/schemas.js';
 
 interface AvailableOptions {
   cwd?: string;

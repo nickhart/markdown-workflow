@@ -3,7 +3,7 @@ import { migrateCommand, listMigrationWorkflows } from '../../../../src/cli/comm
 
 // Mock JobApplicationMigrator
 const mockMigrateJobApplications = jest.fn();
-jest.mock('../../../../src/core/job-application-migrator.js', () => ({
+jest.mock('../../../../src/engine/job-application-migrator.js', () => ({
   JobApplicationMigrator: jest.fn().mockImplementation(() => ({
     migrateJobApplications: mockMigrateJobApplications,
   })),
@@ -11,7 +11,7 @@ jest.mock('../../../../src/core/job-application-migrator.js', () => ({
 
 // Mock ConfigDiscovery
 const mockRequireProjectRoot = jest.fn().mockReturnValue('/mock/project');
-jest.mock('../../../../src/core/config-discovery.js', () => ({
+jest.mock('../../../../src/engine/config-discovery.js', () => ({
   ConfigDiscovery: jest.fn().mockImplementation(() => ({
     requireProjectRoot: mockRequireProjectRoot,
   })),

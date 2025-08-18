@@ -1,13 +1,13 @@
 import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { jest } from '@jest/globals';
-import { PandocConverter } from '../../../../src/shared/converters/pandoc-converter.js';
+import { PandocConverter } from '../../../../src/services/converters/pandoc-converter.js';
 import {
   ProcessorRegistry,
   BaseProcessor,
   ProcessingContext,
   ProcessingResult,
-} from '../../../../src/shared/processors/base-processor.js';
+} from '../../../../src/services/processors/base-processor.js';
 
 // Mock external dependencies
 jest.mock('fs');

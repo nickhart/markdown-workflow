@@ -1,8 +1,8 @@
 import { listAliasesCommand } from '../../../../src/cli/commands/aliases.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 
 // Mock dependencies
-jest.mock('../../../../src/core/config-discovery.js');
+jest.mock('../../../../src/engine/config-discovery.js');
 
 const mockConfigDiscovery = ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>;
 

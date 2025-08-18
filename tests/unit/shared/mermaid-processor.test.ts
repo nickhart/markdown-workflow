@@ -1,6 +1,6 @@
-import { MermaidProcessor, type MermaidConfig } from '../../../src/shared/mermaid-processor.js';
-import type { SystemConfig } from '../../../src/core/schemas.js';
-import { ProcessingContext } from '../../../src/shared/processors/base-processor.js';
+import { MermaidProcessor, type MermaidConfig } from '../../../src/services/mermaid-processor.js';
+import type { SystemConfig } from '../../../src/engine/schemas.js';
+import { ProcessingContext } from '../../../src/services/processors/base-processor.js';
 import { jest } from '@jest/globals';
 import * as fs from 'fs';
 import { execSync } from 'child_process';

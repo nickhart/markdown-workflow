@@ -12,11 +12,14 @@ import {
   type WorkflowTemplate,
 } from './schemas.js';
 import { Collection, type CollectionMetadata } from './types.js';
-import { getCurrentISODate, formatDate, getCurrentDate } from '../shared/date-utils.js';
-import { sanitizeForFilename, normalizeTemplateName } from '../shared/file-utils.js';
-import { convertDocument } from '../shared/document-converter.js';
-import { defaultConverterRegistry, registerDefaultConverters } from '../shared/converters/index.js';
-import { registerDefaultProcessors } from '../shared/processors/index.js';
+import { getCurrentISODate, formatDate, getCurrentDate } from '../utils/date-utils.js';
+import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils.js';
+import { convertDocument } from '../services/document-converter.js';
+import {
+  defaultConverterRegistry,
+  registerDefaultConverters,
+} from '../services/converters/index.js';
+import { registerDefaultProcessors } from '../services/processors/index.js';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions

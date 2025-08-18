@@ -3,7 +3,7 @@
  * Tests that system defaults are properly merged with user configuration
  */
 
-import { ConfigDiscovery } from '../../../src/core/config-discovery.js';
+import { ConfigDiscovery } from '../../../src/engine/config-discovery.js';
 import { MockSystemInterface } from '../mocks/mock-system-interface.js';
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import _ from 'lodash';
