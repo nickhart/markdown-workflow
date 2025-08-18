@@ -1,6 +1,6 @@
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
-import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
-import type { Collection } from '../../../../src/core/types.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
+import { WorkflowEngine } from '../../../../src/engine/workflow-engine.js';
+import type { Collection } from '../../../../src/engine/types.js';
 import {
   initializeProject,
   initializeWorkflowEngine,
@@ -10,8 +10,8 @@ import {
 } from '../../../../src/cli/shared/cli-base.js';
 
 // Mock dependencies
-jest.mock('../../../../src/core/config-discovery.js');
-jest.mock('../../../../src/core/workflow-engine.js');
+jest.mock('../../../../src/engine/config-discovery.js');
+jest.mock('../../../../src/engine/workflow-engine.js');
 
 const MockConfigDiscovery = ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>;
 const MockWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;

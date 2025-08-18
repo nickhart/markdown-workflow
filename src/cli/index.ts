@@ -18,8 +18,8 @@ import commitCommand from './commands/commit.js';
 import cleanCommand from './commands/clean.js';
 import { withErrorHandling } from './shared/error-handler.js';
 import { logError } from './shared/formatting-utils.js';
-import { ConfigDiscovery } from '../core/config-discovery.js';
-import { WorkflowFileSchema } from '../core/schemas.js';
+import { ConfigDiscovery } from '../engine/config-discovery.js';
+import { WorkflowFileSchema } from '../engine/schemas.js';
 
 const program = new Command();
 

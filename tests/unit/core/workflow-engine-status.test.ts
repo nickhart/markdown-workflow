@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { WorkflowEngine } from '../../../src/core/workflow-engine.js';
-import { ConfigDiscovery } from '../../../src/core/config-discovery.js';
+import { WorkflowEngine } from '../../../src/engine/workflow-engine.js';
+import { ConfigDiscovery } from '../../../src/engine/config-discovery.js';
 import { MockSystemInterface } from '../mocks/mock-system-interface.js';
 import { createEnhancedMockFileSystem } from '../helpers/file-system-helpers.js';
 
@@ -161,7 +161,7 @@ describe('WorkflowEngine - updateCollectionStatus', () => {
     );
 
     // Mock getCurrentISODate for deterministic testing
-    jest.doMock('../../../src/shared/date-utils.js', () => ({
+    jest.doMock('../../../src/utils/date-utils.js', () => ({
       getCurrentISODate: jest.fn().mockReturnValue('2025-01-21T11:00:00.000Z'),
     }));
 

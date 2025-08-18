@@ -2,8 +2,8 @@ import { jest } from '@jest/globals';
 import {
   GraphvizProcessor,
   GraphvizConfig,
-} from '../../../../src/shared/processors/graphviz-processor.js';
-import type { ProcessingContext } from '../../../../src/shared/processors/base-processor.js';
+} from '../../../../src/services/processors/graphviz-processor.js';
+import type { ProcessingContext } from '../../../../src/services/processors/base-processor.js';
 
 // Mock external dependencies
 jest.mock('child_process');

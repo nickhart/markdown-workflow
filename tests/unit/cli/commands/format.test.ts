@@ -1,12 +1,12 @@
 import * as path from 'path';
 import { formatCommand, formatAllCommand } from '../../../../src/cli/commands/format.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
-import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
+import { WorkflowEngine } from '../../../../src/engine/workflow-engine.js';
 import { loadWorkflowDefinition } from '../../../../src/cli/shared/workflow-operations.js';
 
 // Mock dependencies
 jest.mock('path');
-jest.mock('../../../../src/core/workflow-engine.js');
+jest.mock('../../../../src/engine/workflow-engine.js');
 jest.mock('../../../../src/cli/shared/workflow-operations.js');
 
 const mockPath = path as jest.Mocked<typeof path>;

@@ -6,11 +6,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import Mustache from 'mustache';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { WorkflowTemplate } from '../../core/types.js';
-import { type ProjectConfig } from '../../core/schemas.js';
-import { formatDate, getCurrentDate } from '../../shared/date-utils.js';
-import { sanitizeForFilename } from '../../shared/file-utils.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { WorkflowTemplate } from '../../engine/types.js';
+import { type ProjectConfig } from '../../engine/schemas.js';
+import { formatDate, getCurrentDate } from '../../utils/date-utils.js';
+import { sanitizeForFilename } from '../../utils/file-utils.js';
 import { logTemplateUsage, logFileCreation, logWarning, logError } from './formatting-utils.js';
 
 export interface TemplateProcessingOptions {

@@ -1,14 +1,14 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { TemplateProcessor } from '../../../../src/cli/shared/template-processor.js';
-import { WorkflowTemplate } from '../../../../src/core/types.js';
-import { ProjectConfig } from '../../../../src/core/schemas.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { WorkflowTemplate } from '../../../../src/engine/types.js';
+import { ProjectConfig } from '../../../../src/engine/schemas.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 
 // Mock dependencies
 jest.mock('fs');
 jest.mock('path');
-jest.mock('../../../../src/core/config-discovery.js');
+jest.mock('../../../../src/engine/config-discovery.js');
 jest.mock('../../../../src/cli/shared/formatting-utils.js');
 
 const mockFs = fs as jest.Mocked<typeof fs>;

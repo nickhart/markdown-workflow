@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import { spawn } from 'child_process';
 import { jest } from '@jest/globals';
-import { PresentationConverter } from '../../../../src/shared/converters/presentation-converter.js';
-import { ProcessorRegistry } from '../../../../src/shared/processors/base-processor.js';
+import { PresentationConverter } from '../../../../src/services/converters/presentation-converter.js';
+import { ProcessorRegistry } from '../../../../src/services/processors/base-processor.js';
 
 // Mock external dependencies
 jest.mock('fs');

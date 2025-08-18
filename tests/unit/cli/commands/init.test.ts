@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { initCommand } from '../../../../src/cli/commands/init.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 import { MockSystemInterface } from '../../mocks/mock-system-interface.js';
 import { createEnhancedMockFileSystem } from '../../helpers/file-system-helpers.js';
 

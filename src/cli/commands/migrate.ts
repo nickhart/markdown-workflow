@@ -1,5 +1,5 @@
-import { JobApplicationMigrator } from '../../core/job-application-migrator.js';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { JobApplicationMigrator } from '../../engine/job-application-migrator.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
 
 interface MigrateOptions {
   dryRun?: boolean;

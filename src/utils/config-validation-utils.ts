@@ -3,7 +3,7 @@
  * Validates testing configuration settings and provides helpful error messages
  */
 
-import { ProjectConfigSchema } from '../core/schemas.js';
+import { ProjectConfigSchema } from '../engine/schemas.js';
 import { z } from 'zod';
 
 export interface ValidationResult {

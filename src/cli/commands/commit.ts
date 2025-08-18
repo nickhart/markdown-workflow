@@ -1,11 +1,11 @@
 import { execSync } from 'child_process';
 import * as path from 'path';
 import Mustache from 'mustache';
-import { WorkflowEngine } from '../../core/workflow-engine.js';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
 import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
-import type { ProjectConfig } from '../../core/schemas.js';
-import type { Collection } from '../../core/types.js';
+import type { ProjectConfig } from '../../engine/schemas.js';
+import type { Collection } from '../../engine/types.js';
 
 interface CommitOptions {
   message?: string;

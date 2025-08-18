@@ -4,9 +4,9 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { CollectionMetadata } from '../../core/types.js';
-import { getCurrentISODate } from '../../shared/date-utils.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { CollectionMetadata } from '../../engine/types.js';
+import { getCurrentISODate } from '../../utils/date-utils.js';
 import { initializeProject } from '../shared/cli-base.js';
 import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations.js';
 import { loadCollectionMetadata, generateMetadataYaml } from '../shared/metadata-utils.js';

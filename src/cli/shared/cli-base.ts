@@ -2,9 +2,9 @@
  * Core CLI utilities for shared initialization and validation patterns
  */
 
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { WorkflowEngine } from '../../core/workflow-engine.js';
-import type { ResolvedConfig, Collection } from '../../core/types.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import type { ResolvedConfig, Collection } from '../../engine/types.js';
 
 export interface BaseCliOptions {
   cwd?: string;

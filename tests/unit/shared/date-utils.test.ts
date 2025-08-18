@@ -1,5 +1,5 @@
-import { formatDate, generateCollectionId } from '../../../src/shared/date-utils.js';
-import { ProjectConfig } from '../../../src/core/schemas.js';
+import { formatDate, generateCollectionId } from '../../../src/utils/date-utils.js';
+import { ProjectConfig } from '../../../src/engine/schemas.js';
 
 describe('date-utils', () => {
   describe('formatDate', () => {

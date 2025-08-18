@@ -10,7 +10,7 @@ import {
   compareSnapshotsEnhanced,
   validateSnapshotHealth,
   generateContentDiff,
-} from '../../../src/shared/snapshot-diff-utils.js';
+} from '../../../src/utils/snapshot-diff-utils.js';
 
 describe('Snapshot Diff Utils', () => {
   let tempDir: string;
