@@ -355,29 +355,31 @@ export class WorkflowEngine {
     } else {
       // Default behavior: convert all workflow templates except notes/personal templates
       const templateToFileMap = await this.getTemplateArtifactMap(workflow, collection);
-      
+
       // Get all template names from workflow, excluding personal/note templates
       const excludedTemplates = ['notes']; // Templates that shouldn't be converted by default
       const mainDocumentTemplates = workflow.workflow.templates
         .map((template) => template.name)
         .filter((name) => !excludedTemplates.includes(name));
-      
+
       const defaultFiles = new Set<string>();
-      
+
       for (const templateName of mainDocumentTemplates) {
         const files = templateToFileMap.get(templateName);
         if (files) {
           files.forEach((file) => defaultFiles.add(file));
         }
       }
-      
+
       filesToConvert = markdownFiles.filter((file) => defaultFiles.has(file));
-      
+
       if (filesToConvert.length === 0) {
-        console.log(`ℹ️  No main document artifacts found to convert (${mainDocumentTemplates.join(', ')})`);
+        console.log(
+          `ℹ️  No main document artifacts found to convert (${mainDocumentTemplates.join(', ')})`,
+        );
         return;
       }
-      
+
       console.log(`📄 Converting main documents: ${filesToConvert.join(', ')}`);
     }
 
@@ -385,15 +387,15 @@ export class WorkflowEngine {
     for (const file of filesToConvert) {
       const inputPath = path.join(collection.path, file);
       const baseName = path.basename(file, '.md');
-      
+
       // Generate output filename using template output pattern with variable substitution
       let outputFileName = `${baseName}.${formatType}`; // fallback to simple naming
-      
+
       // Try to generate smart output filename using template patterns
       try {
         // Find matching template by examining the artifact filename
         let matchingTemplate: WorkflowTemplate | null = null;
-        
+
         // Simple matching: find template whose name appears in the filename
         for (const template of workflow.workflow.templates) {
           if (file.includes(template.name)) {
@@ -401,16 +403,18 @@ export class WorkflowEngine {
             break;
           }
         }
-        
+
         if (matchingTemplate && matchingTemplate.output) {
-          console.log(`🔧 Using template '${matchingTemplate.name}' output pattern: ${matchingTemplate.output}`);
-          
+          console.log(
+            `🔧 Using template '${matchingTemplate.name}' output pattern: ${matchingTemplate.output}`,
+          );
+
           // Build template variables (same as template processing)
           const templateVariables = this.buildTemplateVariables(collection);
-          
+
           // Apply variable substitution to template output pattern
           const processedFileName = Mustache.render(matchingTemplate.output, templateVariables);
-          
+
           // Replace .md extension with target format
           outputFileName = processedFileName.replace(/\.md$/, `.${formatType}`);
           console.log(`🎯 Generated output filename: ${outputFileName}`);
@@ -418,9 +422,12 @@ export class WorkflowEngine {
           console.log(`⚠️  No template found for ${file}, using fallback naming`);
         }
       } catch (error) {
-        console.warn(`Warning: Could not determine template for ${file}, using fallback naming:`, error);
+        console.warn(
+          `Warning: Could not determine template for ${file}, using fallback naming:`,
+          error,
+        );
       }
-      
+
       const outputPath = path.join(outputDir, outputFileName);
 
       try {
@@ -628,14 +635,16 @@ export class WorkflowEngine {
     const templateMap = new Map<string, string[]>();
 
     console.log(`🔍 Template-to-artifact mapping debug:`);
-    console.log(`📋 Available templates: ${workflow.workflow.templates.map(t => `${t.name} (output: ${t.output})`).join(', ')}`);
+    console.log(
+      `📋 Available templates: ${workflow.workflow.templates.map((t) => `${t.name} (output: ${t.output})`).join(', ')}`,
+    );
     console.log(`📁 Collection artifacts: ${collection.artifacts.join(', ')}`);
 
     // For each template in the workflow, resolve its output filename
     for (const template of workflow.workflow.templates) {
       console.log(`\n🔍 Processing template: ${template.name}`);
       console.log(`   Template output pattern: ${template.output}`);
-      
+
       try {
         // Find all collection artifacts that match this template pattern
         const matchingFiles = collection.artifacts.filter((artifact) => {
@@ -725,7 +734,7 @@ export class WorkflowEngine {
     for (const [templateName, artifacts] of templateMap.entries()) {
       console.log(`   ${templateName} → [${artifacts.join(', ')}]`);
     }
-    
+
     return templateMap;
   }
 
@@ -736,7 +745,7 @@ export class WorkflowEngine {
   private buildTemplateVariables(collection: Collection) {
     // Get user config
     const userConfig = this.projectConfig?.user || this.getDefaultUserConfig();
-    
+
     // Extract title from collection metadata or collection ID
     let title = '';
     if (collection.metadata.title && typeof collection.metadata.title === 'string') {
@@ -753,9 +762,13 @@ export class WorkflowEngine {
         title = collectionId;
       }
     }
-    
+
     return {
-      date: formatDate(getCurrentDate(this.projectConfig || undefined), 'LONG_DATE', this.projectConfig || undefined),
+      date: formatDate(
+        getCurrentDate(this.projectConfig || undefined),
+        'LONG_DATE',
+        this.projectConfig || undefined,
+      ),
       user: {
         ...userConfig,
         // Add sanitized versions for filenames
@@ -766,8 +779,8 @@ export class WorkflowEngine {
       title: title,
       title_sanitized: sanitizeForFilename(title),
       collection_id: collection.metadata.collection_id,
-      company: (typeof collection.metadata.company === 'string' ? collection.metadata.company : ''),
-      role: (typeof collection.metadata.role === 'string' ? collection.metadata.role : ''),
+      company: typeof collection.metadata.company === 'string' ? collection.metadata.company : '',
+      role: typeof collection.metadata.role === 'string' ? collection.metadata.role : '',
     };
   }
 
