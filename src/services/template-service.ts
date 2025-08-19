@@ -1,6 +1,6 @@
 /**
  * Template Service - Domain service for template operations
- * 
+ *
  * Extracted from WorkflowEngine and CLI shared modules to provide clean template management.
  * Handles template loading, processing, variable substitution, and artifact mapping.
  */
@@ -37,9 +37,9 @@ export class TemplateService {
    * Load template content from file system
    */
   async loadTemplate(workflow: WorkflowFile, templateName: string): Promise<string> {
-    const template = workflow.workflow.templates.find(t => t.name === templateName);
+    const template = workflow.workflow.templates.find((t) => t.name === templateName);
     if (!template) {
-      const availableTemplates = workflow.workflow.templates.map(t => t.name);
+      const availableTemplates = workflow.workflow.templates.map((t) => t.name);
       throw new Error(
         `Template '${templateName}' not found. Available templates: ${availableTemplates.join(', ')}`,
       );
@@ -62,10 +62,7 @@ export class TemplateService {
   /**
    * Process template with variable substitution
    */
-  processTemplate(
-    templateContent: string,
-    context: TemplateProcessingContext,
-  ): string {
+  processTemplate(templateContent: string, context: TemplateProcessingContext): string {
     const templateVariables = this.buildTemplateVariables(context);
     return Mustache.render(templateContent, templateVariables);
   }
@@ -107,7 +104,7 @@ export class TemplateService {
     for (const template of workflow.workflow.templates) {
       try {
         // Find all collection artifacts that match this template pattern
-        const matchingFiles = collection.artifacts.filter(artifact => {
+        const matchingFiles = collection.artifacts.filter((artifact) => {
           // Pattern 1: Template name prefix (e.g., "resume_*.md")
           if (artifact.startsWith(`${template.name}_`) && artifact.endsWith('.md')) {
             return true;
@@ -204,11 +201,7 @@ export class TemplateService {
       // Custom variables take precedence
       ...customVariables,
       // Standard variables
-      date: formatDate(
-        getCurrentDate(projectConfig),
-        'LONG_DATE',
-        projectConfig,
-      ),
+      date: formatDate(getCurrentDate(projectConfig), 'LONG_DATE', projectConfig),
       user: {
         ...userConfig,
         // Add sanitized versions for filenames
