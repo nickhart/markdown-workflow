@@ -1,123 +1,73 @@
 /**
- * Core CLI utilities for shared initialization and validation patterns
+ * CLI-specific utilities for command initialization and user interaction
+ *
+ * This module provides CLI-specific functionality like command parsing helpers,
+ * console output utilities, and CLI-specific options handling. Business logic
+ * has been moved to ConfigService for sharing with the REST API.
  */
 
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { WorkflowEngine } from '../../engine/workflow-engine.js';
-import type { ResolvedConfig, Collection } from '../../engine/types.js';
+import {
+  ConfigService,
+  type ProjectContext,
+  type WorkflowContext,
+} from '../../services/config-service';
+import { ConfigDiscovery } from '../../engine/config-discovery';
 
 export interface BaseCliOptions {
   cwd?: string;
   configDiscovery?: ConfigDiscovery;
 }
 
-export interface ProjectContext {
-  configDiscovery: ConfigDiscovery;
-  projectRoot: string;
-  projectPaths: ReturnType<ConfigDiscovery['getProjectPaths']>;
-  systemConfig: ResolvedConfig;
-}
-
-export interface WorkflowContext extends ProjectContext {
-  workflowEngine: WorkflowEngine;
-  workflowName: string;
-}
+// Re-export types for CLI usage
+export type { ProjectContext, WorkflowContext } from '../../services/config-service';
 
 /**
- * Initialize project context with standard ConfigDiscovery setup and validation
- * Used by most CLI commands that need project context
+ * Initialize project context using shared ConfigService
+ * CLI wrapper around shared business logic
  */
 export async function initializeProject(options: BaseCliOptions = {}): Promise<ProjectContext> {
-  const cwd = options.cwd || process.cwd();
+  const configService = new ConfigService({
+    cwd: options.cwd,
+    configDiscovery: options.configDiscovery,
+  });
 
-  // Use provided ConfigDiscovery instance or create new one
-  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
-
-  // Ensure we're in a project
-  const projectRoot = configDiscovery.requireProjectRoot(cwd);
-  const projectPaths = configDiscovery.getProjectPaths(projectRoot);
-
-  // Get system configuration
-  const systemConfig = await configDiscovery.resolveConfiguration(cwd);
-
-  return {
-    configDiscovery,
-    projectRoot,
-    projectPaths,
-    systemConfig,
-  };
+  return configService.initializeProject(options.cwd);
 }
 
 /**
- * Initialize workflow context with WorkflowEngine setup and workflow validation
- * Used by commands that operate on specific workflows
+ * Initialize workflow context using shared ConfigService
+ * CLI wrapper around shared business logic
  */
 export async function initializeWorkflowEngine(
   workflowName: string,
   options: BaseCliOptions = {},
 ): Promise<WorkflowContext> {
-  const projectContext = await initializeProject(options);
+  const configService = new ConfigService({
+    cwd: options.cwd,
+    configDiscovery: options.configDiscovery,
+  });
 
-  // Validate workflow exists
-  validateWorkflow(workflowName, projectContext.systemConfig.availableWorkflows);
-
-  // Initialize WorkflowEngine
-  const workflowEngine = new WorkflowEngine(
-    projectContext.projectRoot,
-    projectContext.configDiscovery,
-  );
-
-  return {
-    ...projectContext,
-    workflowEngine,
-    workflowName,
-  };
+  return configService.initializeWorkflowEngine(workflowName, options.cwd);
 }
 
 /**
- * Validate that a workflow exists in the available workflows
+ * CLI-specific helper: Parse comma-separated workflow list
+ * This is CLI presentation logic, not business logic
  */
-export function validateWorkflow(workflowName: string, availableWorkflows: string[]): void {
-  if (!availableWorkflows.includes(workflowName)) {
-    throw new Error(
-      `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
-    );
-  }
+export function parseWorkflowList(workflowsOption?: string): string[] | undefined {
+  return workflowsOption ? workflowsOption.split(',').map((w: string) => w.trim()) : undefined;
 }
 
 /**
- * Validate that a collection exists in the specified workflow
+ * CLI-specific helper: Validate command arguments
+ * This is CLI presentation logic for argument validation
  */
-export async function validateCollection(
-  workflowEngine: WorkflowEngine,
-  workflowName: string,
-  collectionId: string,
-): Promise<void> {
-  const collections = await workflowEngine.getCollections(workflowName);
-  const collectionExists = collections.some(
-    (collection: Collection) => collection.metadata.collection_id === collectionId,
-  );
-
-  if (!collectionExists) {
-    throw new Error(`Collection '${collectionId}' not found in workflow '${workflowName}'`);
+export function validateRequiredArgs(
+  args: unknown[],
+  requiredCount: number,
+  commandName: string,
+): void {
+  if (args.length < requiredCount) {
+    throw new Error(`${commandName} requires at least ${requiredCount} argument(s)`);
   }
-}
-
-/**
- * Find the path to a specific collection
- * Throws an error if the collection doesn't exist
- */
-export async function findCollectionPath(
-  workflowEngine: WorkflowEngine,
-  workflowName: string,
-  collectionId: string,
-): Promise<string> {
-  const collections = await workflowEngine.getCollections(workflowName);
-  const collection = collections.find((c: Collection) => c.metadata.collection_id === collectionId);
-
-  if (!collection) {
-    throw new Error(`Collection '${collectionId}' not found in workflow '${workflowName}'`);
-  }
-
-  return collection.path;
 }

@@ -3,16 +3,16 @@
  * Provides access to all converters and utilities
  */
 
-export { BaseConverter, ConverterRegistry, defaultConverterRegistry } from './base-converter.js';
-export type { ConverterConfig, ConversionContext, ConversionResult } from './base-converter.js';
+export { BaseConverter, ConverterRegistry, defaultConverterRegistry } from './base-converter';
+export type { ConverterConfig, ConversionContext, ConversionResult } from './base-converter';
 
-export { PandocConverter } from './pandoc-converter.js';
-export { PresentationConverter } from './presentation-converter.js';
+export { PandocConverter } from './pandoc-converter';
+export { PresentationConverter } from './presentation-converter';
 
-import { defaultConverterRegistry } from './base-converter.js';
-import { PandocConverter } from './pandoc-converter.js';
-import { PresentationConverter } from './presentation-converter.js';
-import { defaultProcessorRegistry } from '../processors/base-processor.js';
+import { defaultConverterRegistry } from './base-converter';
+import { PandocConverter } from './pandoc-converter';
+import { PresentationConverter } from './presentation-converter';
+import { defaultProcessorRegistry } from '../processors/base-processor';
 
 // Convenience function to register default converters
 export function registerDefaultConverters() {

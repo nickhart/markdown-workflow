@@ -1,5 +1,8 @@
 /**
- * Shared console output formatting utilities for CLI commands
+ * Console output formatting utilities for CLI commands
+ *
+ * Provides standardized console output formatting for CLI user interaction.
+ * This is CLI presentation layer functionality - purely for user interface.
  */
 
 /**

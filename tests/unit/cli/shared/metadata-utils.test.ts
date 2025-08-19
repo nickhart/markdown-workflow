@@ -156,6 +156,7 @@ describe('Metadata Utils', () => {
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '/collection/path/collection.yml',
         expect.any(String),
+        'utf8',
       );
     });
 

@@ -4,13 +4,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { CollectionMetadata } from '../../engine/types.js';
-import { getCurrentISODate } from '../../utils/date-utils.js';
-import { initializeProject } from '../shared/cli-base.js';
-import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations.js';
-import { loadCollectionMetadata, generateMetadataYaml } from '../shared/metadata-utils.js';
-import { logCollectionUpdate, logSuccess, logNextSteps } from '../shared/formatting-utils.js';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { CollectionMetadata } from '../../engine/types';
+import { getCurrentISODate } from '../../utils/date-utils';
+import { initializeProject } from '../shared/cli-base';
+import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations';
+import { loadCollectionMetadata, generateMetadataYaml } from '../shared/metadata-utils';
+import { logCollectionUpdate, logSuccess, logNextSteps } from '../shared/console-output';
 
 interface UpdateOptions {
   url?: string;

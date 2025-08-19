@@ -1,6 +1,16 @@
-import { JobApplicationMigrator } from '../../engine/job-application-migrator.js';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { JobApplicationMigrator } from '../../engine/job-application-migrator';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { logWarning, logError, logInfo } from '../shared/console-output';
 
+/**
+ * ⚠️  EXPERIMENTAL MIGRATION TOOL ⚠️
+ *
+ * This migration command is experimental and not officially supported.
+ * It is intended for advanced users migrating from legacy markdown-workflow systems.
+ * Use at your own risk and always backup your data first.
+ *
+ * For most users, it's recommended to start fresh with `wf init` instead.
+ */
 interface MigrateOptions {
   dryRun?: boolean;
   force?: boolean;
@@ -23,7 +33,25 @@ export async function migrateCommand(
   sourcePath: string,
   options: MigrateOptions = {},
 ): Promise<void> {
-  const { dryRun = false, force = false, cwd = process.cwd() } = options;
+  const { dryRun = true, force = false, cwd = process.cwd() } = options; // Default to dry-run for safety
+
+  // 🚨 EXPERIMENTAL FEATURE WARNING 🚨
+  console.log('\n' + '='.repeat(60));
+  console.log('⚠️  EXPERIMENTAL MIGRATION TOOL - USE AT YOUR OWN RISK ⚠️');
+  console.log('='.repeat(60));
+  logWarning('This migration tool is EXPERIMENTAL and NOT OFFICIALLY SUPPORTED');
+  logWarning('It may not work correctly and could potentially cause data loss');
+  logWarning('ALWAYS backup your data before running this command');
+  logInfo('For most users, we recommend starting fresh with "wf init" instead');
+  console.log('='.repeat(60) + '\n');
+
+  // Safety check: Force dry-run unless explicitly disabled
+  if (!dryRun && !process.env.WF_MIGRATE_ALLOW_DESTRUCTIVE) {
+    logWarning('Migration defaults to dry-run for safety');
+    logInfo('To enable destructive operations, set WF_MIGRATE_ALLOW_DESTRUCTIVE=1');
+    logInfo('Example: WF_MIGRATE_ALLOW_DESTRUCTIVE=1 wf migrate job <source> --no-dry-run');
+    console.log('');
+  }
 
   // Validate workflow type
   if (workflow !== 'job') {
@@ -36,16 +64,26 @@ export async function migrateCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
+  // Additional safety check: Warn about destructive operations
+  if (!dryRun && force) {
+    logError('⚠️  DESTRUCTIVE MODE ENABLED ⚠️');
+    logWarning('This will OVERWRITE existing collections without confirmation');
+    logWarning('Make sure you have backed up your data');
+    console.log('');
+  }
+
   console.log(`🚀 Starting ${workflow} workflow migration`);
   console.log(`📂 Source: ${sourcePath}`);
   console.log(`🎯 Target: ${projectRoot}`);
 
   if (dryRun) {
-    console.log('🔍 DRY RUN: No changes will be made');
+    logInfo('🔍 DRY RUN: No changes will be made');
+  } else {
+    logWarning('💥 LIVE MODE: Changes will be written to disk');
   }
 
   if (force) {
-    console.log('⚡ FORCE MODE: Existing collections will be overwritten');
+    logWarning('⚡ FORCE MODE: Existing collections will be overwritten');
   }
 
   try {
@@ -77,23 +115,38 @@ export async function migrateCommand(
 }
 
 /**
- * Show available workflows for migration
+ * Show available workflows for migration with experimental warnings
  */
 export async function listMigrationWorkflows(): Promise<void> {
-  console.log('\nAVAILABLE WORKFLOWS FOR MIGRATION\n');
-  console.log('1. job');
+  console.log('\n' + '='.repeat(60));
+  console.log('⚠️  EXPERIMENTAL MIGRATION WORKFLOWS ⚠️');
+  console.log('='.repeat(60));
+  logWarning('These migration tools are EXPERIMENTAL and NOT OFFICIALLY SUPPORTED');
+  logWarning('Use at your own risk - always backup your data first');
+  logInfo('For most users, we recommend starting fresh with "wf init"');
+  console.log('='.repeat(60) + '\n');
+
+  console.log('AVAILABLE WORKFLOWS FOR MIGRATION\n');
+  console.log('1. job (EXPERIMENTAL)');
   console.log('   Migrate job applications from legacy shell-based system');
   console.log('   Usage: wf migrate job <source_path> [--dry-run] [--force]');
   console.log('');
   console.log('📝 Notes:');
-  console.log('  • --dry-run: Preview changes without modifying files');
+  console.log('  • Migration defaults to dry-run for safety');
+  console.log('  • --dry-run: Preview changes without modifying files (DEFAULT)');
   console.log('  • --force: Overwrite existing collections with same ID');
   console.log('  • Source path should contain an "applications" directory');
   console.log('  • Legacy applications should use application.yml format');
+  console.log('  • Set WF_MIGRATE_ALLOW_DESTRUCTIVE=1 to enable live mode');
   console.log('');
-  console.log('Examples:');
-  console.log('  wf migrate job ./old-writing-system --dry-run');
-  console.log('  wf migrate job ~/legacy-markdown-workflow --force');
+  console.log('⚠️  Safety Examples:');
+  console.log('  wf migrate job ./old-system                           # Safe: dry-run only');
+  console.log('  wf migrate job ./old-system --dry-run                 # Safe: dry-run only');
+  console.log(
+    '  WF_MIGRATE_ALLOW_DESTRUCTIVE=1 wf migrate job ./old-system --no-dry-run  # Destructive',
+  );
+  console.log('');
+  logWarning('REMEMBER: This is experimental software. Always backup your data!');
 }
 
 export default migrateCommand;

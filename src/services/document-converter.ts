@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { spawn, type SpawnOptions } from 'child_process';
-import { MermaidProcessor, type MermaidConfig } from './mermaid-processor.js';
+import { MermaidProcessor, type MermaidConfig } from './mermaid-processor';
 
 export interface ConversionOptions {
   inputFile: string;
@@ -190,10 +190,10 @@ endobj
 
 xref
 0 4
-0000000000 65535 f 
-0000000010 00000 n 
-0000000079 00000 n 
-0000000136 00000 n 
+0000000000 65535 f
+0000000010 00000 n
+0000000079 00000 n
+0000000136 00000 n
 trailer
 <<
 /Size 4

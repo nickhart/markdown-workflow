@@ -6,9 +6,9 @@
 import { Command } from 'commander';
 import * as path from 'path';
 import * as fs from 'fs';
-import { withErrorHandling } from '../shared/error-handler.js';
-import { logSuccess, logInfo } from '../shared/formatting-utils.js';
-import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
+import { withErrorHandling } from '../shared/error-handler';
+import { logSuccess, logInfo } from '../shared/console-output';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator';
 
 /**
  * Clean intermediate files for a specific collection

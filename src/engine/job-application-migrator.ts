@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { SystemInterface, NodeSystemInterface } from './system-interface.js';
-import { ConfigDiscovery } from './config-discovery.js';
-import type { CollectionMetadata } from './types.js';
-import { sanitizeForFilename } from '../utils/file-utils.js';
+import { SystemInterface, NodeSystemInterface } from './system-interface';
+import { ConfigDiscovery } from './config-discovery';
+import type { CollectionMetadata } from './types';
+import { sanitizeForFilename } from '../utils/file-utils';
 
 interface LegacyApplication {
   company: string;

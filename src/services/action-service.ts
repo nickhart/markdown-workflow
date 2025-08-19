@@ -7,13 +7,13 @@
 
 import * as path from 'path';
 import Mustache from 'mustache';
-import { type WorkflowFile, type WorkflowAction } from '../engine/schemas.js';
-import { type Collection, type ProjectConfig } from '../engine/types.js';
-import { SystemInterface } from '../engine/system-interface.js';
-import { convertDocument } from './document-converter.js';
-import { defaultConverterRegistry } from './converters/index.js';
-import { TemplateService } from './template-service.js';
-import { WorkflowService } from './workflow-service.js';
+import { type WorkflowFile, type WorkflowAction } from '../engine/schemas';
+import { type Collection, type ProjectConfig } from '../engine/types';
+import { SystemInterface } from '../engine/system-interface';
+import { convertDocument } from './document-converter';
+import { defaultConverterRegistry } from './converters/index';
+import { TemplateService } from './template-service';
+import { WorkflowService } from './workflow-service';
 
 export interface ActionServiceOptions {
   systemRoot: string;

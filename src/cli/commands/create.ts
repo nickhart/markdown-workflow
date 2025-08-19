@@ -1,18 +1,18 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { CollectionMetadata } from '../../engine/types.js';
-import { generateCollectionId, getCurrentISODate } from '../../utils/date-utils.js';
-import { initializeProject } from '../shared/cli-base.js';
-import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations.js';
-import { generateMetadataYaml } from '../shared/metadata-utils.js';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { CollectionMetadata } from '../../engine/types';
+import { generateCollectionId, getCurrentISODate } from '../../utils/date-utils';
+import { initializeProject } from '../shared/cli-base';
+import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations';
+import { generateMetadataYaml } from '../shared/metadata-utils';
 import {
   logCollectionCreation,
   logSuccess,
   logNextSteps,
   logForceRecreation,
-} from '../shared/formatting-utils.js';
-import { TemplateProcessor } from '../shared/template-processor.js';
+} from '../shared/console-output';
+import { TemplateProcessor } from '../shared/template-processor';
 
 interface CreateOptions {
   url?: string;

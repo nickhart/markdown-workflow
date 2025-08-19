@@ -2,7 +2,7 @@
  * Date utilities that respect testing overrides from config
  */
 
-import { ProjectConfig } from '../engine/schemas.js';
+import { ProjectConfig } from '../engine/schemas';
 
 // Global state for frozen time in testing
 let frozenTime: Date | null = null;

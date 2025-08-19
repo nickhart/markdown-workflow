@@ -97,7 +97,7 @@ export function generateFileSystemCode(
     .join(',\n');
 
   return `// Auto-generated mock file system data
-import { FileSystemPaths } from '../helpers/FileSystemHelpers.js';
+import { FileSystemPaths } from '../helpers/FileSystemHelpers';
 
 export const ${exportName}: FileSystemPaths = {
 ${pathEntries}

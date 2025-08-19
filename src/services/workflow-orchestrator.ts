@@ -5,15 +5,15 @@
  * Coordinates between domain services to provide high-level workflow operations.
  */
 
-import { ConfigDiscovery } from '../engine/config-discovery.js';
-import { SystemInterface, NodeSystemInterface } from '../engine/system-interface.js';
-import { type ProjectConfig } from '../engine/types.js';
-import { registerDefaultProcessors } from './processors/index.js';
-import { registerDefaultConverters } from './converters/index.js';
-import { WorkflowService } from './workflow-service.js';
-import { CollectionService } from './collection-service.js';
-import { TemplateService } from './template-service.js';
-import { ActionService } from './action-service.js';
+import { ConfigDiscovery } from '../engine/config-discovery';
+import { SystemInterface, NodeSystemInterface } from '../engine/system-interface';
+import { type ProjectConfig } from '../engine/types';
+import { registerDefaultProcessors } from './processors/index';
+import { registerDefaultConverters } from './converters/index';
+import { WorkflowService } from './workflow-service';
+import { CollectionService } from './collection-service';
+import { TemplateService } from './template-service';
+import { ActionService } from './action-service';
 
 export interface WorkflowOrchestratorOptions {
   projectRoot?: string;

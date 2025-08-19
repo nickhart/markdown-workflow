@@ -132,8 +132,8 @@ describe('migrate command', () => {
         force: true,
       });
 
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('FORCE MODE: Existing collections will be overwritten'),
+      expect(consoleSpy.error).toHaveBeenCalledWith(
+        expect.stringContaining('⚠️  DESTRUCTIVE MODE ENABLED ⚠️'),
       );
     });
 
@@ -288,12 +288,12 @@ describe('migrate command', () => {
     it('should provide usage examples', async () => {
       await listMigrationWorkflows();
 
-      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Examples:'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Safety Examples:'));
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('./old-writing-system --dry-run'),
+        expect.stringContaining('./old-system --dry-run'),
       );
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('~/legacy-markdown-workflow --force'),
+        expect.stringContaining('WF_MIGRATE_ALLOW_DESTRUCTIVE=1'),
       );
     });
 

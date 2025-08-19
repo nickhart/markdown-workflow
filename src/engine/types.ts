@@ -3,7 +3,7 @@
 import type {
   SystemConfig as SchemaSystemConfig,
   ProjectConfig as SchemaProjectConfig,
-} from './schemas.js';
+} from './schemas';
 
 export interface WorkflowStage {
   name: string;
