@@ -12,7 +12,7 @@ import {
   ProcessorBlock,
   ProcessingContext,
   ProcessingResult,
-} from './base-processor.js';
+} from './base-processor';
 
 export interface PlantUMLConfig {
   output_format: 'png' | 'svg' | 'pdf';

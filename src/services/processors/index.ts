@@ -3,25 +3,25 @@
  * Provides access to all processors and utilities
  */
 
-export { BaseProcessor, ProcessorRegistry, defaultProcessorRegistry } from './base-processor.js';
+export { BaseProcessor, ProcessorRegistry, defaultProcessorRegistry } from './base-processor';
 export type {
   ProcessorConfig,
   ProcessingContext,
   ProcessorBlock,
   ProcessingResult,
-} from './base-processor.js';
+} from './base-processor';
 
 // Import specific processors
-export { MermaidProcessor } from '../mermaid-processor.js';
-export { EmojiProcessor } from './emoji-processor.js';
-export { PlantUMLProcessor } from './plantuml-processor.js';
-export { GraphvizProcessor } from './graphviz-processor.js';
+export { MermaidProcessor } from '../mermaid-processor';
+export { EmojiProcessor } from './emoji-processor';
+export { PlantUMLProcessor } from './plantuml-processor';
+export { GraphvizProcessor } from './graphviz-processor';
 
-import { defaultProcessorRegistry } from './base-processor.js';
-import { MermaidProcessor } from '../mermaid-processor.js';
-import { EmojiProcessor } from './emoji-processor.js';
-import { PlantUMLProcessor } from './plantuml-processor.js';
-import { GraphvizProcessor } from './graphviz-processor.js';
+import { defaultProcessorRegistry } from './base-processor';
+import { MermaidProcessor } from '../mermaid-processor';
+import { EmojiProcessor } from './emoji-processor';
+import { PlantUMLProcessor } from './plantuml-processor';
+import { GraphvizProcessor } from './graphviz-processor';
 
 // Convenience function to register default processors
 export function registerDefaultProcessors() {

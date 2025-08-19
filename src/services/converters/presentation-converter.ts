@@ -5,9 +5,9 @@
 
 import * as path from 'path';
 import * as fs from 'fs';
-import { PandocConverter } from './pandoc-converter.js';
-import { ConversionContext, ConversionResult, ConverterConfig } from './base-converter.js';
-import type { ProcessorRegistry } from '../processors/base-processor.js';
+import { PandocConverter } from './pandoc-converter';
+import { ConversionContext, ConversionResult, ConverterConfig } from './base-converter';
+import type { ProcessorRegistry } from '../processors/base-processor';
 
 /**
  * Presentation converter implementation

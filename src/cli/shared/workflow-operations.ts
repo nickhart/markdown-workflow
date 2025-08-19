@@ -2,12 +2,14 @@
  * Shared workflow operations extracted from CLI commands
  */
 
+// does this belong in a shared location? web needs to load workflow definitions... although not from disk.
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { WorkflowFileSchema, type WorkflowFile } from '../../engine/schemas.js';
-import { scrapeUrl } from '../../services/web-scraper.js';
-import { logInfo, logSuccess, logError } from './formatting-utils.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../../engine/schemas';
+import { scrapeUrl } from '../../services/web-scraper';
+import { logInfo, logSuccess, logError } from './console-output';
 
 /**
  * Load and validate a workflow definition from the system workflows directory

@@ -2,7 +2,7 @@
  * Shared error handling utilities for CLI commands
  */
 
-import { logError } from './formatting-utils.js';
+import { logError } from './console-output';
 
 /**
  * Standard CLI error handler - logs error and exits with code 1

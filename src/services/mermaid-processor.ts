@@ -2,13 +2,13 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { SystemConfig } from '../engine/schemas.js';
+import type { SystemConfig } from '../engine/schemas';
 import {
   BaseProcessor,
   ProcessorBlock,
   ProcessingContext,
   ProcessingResult,
-} from './processors/base-processor.js';
+} from './processors/base-processor';
 
 // Legacy interface for backward compatibility
 export interface MermaidBlock {

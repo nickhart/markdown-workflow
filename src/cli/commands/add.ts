@@ -1,5 +1,5 @@
-import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator';
+import { ConfigDiscovery } from '../../engine/config-discovery';
 
 interface AddOptions {
   cwd?: string;

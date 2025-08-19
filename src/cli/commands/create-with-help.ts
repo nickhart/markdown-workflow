@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { WorkflowFileSchema } from '../../engine/schemas.js';
-import { createCommand } from './create.js';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { WorkflowFileSchema } from '../../engine/schemas';
+import { createCommand } from './create';
 
 interface CreateWithHelpOptions {
   url?: string;

@@ -7,11 +7,11 @@
 
 import * as path from 'path';
 import Mustache from 'mustache';
-import { type WorkflowFile, type WorkflowTemplate } from '../engine/schemas.js';
-import { type Collection, type ProjectConfig } from '../engine/types.js';
-import { SystemInterface } from '../engine/system-interface.js';
-import { formatDate, getCurrentDate } from '../utils/date-utils.js';
-import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils.js';
+import { type WorkflowFile, type WorkflowTemplate } from '../engine/schemas';
+import { type Collection, type ProjectConfig } from '../engine/types';
+import { SystemInterface } from '../engine/system-interface';
+import { formatDate, getCurrentDate } from '../utils/date-utils';
+import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils';
 
 export interface TemplateServiceOptions {
   systemRoot: string;
@@ -22,6 +22,15 @@ export interface TemplateProcessingContext {
   collection?: Collection;
   projectConfig?: ProjectConfig;
   customVariables?: Record<string, unknown>;
+  workflowName?: string;
+  projectPaths?: { workflowsDir: string; configFile: string } | null;
+}
+
+export interface TemplateResolutionOptions {
+  systemRoot: string;
+  workflowName: string;
+  templateVariant?: string;
+  projectPaths?: { workflowsDir: string } | null;
 }
 
 export class TemplateService {
@@ -60,11 +69,18 @@ export class TemplateService {
   }
 
   /**
-   * Process template with variable substitution
+   * Process template with variable substitution and partials support
    */
   processTemplate(templateContent: string, context: TemplateProcessingContext): string {
     const templateVariables = this.buildTemplateVariables(context);
-    return Mustache.render(templateContent, templateVariables);
+
+    // Load partials (snippets) for template includes if workflow context is available
+    let partials: Record<string, string> = {};
+    if (context.workflowName) {
+      partials = this.loadPartials(context.workflowName, context.projectPaths);
+    }
+
+    return Mustache.render(templateContent, templateVariables, partials);
   }
 
   /**
@@ -215,6 +231,158 @@ export class TemplateService {
       company: typeof collection?.metadata.company === 'string' ? collection.metadata.company : '',
       role: typeof collection?.metadata.role === 'string' ? collection.metadata.role : '',
     };
+  }
+
+  /**
+   * Resolve template path with inheritance and variant support
+   * Priority: project templates (with variant) > project templates (default) > system templates
+   */
+  resolveTemplatePath(
+    template: WorkflowTemplate,
+    options: TemplateResolutionOptions,
+  ): string | null {
+    const templatePaths: string[] = [];
+
+    // If project has workflows directory, check project templates first
+    if (options.projectPaths?.workflowsDir) {
+      const projectWorkflowDir = path.join(options.projectPaths.workflowsDir, options.workflowName);
+
+      if (options.templateVariant) {
+        // Try project template with variant (e.g., .markdown-workflow/workflows/job/templates/resume/ai-frontend.md)
+        const variantPath = this.getVariantTemplatePath(
+          projectWorkflowDir,
+          template,
+          options.templateVariant,
+        );
+        if (variantPath) templatePaths.push(variantPath);
+      }
+
+      // Try project template default (e.g., .markdown-workflow/workflows/job/templates/resume/default.md)
+      const projectTemplatePath = path.join(projectWorkflowDir, template.file);
+      templatePaths.push(projectTemplatePath);
+    }
+
+    // Always add system template as fallback
+    const systemTemplatePath = path.join(
+      options.systemRoot,
+      'workflows',
+      options.workflowName,
+      template.file,
+    );
+    templatePaths.push(systemTemplatePath);
+
+    // Return first existing template
+    for (const templatePath of templatePaths) {
+      if (this.systemInterface.existsSync(templatePath)) {
+        return templatePath;
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Build variant template path by replacing filename with variant
+   * e.g., templates/resume/default.md + variant "ai-frontend" -> templates/resume/ai-frontend.md
+   */
+  getVariantTemplatePath(
+    workflowDir: string,
+    template: WorkflowTemplate,
+    variant: string,
+  ): string | null {
+    const templateFile = template.file;
+    const parsedPath = path.parse(templateFile);
+
+    // Replace filename with variant, keep extension
+    const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
+    return path.join(workflowDir, variantFile);
+  }
+
+  /**
+   * Load partials (snippets) for template includes
+   * Supports inheritance: project snippets override system snippets
+   */
+  loadPartials(
+    workflowName: string,
+    projectPaths?: { workflowsDir: string } | null,
+  ): Record<string, string> {
+    const partials: Record<string, string> = {};
+
+    // Define potential snippet directories in load order (system first, then project overrides)
+    const snippetDirs: string[] = [];
+
+    // System snippets (loaded first, lower priority)
+    snippetDirs.push(path.join(this.systemRoot, 'workflows', workflowName, 'snippets'));
+
+    // Project snippets (loaded last, higher priority - overrides system)
+    if (projectPaths?.workflowsDir) {
+      snippetDirs.push(path.join(projectPaths.workflowsDir, workflowName, 'snippets'));
+    }
+
+    // Load snippets from all directories (later ones override earlier ones)
+    for (const snippetDir of snippetDirs) {
+      if (this.systemInterface.existsSync(snippetDir)) {
+        try {
+          const snippetFiles = this.systemInterface
+            .readdirSync(snippetDir)
+            .filter((dirent) => dirent.name.endsWith('.md') || dirent.name.endsWith('.txt'))
+            .map((dirent) => dirent.name);
+
+          for (const snippetFile of snippetFiles) {
+            const snippetName = path.basename(snippetFile, path.extname(snippetFile));
+            const snippetPath = path.join(snippetDir, snippetFile);
+
+            try {
+              const snippetContent = this.systemInterface.readFileSync(snippetPath);
+              partials[snippetName] = snippetContent;
+            } catch (error) {
+              console.warn(
+                `Failed to load snippet ${snippetName}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+        } catch (error) {
+          console.warn(
+            `Failed to read snippets directory ${snippetDir}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
+      }
+    }
+
+    return partials;
+  }
+
+  /**
+   * Load template with inheritance support
+   * Uses template resolution to find the best template (project override or system default)
+   */
+  async loadTemplateWithInheritance(
+    workflow: WorkflowFile,
+    templateName: string,
+    options: TemplateResolutionOptions,
+  ): Promise<string> {
+    const template = workflow.workflow.templates.find((t) => t.name === templateName);
+    if (!template) {
+      const availableTemplates = workflow.workflow.templates.map((t) => t.name);
+      throw new Error(
+        `Template '${templateName}' not found. Available templates: ${availableTemplates.join(', ')}`,
+      );
+    }
+
+    // Resolve template path with inheritance
+    const resolvedTemplatePath = this.resolveTemplatePath(template, options);
+
+    if (!resolvedTemplatePath) {
+      throw new Error(
+        `Template not found: ${template.name} (checked project and system locations)`,
+      );
+    }
+
+    if (!this.systemInterface.existsSync(resolvedTemplatePath)) {
+      throw new Error(`Template file not found: ${resolvedTemplatePath}`);
+    }
+
+    return this.systemInterface.readFileSync(resolvedTemplatePath);
   }
 
   /**

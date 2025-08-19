@@ -11,8 +11,8 @@ import {
   ConversionContext,
   ConversionResult,
   ConverterConfig,
-} from './base-converter.js';
-import type { ProcessorRegistry } from '../processors/base-processor.js';
+} from './base-converter';
+import type { ProcessorRegistry } from '../processors/base-processor';
 
 /**
  * Pandoc converter implementation
@@ -237,10 +237,10 @@ endobj
 
 xref
 0 4
-0000000000 65535 f 
-0000000010 00000 n 
-0000000079 00000 n 
-0000000136 00000 n 
+0000000000 65535 f
+0000000010 00000 n
+0000000079 00000 n
+0000000136 00000 n
 trailer
 <<
 /Size 4

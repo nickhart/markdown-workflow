@@ -7,8 +7,8 @@
 
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { WorkflowFileSchema, type WorkflowFile } from '../engine/schemas.js';
-import { SystemInterface } from '../engine/system-interface.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../engine/schemas';
+import { SystemInterface } from '../engine/system-interface';
 
 export interface WorkflowServiceOptions {
   systemRoot: string;

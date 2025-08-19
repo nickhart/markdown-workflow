@@ -8,7 +8,7 @@ import {
   downloadFile,
   type Template,
   type MermaidOptions,
-} from '@/lib/presentation-api';
+} from '@/services/presentation-api';
 
 type Status = 'idle' | 'loading-templates' | 'creating' | 'formatting' | 'ready' | 'error';
 

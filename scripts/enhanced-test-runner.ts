@@ -13,12 +13,12 @@ import {
   formatE2EReport,
   createE2ETestContext,
   type E2ETestReport,
-} from '../src/shared/enhanced-error-reporting.js';
+} from '../src/utils/enhanced-error-reporting';
 import {
   compareSnapshotsEnhanced,
   validateSnapshotHealth,
   type EnhancedDiffResult,
-} from '../src/shared/snapshot-diff-utils.js';
+} from '../src/utils/snapshot-diff-utils';
 
 interface TestResult {
   name: string;

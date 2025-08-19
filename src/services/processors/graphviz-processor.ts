@@ -11,7 +11,7 @@ import {
   ProcessorBlock,
   ProcessingContext,
   ProcessingResult,
-} from './base-processor.js';
+} from './base-processor';
 
 export interface GraphvizConfig {
   output_format: 'png' | 'svg' | 'pdf' | 'jpeg';

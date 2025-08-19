@@ -1,139 +1,26 @@
 #!/usr/bin/env node
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as YAML from 'yaml';
 import { Command } from 'commander';
-import initCommand from './commands/init.js';
-import createWithHelpCommand from './commands/create-with-help.js';
-import availableCommand from './commands/available.js';
-import formatCommand from './commands/format.js';
-import { statusCommand, showStatusesCommand } from './commands/status.js';
-import { addCommand, listTemplatesCommand } from './commands/add.js';
-import listCommand from './commands/list.js';
-import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
-import updateCommand from './commands/update.js';
-import { listAliasesCommand } from './commands/aliases.js';
-import commitCommand from './commands/commit.js';
-import cleanCommand from './commands/clean.js';
-import { withErrorHandling } from './shared/error-handler.js';
-import { logError } from './shared/formatting-utils.js';
-import { ConfigDiscovery } from '../engine/config-discovery.js';
-import { WorkflowFileSchema } from '../engine/schemas.js';
+import initCommand from './commands/init';
+import createWithHelpCommand from './commands/create-with-help';
+import availableCommand from './commands/available';
+import formatCommand from './commands/format';
+import { statusCommand, showStatusesCommand } from './commands/status';
+import { addCommand, listTemplatesCommand } from './commands/add';
+import listCommand from './commands/list';
+import { migrateCommand, listMigrationWorkflows } from './commands/migrate';
+import updateCommand from './commands/update';
+import { listAliasesCommand } from './commands/aliases';
+import commitCommand from './commands/commit';
+import cleanCommand from './commands/clean';
+import { withErrorHandling } from './shared/error-handler';
+import { logError } from './shared/console-output';
 
 const program = new Command();
 
 program.name('wf').description('Markdown Workflow CLI').version('1.0.0');
 
-/**
- * Register workflow-specific aliases as commands
- */
-async function registerWorkflowAliases() {
-  try {
-    const configDiscovery = new ConfigDiscovery();
-    const systemConfig = configDiscovery.discoverSystemConfiguration();
-
-    for (const workflowName of systemConfig.availableWorkflows) {
-      try {
-        const workflowPath = path.join(
-          systemConfig.systemRoot,
-          'workflows',
-          workflowName,
-          'workflow.yml',
-        );
-
-        if (!fs.existsSync(workflowPath)) {
-          continue;
-        }
-
-        const workflowContent = fs.readFileSync(workflowPath, 'utf8');
-        const parsedYaml = YAML.parse(workflowContent);
-        const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
-
-        if (!validationResult.success) {
-          continue;
-        }
-
-        const workflowDef = validationResult.data.workflow;
-
-        // Register CLI aliases if they exist
-        if (workflowDef.cli?.aliases) {
-          for (const alias of workflowDef.cli.aliases) {
-            const createAction = workflowDef.actions.find((action) => action.name === 'create');
-
-            if (createAction) {
-              // Create alias command that maps to the create workflow
-              const command = program
-                .command(alias)
-                .description(
-                  workflowDef.cli.description || `Create ${workflowName} using ${alias} alias`,
-                )
-                .usage(workflowDef.cli.usage?.replace('{alias}', alias) || `<args...>`);
-
-              // Add workflow-specific arguments instead of generic [args...]
-              if (workflowDef.cli?.arguments) {
-                workflowDef.cli.arguments.forEach((arg) => {
-                  const argSyntax = arg.required ? `<${arg.name}>` : `[${arg.name}]`;
-                  const description = arg.help_text || arg.description;
-                  command.argument(argSyntax, description);
-                });
-              } else {
-                // Fallback for workflows without CLI argument definitions
-                command.argument('[args...]', 'Arguments based on workflow configuration');
-              }
-
-              // Add workflow-appropriate options
-              if (
-                workflowName === 'job' ||
-                workflowDef.cli?.arguments?.some((arg) => arg.name === 'url')
-              ) {
-                command.option('-u, --url <url>', 'Job posting URL');
-              }
-              command.option('-t, --template-variant <variant>', 'Template variant to use');
-              command.option('--force', 'Force recreate existing collection');
-
-              // Add enhanced help text as additional description
-              if (workflowDef.cli?.help_text) {
-                command.addHelpText('after', `\n${workflowDef.cli.help_text}`);
-              }
-
-              if (workflowDef.cli?.examples && workflowDef.cli.examples.length > 0) {
-                const examplesText =
-                  '\nExamples:\n' +
-                  workflowDef.cli.examples.map((example) => `  $ ${example}`).join('\n');
-                command.addHelpText('after', examplesText);
-              }
-
-              command.action(
-                withErrorHandling(async (...argsWithOptions) => {
-                  // Commander.js passes individual arguments, then options as the last parameter
-                  const options = argsWithOptions[argsWithOptions.length - 1];
-                  const args = argsWithOptions.slice(0, -1);
-
-                  // Map alias call to regular create command
-                  await createWithHelpCommand([workflowName, ...args], {
-                    url: options.url,
-                    template_variant: options.templateVariant,
-                    force: options.force,
-                  });
-                }),
-              );
-            }
-          }
-        }
-      } catch {
-        // Skip individual workflow errors - don't break entire CLI
-        continue;
-      }
-    }
-  } catch {
-    // Don't break CLI startup if workflow registration fails
-    // The base commands will still work
-  }
-}
-
-// Register workflow aliases before parsing commands
-await registerWorkflowAliases();
+// Removed workflow alias registration to keep CLI simple and avoid workflow-specific logic
 
 // wf-init command
 program
@@ -222,6 +109,7 @@ program
     }),
   );
 
+// TODO: this could maybe use some more definition or use cases
 // wf-add command
 program
   .command('add')
@@ -299,13 +187,15 @@ program
     }),
   );
 
-// wf-migrate command
+// Legacy markdown-writer migration support - marked as experimental with strong warnings
+// wf-migrate command (EXPERIMENTAL)
 program
   .command('migrate')
-  .description('Migrate legacy workflow system to new format')
+  .description('⚠️  EXPERIMENTAL: Migrate legacy workflow system (USE AT YOUR OWN RISK)')
   .argument('[workflow]', 'Workflow type to migrate (omit to show available workflows)')
   .argument('[source_path]', 'Path to legacy workflow system')
-  .option('--dry-run', 'Preview changes without modifying files')
+  .option('--dry-run', 'Preview changes without modifying files (DEFAULT for safety)')
+  .option('--no-dry-run', 'Enable destructive operations (requires WF_MIGRATE_ALLOW_DESTRUCTIVE=1)')
   .option('--force', 'Overwrite existing collections with same ID')
   .action(
     withErrorHandling(async (workflow, sourcePath, options) => {
@@ -317,9 +207,9 @@ program
           'Please provide a source path or omit workflow to see available migration types',
         );
       } else {
-        // Perform migration
+        // Perform migration with safety defaults
         await migrateCommand(workflow, sourcePath, {
-          dryRun: options.dryRun,
+          dryRun: options.dryRun, // Commander.js handles --no-dry-run automatically
           force: options.force,
         });
       }

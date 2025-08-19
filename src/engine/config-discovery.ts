@@ -1,9 +1,9 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
 import _ from 'lodash';
-import { ConfigPaths, ResolvedConfig } from './types.js';
-import { ProjectConfigSchema, type ProjectConfig } from './schemas.js';
-import { SystemInterface, NodeSystemInterface } from './system-interface.js';
+import { ConfigPaths, ResolvedConfig } from './types';
+import { ProjectConfigSchema, type ProjectConfig } from './schemas';
+import { SystemInterface, NodeSystemInterface } from './system-interface';
 
 /**
  * Configuration discovery system for markdown-workflow

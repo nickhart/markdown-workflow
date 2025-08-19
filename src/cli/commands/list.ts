@@ -1,7 +1,7 @@
 import * as YAML from 'yaml';
-import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { Collection } from '../../engine/types.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { Collection } from '../../engine/types';
 
 interface ListOptions {
   status?: string;

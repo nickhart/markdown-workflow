@@ -1,17 +1,17 @@
 /**
- * Shared template processing utilities for CLI commands
- * Handles template resolution, inheritance, and variable substitution
+ * CLI-specific template processing utilities
+ *
+ * Provides CLI-specific template operations using the shared TemplateService.
+ * Handles CLI-specific concerns like console logging, file path resolution, and CLI output.
+ * Business logic has been moved to TemplateService for sharing with the REST API.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
-import Mustache from 'mustache';
-import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { WorkflowTemplate } from '../../engine/types.js';
-import { type ProjectConfig } from '../../engine/schemas.js';
-import { formatDate, getCurrentDate } from '../../utils/date-utils.js';
-import { sanitizeForFilename } from '../../utils/file-utils.js';
-import { logTemplateUsage, logFileCreation, logWarning, logError } from './formatting-utils.js';
+import { TemplateService, type TemplateResolutionOptions } from '../../services/template-service';
+import { NodeSystemInterface } from '../../engine/system-interface';
+import { WorkflowTemplate } from '../../engine/types';
+import { type ProjectConfig } from '../../engine/schemas';
+import { logTemplateUsage, logFileCreation, logWarning, logError } from './console-output';
 
 export interface TemplateProcessingOptions {
   systemRoot: string;
@@ -21,98 +21,81 @@ export interface TemplateProcessingOptions {
   projectPaths?: { workflowsDir: string; configFile: string } | null;
 }
 
-export interface TemplateResolutionOptions {
-  systemRoot: string;
-  workflowName: string;
-  templateVariant?: string;
-  projectPaths?: { workflowsDir: string } | null;
-}
+// Re-export types for CLI usage
+export type { TemplateResolutionOptions };
+
+// Create system interface for file operations
+const systemInterface = new NodeSystemInterface();
 
 /**
- * Template processor class containing all template-related operations
+ * CLI template processor using shared TemplateService
+ * Provides CLI-specific logging and file I/O operations
  */
 export class TemplateProcessor {
+  private static templateService = new TemplateService({
+    systemRoot: '', // Will be set per operation
+    systemInterface,
+  });
+
   /**
-   * Process a template file with variable substitution
-   * Implements template inheritance: project templates override system templates
+   * CLI wrapper: Process a template file with variable substitution and file output
+   * Handles CLI-specific file I/O and logging
    */
   static async processTemplate(
     template: WorkflowTemplate,
     collectionPath: string,
     options: TemplateProcessingOptions,
   ): Promise<void> {
-    // Use the provided project config or load it if not available
-    let userConfig = null;
-    if (options.projectConfig?.user) {
-      // Use the already loaded and merged project config
-      userConfig = options.projectConfig.user;
-    } else if (options.projectPaths?.configFile && fs.existsSync(options.projectPaths.configFile)) {
-      // Fallback: load config directly if not provided
-      const configDiscovery = new ConfigDiscovery();
-      const config = await configDiscovery.loadProjectConfig(
-        options.projectPaths.configFile,
-        options.systemRoot,
-      );
-      userConfig = config?.user;
-    }
-
-    // Resolve template path with inheritance: project templates override system templates
-    const resolvedTemplatePath = this.resolveTemplatePath(template, {
+    // Update template service system root for this operation
+    this.templateService = new TemplateService({
       systemRoot: options.systemRoot,
-      workflowName: options.workflowName,
-      templateVariant: options.variables.template_variant,
-      projectPaths: options.projectPaths,
+      systemInterface,
     });
 
-    if (!resolvedTemplatePath) {
-      logWarning(`Template not found: ${template.name} (checked project and system locations)`);
-      return;
-    }
-
-    logTemplateUsage(resolvedTemplatePath);
-
-    if (!fs.existsSync(resolvedTemplatePath)) {
-      logWarning(`Template file not found: ${resolvedTemplatePath}`);
-      return;
-    }
-
     try {
-      const templateContent = fs.readFileSync(resolvedTemplatePath, 'utf8');
+      // Resolve template path with inheritance
+      const resolvedTemplatePath = this.templateService.resolveTemplatePath(template, {
+        systemRoot: options.systemRoot,
+        workflowName: options.workflowName,
+        templateVariant: options.variables.template_variant,
+        projectPaths: options.projectPaths,
+      });
 
-      // Prepare template variables for Mustache
-      const userConfigForTemplate = userConfig || this.getDefaultUserConfig();
-      const templateVariables = {
-        ...options.variables,
-        date: formatDate(
-          getCurrentDate(options.projectConfig || undefined),
-          'LONG_DATE',
-          options.projectConfig || undefined,
-        ),
-        user: {
-          ...userConfigForTemplate,
-          // Add sanitized versions for filenames - use separate keys to preserve original values
-          name_sanitized: sanitizeForFilename(userConfigForTemplate.name),
-          preferred_name_sanitized: sanitizeForFilename(userConfigForTemplate.preferred_name),
-          // Keep original preferred_name unsanitized for content/signatures
-        },
+      if (!resolvedTemplatePath) {
+        logWarning(`Template not found: ${template.name} (checked project and system locations)`);
+        return;
+      }
+
+      // CLI-specific logging
+      logTemplateUsage(resolvedTemplatePath);
+
+      if (!systemInterface.existsSync(resolvedTemplatePath)) {
+        logWarning(`Template file not found: ${resolvedTemplatePath}`);
+        return;
+      }
+
+      // Load template content
+      const templateContent = systemInterface.readFileSync(resolvedTemplatePath);
+
+      // Build processing context
+      const context = {
+        projectConfig: options.projectConfig || undefined,
+        customVariables: options.variables,
+        workflowName: options.workflowName,
+        projectPaths: options.projectPaths,
       };
 
-      // Load partials (snippets) for template includes
-      const partials = this.loadPartials(
-        options.systemRoot,
-        options.workflowName,
-        options.projectPaths,
-      );
+      // Process template using shared service
+      const processedContent = this.templateService.processTemplate(templateContent, context);
 
-      // Process template with Mustache including partials support
-      const processedContent = Mustache.render(templateContent, templateVariables, partials);
+      // Generate output filename using shared service
+      const outputFile = this.templateService.generateOutputFilename(template, context);
 
-      // Generate output filename with Mustache
-      const outputFile = Mustache.render(template.output, templateVariables);
-
+      // CLI-specific file I/O
       const outputPath = path.join(collectionPath, outputFile);
-      fs.writeFileSync(outputPath, processedContent);
+      systemInterface.writeFileSync(outputPath, processedContent);
 
+      // CLI-specific logging
       logFileCreation(outputFile);
     } catch (error) {
       logError(
@@ -122,126 +105,58 @@ export class TemplateProcessor {
   }
 
   /**
-   * Resolve template path with inheritance and variant support
-   * Priority: project templates (with variant) > project templates (default) > system templates
+   * CLI wrapper: Resolve template path with inheritance and variant support
+   * Uses shared TemplateService business logic with CLI-specific system root handling
    */
   static resolveTemplatePath(
     template: WorkflowTemplate,
     options: TemplateResolutionOptions,
   ): string | null {
-    const templatePaths: string[] = [];
+    const templateService = new TemplateService({
+      systemRoot: options.systemRoot,
+      systemInterface,
+    });
 
-    // If project has workflows directory, check project templates first
-    if (options.projectPaths?.workflowsDir) {
-      const projectWorkflowDir = path.join(options.projectPaths.workflowsDir, options.workflowName);
-
-      if (options.templateVariant) {
-        // Try project template with variant (e.g., .markdown-workflow/workflows/job/templates/resume/ai-frontend.md)
-        const variantPath = this.getVariantTemplatePath(
-          projectWorkflowDir,
-          template,
-          options.templateVariant,
-        );
-        if (variantPath) templatePaths.push(variantPath);
-      }
-
-      // Try project template default (e.g., .markdown-workflow/workflows/job/templates/resume/default.md)
-      const projectTemplatePath = path.join(projectWorkflowDir, template.file);
-      templatePaths.push(projectTemplatePath);
-    }
-
-    // Always add system template as fallback
-    const systemTemplatePath = path.join(
-      options.systemRoot,
-      'workflows',
-      options.workflowName,
-      template.file,
-    );
-    templatePaths.push(systemTemplatePath);
-
-    // Return first existing template
-    for (const templatePath of templatePaths) {
-      if (fs.existsSync(templatePath)) {
-        return templatePath;
-      }
-    }
-
-    return null;
+    return templateService.resolveTemplatePath(template, options);
   }
 
   /**
-   * Build variant template path by replacing filename with variant
-   * e.g., templates/resume/default.md + variant "ai-frontend" -> templates/resume/ai-frontend.md
+   * CLI wrapper: Build variant template path
+   * Uses shared TemplateService business logic
    */
   static getVariantTemplatePath(
     workflowDir: string,
     template: WorkflowTemplate,
     variant: string,
   ): string | null {
-    const templateFile = template.file;
-    const parsedPath = path.parse(templateFile);
+    const templateService = new TemplateService({
+      systemRoot: '', // Not needed for this operation
+      systemInterface,
+    });
 
-    // Replace filename with variant, keep extension
-    const variantFile = path.join(parsedPath.dir, `${variant}${parsedPath.ext}`);
-    return path.join(workflowDir, variantFile);
+    return templateService.getVariantTemplatePath(workflowDir, template, variant);
   }
 
   /**
-   * Load partials (snippets) for template includes
-   * Supports inheritance: project snippets override system snippets
+   * CLI wrapper: Load partials with CLI-specific logging
+   * Uses shared TemplateService business logic with CLI logging
    */
   static loadPartials(
     systemRoot: string,
     workflowName: string,
     projectPaths?: { workflowsDir: string } | null,
   ): Record<string, string> {
-    const partials: Record<string, string> = {};
+    const templateService = new TemplateService({
+      systemRoot,
+      systemInterface,
+    });
 
-    // Define potential snippet directories in load order (system first, then project overrides)
-    const snippetDirs: string[] = [];
-
-    // System snippets (loaded first, lower priority)
-    snippetDirs.push(path.join(systemRoot, 'workflows', workflowName, 'snippets'));
-
-    // Project snippets (loaded last, higher priority - overrides system)
-    if (projectPaths?.workflowsDir) {
-      snippetDirs.push(path.join(projectPaths.workflowsDir, workflowName, 'snippets'));
-    }
-
-    // Load snippets from all directories (later ones override earlier ones)
-    for (const snippetDir of snippetDirs) {
-      if (fs.existsSync(snippetDir)) {
-        try {
-          const snippetFiles = fs
-            .readdirSync(snippetDir)
-            .filter((file) => file.endsWith('.md') || file.endsWith('.txt'));
-
-          for (const snippetFile of snippetFiles) {
-            const snippetName = path.basename(snippetFile, path.extname(snippetFile));
-            const snippetPath = path.join(snippetDir, snippetFile);
-
-            try {
-              const snippetContent = fs.readFileSync(snippetPath, 'utf8');
-              partials[snippetName] = snippetContent;
-            } catch (error) {
-              logWarning(
-                `Failed to load snippet ${snippetName}: ${error instanceof Error ? error.message : String(error)}`,
-              );
-            }
-          }
-        } catch (error) {
-          logWarning(
-            `Failed to read snippets directory ${snippetDir}: ${error instanceof Error ? error.message : String(error)}`,
-          );
-        }
-      }
-    }
-
-    return partials;
+    return templateService.loadPartials(workflowName, projectPaths);
   }
 
   /**
-   * Get default user configuration for fallback
+   * CLI helper: Get default user configuration
+   * CLI-specific default configuration
    */
   static getDefaultUserConfig() {
     return {

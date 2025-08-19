@@ -5,20 +5,22 @@
  */
 
 // Main orchestrator
-export { WorkflowOrchestrator } from './workflow-orchestrator.js';
+export { WorkflowOrchestrator } from './workflow-orchestrator';
 
 // Domain services
-export { WorkflowService } from './workflow-service.js';
-export { CollectionService } from './collection-service.js';
-export { TemplateService } from './template-service.js';
-export { ActionService } from './action-service.js';
+export { WorkflowService } from './workflow-service';
+export { CollectionService } from './collection-service';
+export { TemplateService } from './template-service';
+export { ActionService } from './action-service';
+export { ConfigService } from './config-service';
+export { MetadataService } from './metadata-service';
 
 // Legacy services (maintained for backward compatibility)
-export { convertDocument } from './document-converter.js';
-export { MermaidProcessor } from './mermaid-processor.js';
-export { scrapeUrl } from './web-scraper.js';
-export { PresentationApi } from './presentation-api.js';
+export { convertDocument } from './document-converter';
+export { MermaidProcessor } from './mermaid-processor';
+export { scrapeUrl } from './web-scraper';
+export * from './presentation-api';
 
 // Converters and processors
-export * from './converters/index.js';
-export * from './processors/index.js';
+export * from './converters/index';
+export * from './processors/index';

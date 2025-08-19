@@ -7,11 +7,11 @@
 
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { Collection, type CollectionMetadata, type ProjectConfig } from '../engine/types.js';
-import { type WorkflowFile } from '../engine/schemas.js';
-import { SystemInterface } from '../engine/system-interface.js';
-import { getCurrentISODate } from '../utils/date-utils.js';
-import { ConfigDiscovery } from '../engine/config-discovery.js';
+import { Collection, type CollectionMetadata, type ProjectConfig } from '../engine/types';
+import { type WorkflowFile } from '../engine/schemas';
+import { SystemInterface } from '../engine/system-interface';
+import { getCurrentISODate } from '../utils/date-utils';
+import { ConfigDiscovery } from '../engine/config-discovery';
 
 export interface CollectionServiceOptions {
   projectRoot: string;

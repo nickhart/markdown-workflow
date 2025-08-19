@@ -3,7 +3,7 @@
  * Provides deterministic values for dates, IDs, user info, and other variables
  */
 
-import { ProjectConfig } from '../engine/schemas.js';
+import { ProjectConfig } from '../engine/schemas';
 
 // Global state for deterministic testing
 let mockState = {

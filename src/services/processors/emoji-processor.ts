@@ -14,7 +14,7 @@ import {
   ProcessorBlock,
   ProcessingContext,
   ProcessingResult,
-} from './base-processor.js';
+} from './base-processor';
 
 // GitHub standard emoji mappings with convenient aliases
 // Priority: GitHub standard names first, then convenient aliases for frequently used emojis

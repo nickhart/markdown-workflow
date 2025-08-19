@@ -1,8 +1,8 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
 import Mustache from 'mustache';
-import { ConfigDiscovery } from './config-discovery.js';
-import { SystemInterface, NodeSystemInterface } from './system-interface.js';
+import { ConfigDiscovery } from './config-discovery';
+import { SystemInterface, NodeSystemInterface } from './system-interface';
 import {
   WorkflowFileSchema,
   type WorkflowFile,
@@ -10,16 +10,13 @@ import {
   type WorkflowAction,
   type WorkflowStatic,
   type WorkflowTemplate,
-} from './schemas.js';
-import { Collection, type CollectionMetadata } from './types.js';
-import { getCurrentISODate, formatDate, getCurrentDate } from '../utils/date-utils.js';
-import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils.js';
-import { convertDocument } from '../services/document-converter.js';
-import {
-  defaultConverterRegistry,
-  registerDefaultConverters,
-} from '../services/converters/index.js';
-import { registerDefaultProcessors } from '../services/processors/index.js';
+} from './schemas';
+import { Collection, type CollectionMetadata } from './types';
+import { getCurrentISODate, formatDate, getCurrentDate } from '../utils/date-utils';
+import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils';
+import { convertDocument } from '../services/document-converter';
+import { defaultConverterRegistry, registerDefaultConverters } from '../services/converters/index';
+import { registerDefaultProcessors } from '../services/processors/index';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions

@@ -3,7 +3,7 @@
  * Defines the contract for all document converters in the system
  */
 
-import { ProcessorRegistry } from '../processors/base-processor.js';
+import { ProcessorRegistry } from '../processors/base-processor';
 
 export interface ConverterConfig {
   [key: string]: unknown;
