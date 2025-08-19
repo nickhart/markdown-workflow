@@ -185,7 +185,129 @@ src/
 │       └── community-api.ts
 ```
 
-### Phase 6: Performance & Scalability
+### Phase 6: Environment Abstraction System
+
+**Priority**: High
+**Estimated Effort**: 3-4 days
+
+#### Goals
+
+- Unified Environment abstraction for all resources (configs, workflows, processors, converters, templates)
+- Multiple environment population methods (programmatic, filesystem, archives)
+- Smart resource merging and fallback resolution (local → global)  
+- Lazy loading of resources for specific workflows
+- Robust security and validation for web/REST integration
+
+#### Tasks
+
+1. **Core Environment Architecture**
+   - Abstract `Environment` class with unified resource access interface
+   - `FilesystemEnvironment` implementation for directory-based loading
+   - `MemoryEnvironment` implementation for programmatic/in-memory resources
+   - `ArchiveEnvironment` implementation for ZIP file extraction
+   - `MergedEnvironment` for intelligent local → global fallback resolution
+
+2. **Environment Population Methods**
+   - **Programmatic**: Code-defined folder/file structure via API
+   - **Filesystem**: Walk directory structure and populate resources
+   - **Archive-based**: Extract from ZIP files (cross-platform support)
+   - **Request-based**: Populate from HTTP multipart uploads (REST/Web)
+
+3. **Security & Validation Framework**
+   - File size limits by extension (configurable, per-extension defaults)
+   - YAML/JSON schema validation against Zod schemas
+   - Input sanitization for web security (filename validation, path traversal protection)
+   - Unknown file extension handling (warnings + empty placeholders)
+   - Resource limits and timeouts for processing
+   - Content-type validation for uploaded files
+
+4. **Smart Resource Management**
+   - `WorkflowContext` for lazy loading specific workflow resources
+   - Dependency tracking (only load processors/converters used by workflow)
+   - Efficient caching and invalidation strategies
+   - Memory usage monitoring and limits
+
+#### Implementation Strategy
+
+```
+src/
+├── engine/
+│   ├── environment/
+│   │   ├── environment.ts              # Abstract Environment class
+│   │   ├── filesystem-environment.ts   # Loads from disk
+│   │   ├── memory-environment.ts       # In-memory implementation  
+│   │   ├── archive-environment.ts      # ZIP file extraction
+│   │   ├── merged-environment.ts       # Local + global merging
+│   │   ├── request-environment.ts      # HTTP upload handling
+│   │   ├── workflow-context.ts         # Lazy loading for workflows
+│   │   ├── environment-factory.ts      # Creates appropriate environments
+│   │   └── security-validator.ts       # File validation & sanitization
+│   └── environment-discovery.ts        # Replaces config-discovery.ts
+```
+
+#### Security Considerations
+
+**File Size Limits** (per extension, configurable):
+- Text files (`.yml`, `.yaml`, `.json`, `.md`): 100KB default
+- Images (`.png`, `.jpg`, `.jpeg`, `.svg`): 500KB default  
+- Documents (`.docx`, `.pdf`): 1MB default
+- Archives (`.zip`): 5MB total default
+- Nested archive depth: 3 levels maximum
+
+**Input Validation**:
+- Filename sanitization (no path traversal: `../`, absolute paths)
+- Extension allowlist: `.yml`, `.yaml`, `.md`, `.json`, `.docx`, `.png`, `.jpg`, `.jpeg`, `.svg`, `.pdf`
+- MIME type validation for uploads
+- Virus scanning integration point (future)
+
+**Content Validation**:
+- YAML/JSON files validated against Zod schemas
+- Markdown files: basic structure validation
+- Binary files: size and type checking only
+- Unknown extensions: warning + empty placeholder creation
+
+**Resource Limits**:
+- Archive extraction timeout: 30 seconds
+- Memory usage cap during processing: 100MB
+- Maximum files per environment: 500
+- Concurrent processing limit: 3 environments
+
+#### Example Usage
+
+```typescript
+// CLI: Filesystem-based environments
+const globalEnv = new FilesystemEnvironment('/usr/local/lib/markdown-workflow');
+const localEnv = new FilesystemEnvironment('./.markdown-workflow');
+const mergedEnv = new MergedEnvironment(localEnv, globalEnv);
+
+// REST API: Request-based environment
+const uploadedEnv = new RequestEnvironment(uploadedFiles, globalEnv);
+const context = new WorkflowContext(uploadedEnv, 'job-applications');
+
+// Programmatic: Code-defined structure
+const memoryEnv = new MemoryEnvironment();
+await memoryEnv.setConfig(userConfig);
+await memoryEnv.setWorkflow('custom', workflowDef);
+```
+
+#### Benefits
+
+- **Unified Interface**: Single abstraction for all resource access
+- **REST Integration**: Easy environment population from HTTP uploads  
+- **Performance**: Lazy loading only resources needed for current workflow
+- **Security**: Comprehensive validation and sanitization for web uploads
+- **Testability**: Easy mocking with MemoryEnvironment
+- **Flexibility**: Support for archives, filesystems, and programmatic definition
+
+#### Migration Strategy
+
+1. **Phase 6a**: Create Environment abstractions alongside existing ConfigDiscovery
+2. **Phase 6b**: Migrate WorkflowEngine to use Environment system  
+3. **Phase 6c**: Update CLI commands to use WorkflowContext
+4. **Phase 6d**: Implement REST endpoints with RequestEnvironment
+5. **Phase 6e**: Remove legacy ConfigDiscovery and direct filesystem access
+
+### Phase 7: Performance & Scalability
 
 **Priority**: Medium
 **Estimated Effort**: 2-3 days
@@ -223,7 +345,7 @@ src/
    - Memory profiling and leak detection
    - Garbage collection optimization
 
-### Phase 7: Enhanced Testing & Quality
+### Phase 8: Enhanced Testing & Quality
 
 **Priority**: Medium
 **Estimated Effort**: 2-3 days
@@ -261,7 +383,7 @@ src/
    - Security vulnerability scanning
    - Documentation coverage
 
-### Phase 8: Advanced Features
+### Phase 9: Advanced Features
 
 **Priority**: Low
 **Estimated Effort**: 3-4 days

@@ -7,7 +7,7 @@
 //   node save-web.mjs "https://example.com" out.html --method=pandoc-html --strip-scripts -v
 //
 // Options:
-//   --method=chrome|pandoc|wget-pandoc|pandoc-html|wget-html
+//   --method=chrome|pandoc|wget-pandoc|pandoc-html|wget-html|curl-html|node-html
 //   -v, --verbose
 //   --timeout-ms=45000
 //   --user-agent="..."
@@ -20,18 +20,22 @@
 //   --keep-work                        (do not delete working dir on success)
 //   --reuse-work                       (skip wget; reuse existing WORKDIR contents)
 //   --cache-dir=/path                  (alias of --workdir; explicit cache location)
+// Default (no --method): wget-html → curl-html → node-html
 
 import { spawn } from 'node:child_process';
 import { access, mkdir, mkdtemp, rm, readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, extname } from 'node:path';
+import https from 'node:https';
+import http from 'node:http';
+import { URL } from 'node:url';
 
 const args = process.argv.slice(2);
 if (args.length < 2) {
   console.error(`Usage: node save-web.mjs <url> <out.[pdf|html]> [options]
 Options:
-  --method=chrome|pandoc|wget-pandoc|pandoc-html|wget-html
+  --method=chrome|pandoc|wget-pandoc|pandoc-html|wget-html|curl-html|node-html
   -v, --verbose
   --timeout-ms=45000
   --user-agent="..."
@@ -44,6 +48,8 @@ Options:
   --keep-work                        (do not delete working dir on success)
   --reuse-work                       (skip wget; reuse existing WORKDIR contents)
   --cache-dir=/path                  (alias of --workdir; explicit cache location)
+
+Default order (no --method): wget-html → curl-html → node-html
 `);
   process.exit(2);
 }
@@ -136,14 +142,54 @@ async function ensureDir(path) {
   try { await access(path); } catch { await mkdir(path, { recursive: true }); }
 }
 
+async function fetchRawHTML(targetUrl, { timeoutMs = TIMEOUT_MS, userAgent = USER_AGENT, maxRedirects = 5 } = {}) {
+  return new Promise((resolve, reject) => {
+    let redirects = 0;
+    const seen = new Set();
+    function doRequest(u) {
+      if (redirects > maxRedirects) return reject(new Error('Too many redirects'));
+      let parsed;
+      try { parsed = new URL(u); } catch (e) { return reject(e); }
+      const mod = parsed.protocol === 'http:' ? http : https;
+      const req = mod.request({
+        protocol: parsed.protocol,
+        hostname: parsed.hostname,
+        port: parsed.port || (parsed.protocol === 'http:' ? 80 : 443),
+        path: parsed.pathname + (parsed.search || ''),
+        method: 'GET',
+        headers: {
+          'User-Agent': userAgent || 'Mozilla/5.0 (compatible; webgrab/1.0)'
+        }
+      }, res => {
+        const { statusCode, headers } = res;
+        if (statusCode >= 300 && statusCode < 400 && headers.location) {
+          const loc = new URL(headers.location, u).toString();
+          if (seen.has(loc)) return reject(new Error('Redirect loop'));
+          seen.add(loc); redirects++; res.resume(); doRequest(loc); return;
+        }
+        if (statusCode && statusCode >= 400) {
+          return reject(new Error(`HTTP ${statusCode}`));
+        }
+        const chunks = [];
+        res.on('data', c => chunks.push(c));
+        res.on('end', () => resolve(Buffer.concat(chunks)));
+      });
+      req.setTimeout(timeoutMs, () => { req.destroy(new Error('Request timed out')); });
+      req.on('error', reject);
+      req.end();
+    }
+    doRequest(targetUrl);
+  });
+}
+
 async function getWorkDir() {
   if (EFFECTIVE_WORKDIR) {
     await ensureDir(EFFECTIVE_WORKDIR);
     if (VERBOSE) console.error(`[workdir] using: ${EFFECTIVE_WORKDIR}`);
     return { path: EFFECTIVE_WORKDIR, createdTemp: false };
   }
-  const path = await mkdtemp(join(tmpdir(), 'webgrab-'));
-  if (VERBOSE) console.error(`[workdir] created temp: ${path}`);
+  const path = await mkdtemp(join(process.cwd(), 'webgrab-'));
+  if (VERBOSE) console.error(`[workdir] created temp in PWD: ${path}`);
   return { path, createdTemp: true };
 }
 
@@ -291,6 +337,28 @@ async function tryPandocHTMLDirect() {
   await stripScriptsOnFile(out);
 }
 
+async function tryCurlHTML() {
+  if (!outIsHTML) throw new Error('Output must end with .html for curl-html method');
+  if (!(await canRun('curl'))) throw new Error('curl not found');
+  const secs = Math.ceil(TIMEOUT_MS / 1000);
+  const args = [
+    '-L',
+    '--max-time', String(secs),
+    '-o', out,
+  ];
+  if (USER_AGENT) { args.push('-A', USER_AGENT); }
+  if (VERBOSE) { args.unshift('-v'); } else { args.unshift('-sS'); }
+  args.push(url);
+  await run('curl', args);
+}
+
+async function tryNodeHTML() {
+  if (!outIsHTML) throw new Error('Output must end with .html for node-html method');
+  const buf = await fetchRawHTML(url, { timeoutMs: TIMEOUT_MS, userAgent: USER_AGENT });
+  await writeFile(out, buf);
+  if (VERBOSE) console.error(`[node] wrote raw HTML to ${out} (${buf.length} bytes)`);
+}
+
 async function tryWgetPandocHTML() {
   if (!outIsHTML) throw new Error('Output must end with .html for wget-html method');
   if (!(await canRun('wget'))) throw new Error('wget not found');
@@ -351,8 +419,8 @@ async function tryWgetPandocHTML() {
 
 // --- Orchestration -------------------------------------------------------------
 const defaultSeq = outIsPDF
-  ? [tryChromePDF, tryPandocPDFDirect, tryWgetPandocPDF, tryPandocHTMLDirect, tryWgetPandocHTML]
-  : [tryPandocHTMLDirect, tryWgetPandocHTML, tryChromePDF, tryPandocPDFDirect, tryWgetPandocPDF];
+  ? [tryChromePDF, tryPandocPDFDirect, tryWgetPandocPDF, tryPandocHTMLDirect, tryWgetPandocHTML, tryCurlHTML, tryNodeHTML]
+  : [tryWgetPandocHTML, tryCurlHTML, tryNodeHTML, tryPandocHTMLDirect, tryChromePDF, tryPandocPDFDirect, tryWgetPandocPDF];
 
 const seq =
   METHOD === 'chrome'       ? [tryChromePDF] :
@@ -360,6 +428,8 @@ const seq =
   METHOD === 'wget-pandoc'  ? [tryWgetPandocPDF] :
   METHOD === 'pandoc-html'  ? [tryPandocHTMLDirect] :
   METHOD === 'wget-html'    ? [tryWgetPandocHTML] :
+  METHOD === 'curl-html'    ? [tryCurlHTML] :
+  METHOD === 'node-html'    ? [tryNodeHTML] :
   defaultSeq;
 
 (async () => {
