@@ -252,3 +252,49 @@ export type WorkflowCustomField = z.infer<typeof WorkflowCustomFieldSchema>;
 export type WorkflowOverride = z.infer<typeof WorkflowOverrideSchema>;
 export type ProjectConfig = z.infer<typeof ProjectConfigSchema>;
 export type CollectionMetadata = z.infer<typeof CollectionMetadataSchema>;
+
+// External CLI integration schemas
+export const ExternalCLIDetectionSchema = z.object({
+  command: z.string().describe('Command to check if external tool is available'),
+  pattern: z.string().optional().describe('Regex pattern to detect applicable content'),
+});
+
+export const ExternalCLIExecutionSchema = z.object({
+  command_template: z.string().describe('Command template with variable substitution'),
+  mode: z.enum(['in-place', 'output-file']).default('output-file').describe('Processing mode'),
+  backup: z.boolean().default(false).describe('Create backup before in-place modification'),
+  timeout: z.number().default(30).describe('Command timeout in seconds'),
+});
+
+export const ExternalProcessorDefinitionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  version: z.string(),
+  detection: ExternalCLIDetectionSchema,
+  execution: ExternalCLIExecutionSchema,
+});
+
+export const ExternalProcessorFileSchema = z.object({
+  processor: ExternalProcessorDefinitionSchema,
+});
+
+export const ExternalConverterDefinitionSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  version: z.string(),
+  supported_formats: z.array(z.string()),
+  detection: ExternalCLIDetectionSchema,
+  execution: ExternalCLIExecutionSchema,
+});
+
+export const ExternalConverterFileSchema = z.object({
+  converter: ExternalConverterDefinitionSchema,
+});
+
+// Export inferred types
+export type ExternalCLIDetection = z.infer<typeof ExternalCLIDetectionSchema>;
+export type ExternalCLIExecution = z.infer<typeof ExternalCLIExecutionSchema>;
+export type ExternalProcessorDefinition = z.infer<typeof ExternalProcessorDefinitionSchema>;
+export type ExternalProcessorFile = z.infer<typeof ExternalProcessorFileSchema>;
+export type ExternalConverterDefinition = z.infer<typeof ExternalConverterDefinitionSchema>;
+export type ExternalConverterFile = z.infer<typeof ExternalConverterFileSchema>;

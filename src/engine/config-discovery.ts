@@ -225,12 +225,62 @@ export class ConfigDiscovery {
   }
 
   /**
+   * Get list of available user-defined processors
+   * Scans .markdown-workflow/processors/ for YAML files
+   */
+  getAvailableProcessors(projectRoot: string): string[] {
+    const processorsPath = path.join(projectRoot, ConfigDiscovery.PROJECT_MARKER, 'processors');
+
+    if (!this.systemInterface.existsSync(processorsPath)) {
+      return [];
+    }
+
+    try {
+      return this.systemInterface
+        .readdirSync(processorsPath)
+        .filter((dirent) => dirent.isFile() && dirent.name.endsWith('.yml'))
+        .map((dirent) => path.basename(dirent.name, '.yml'));
+    } catch (error) {
+      console.error(`Error reading processors directory ${processorsPath}:`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Get list of available user-defined converters
+   * Scans .markdown-workflow/converters/ for YAML files
+   */
+  getAvailableConverters(projectRoot: string): string[] {
+    const convertersPath = path.join(projectRoot, ConfigDiscovery.PROJECT_MARKER, 'converters');
+
+    if (!this.systemInterface.existsSync(convertersPath)) {
+      return [];
+    }
+
+    try {
+      return this.systemInterface
+        .readdirSync(convertersPath)
+        .filter((dirent) => dirent.isFile() && dirent.name.endsWith('.yml'))
+        .map((dirent) => path.basename(dirent.name, '.yml'));
+    } catch (error) {
+      console.error(`Error reading converters directory ${convertersPath}:`, error);
+      return [];
+    }
+  }
+
+  /**
    * Resolve complete configuration for the current context
    * Combines all configuration discovery into a single result
    */
   async resolveConfiguration(cwd: string = process.cwd()): Promise<ResolvedConfig> {
     const paths = this.discoverConfiguration(cwd);
     const availableWorkflows = this.getAvailableWorkflows(paths.systemRoot);
+    const availableProcessors = paths.projectRoot
+      ? this.getAvailableProcessors(paths.projectRoot)
+      : [];
+    const availableConverters = paths.projectRoot
+      ? this.getAvailableConverters(paths.projectRoot)
+      : [];
 
     let projectConfig: ProjectConfig | null = null;
     if (paths.projectConfig) {
@@ -241,6 +291,8 @@ export class ConfigDiscovery {
       paths,
       projectConfig: projectConfig || undefined,
       availableWorkflows,
+      availableProcessors,
+      availableConverters,
     };
   }
 
