@@ -1,4 +1,4 @@
-import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
 import { ConfigDiscovery } from '../../engine/config-discovery.js';
 import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
 
@@ -22,11 +22,11 @@ export async function statusCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -34,8 +34,8 @@ export async function statusCommand(
   }
 
   // Load workflow definition to show available statuses
-  const workflow = await engine.loadWorkflow(workflowName);
-  const collection = await engine.getCollection(workflowName, collectionId);
+  const workflow = await orchestrator.loadWorkflow(workflowName);
+  const collection = await orchestrator.getCollection(workflowName, collectionId);
 
   if (!collection) {
     throw new Error(`Collection not found: ${collectionId}`);
@@ -63,7 +63,7 @@ export async function statusCommand(
 
   try {
     // Update status
-    await engine.updateCollectionStatus(workflowName, collectionId, newStatus);
+    await orchestrator.updateCollectionStatus(workflowName, collectionId, newStatus);
     logSuccess(`Status updated: ${collection.metadata.status} → ${newStatus}`);
   } catch (error) {
     logError(`Status update failed: ${error instanceof Error ? error.message : String(error)}`);
@@ -84,11 +84,11 @@ export async function showStatusesCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -96,7 +96,7 @@ export async function showStatusesCommand(
   }
 
   // Load workflow definition
-  const workflow = await engine.loadWorkflow(workflowName);
+  const workflow = await orchestrator.loadWorkflow(workflowName);
 
   logInfo(`\nSTATUS STAGES FOR '${workflowName.toUpperCase()}' WORKFLOW\n`);
 

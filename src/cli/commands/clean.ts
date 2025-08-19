@@ -8,7 +8,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { withErrorHandling } from '../shared/error-handler.js';
 import { logSuccess, logInfo } from '../shared/formatting-utils.js';
-import WorkflowEngine from '../../engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
 
 /**
  * Clean intermediate files for a specific collection
@@ -22,17 +22,17 @@ export async function cleanCollection(
     verbose?: boolean;
   } = {},
 ): Promise<void> {
-  const engine = new WorkflowEngine();
+  const orchestrator = new WorkflowOrchestrator();
 
   try {
     // Load workflow and validate it exists
-    const workflow = await engine.loadWorkflow(workflowName);
+    const workflow = await orchestrator.loadWorkflow(workflowName);
     if (!workflow) {
       throw new Error(`Workflow '${workflowName}' not found`);
     }
 
     // Load collection and validate it exists
-    const collection = await engine.getCollection(workflowName, collectionId);
+    const collection = await orchestrator.getCollection(workflowName, collectionId);
     if (!collection) {
       throw new Error(`Collection '${collectionId}' not found in workflow '${workflowName}'`);
     }
@@ -131,11 +131,11 @@ export async function listIntermediateFiles(
   workflowName: string,
   collectionId: string,
 ): Promise<void> {
-  const engine = new WorkflowEngine();
+  const orchestrator = new WorkflowOrchestrator();
 
   try {
     // Load collection and validate it exists
-    const collection = await engine.getCollection(workflowName, collectionId);
+    const collection = await orchestrator.getCollection(workflowName, collectionId);
     if (!collection) {
       throw new Error(`Collection '${collectionId}' not found in workflow '${workflowName}'`);
     }

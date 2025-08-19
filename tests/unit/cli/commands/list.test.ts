@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as YAML from 'yaml';
 import { listCommand } from '../../../../src/cli/commands/list.js';
-import { WorkflowEngine } from '../../../../src/engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../../../src/services/workflow-orchestrator.js';
 import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 import { MockSystemInterface } from '../../mocks/mock-system-interface.js';
 import { createEnhancedMockFileSystem } from '../../helpers/file-system-helpers.js';
@@ -9,16 +9,16 @@ import { createEnhancedMockFileSystem } from '../../helpers/file-system-helpers.
 // Mock dependencies
 jest.mock('path');
 jest.mock('yaml');
-jest.mock('../../../../src/engine/workflow-engine.js');
+jest.mock('../../../../src/services/workflow-orchestrator.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
 const mockYAML = YAML as jest.Mocked<typeof YAML>;
-const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
+const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<typeof WorkflowOrchestrator>;
 
 describe('listCommand', () => {
   let _mockSystemInterface: MockSystemInterface;
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
-  let mockWorkflowEngine: jest.Mocked<WorkflowEngine>;
+  let mockWorkflowOrchestrator: jest.Mocked<WorkflowOrchestrator>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -77,7 +77,7 @@ describe('listCommand', () => {
     } as unknown as jest.Mocked<ConfigDiscovery>;
 
     // Mock WorkflowEngine - create a partial mock and cast to avoid TypeScript errors
-    mockWorkflowEngine = {
+    mockWorkflowOrchestrator = {
       systemRoot: '/mock/system',
       projectRoot: '/mock/project',
       projectConfig: null,
@@ -94,7 +94,7 @@ describe('listCommand', () => {
       getSystemRoot: jest.fn().mockReturnValue('/mock/system'),
     } as unknown as jest.Mocked<WorkflowEngine>;
 
-    MockedWorkflowEngine.mockImplementation(() => mockWorkflowEngine);
+    MockedWorkflowOrchestrator.mockImplementation(() => mockWorkflowOrchestrator);
   });
 
   it('should list collections for a workflow', async () => {
@@ -116,18 +116,18 @@ describe('listCommand', () => {
       },
     ];
 
-    mockWorkflowEngine.getCollections.mockResolvedValue(mockCollections);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue(mockCollections);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
     await listCommand('job', options);
 
-    expect(mockWorkflowEngine.getAvailableWorkflows).toHaveBeenCalled();
-    expect(mockWorkflowEngine.getCollections).toHaveBeenCalledWith('job');
+    expect(mockWorkflowOrchestrator.getAvailableWorkflows).toHaveBeenCalled();
+    expect(mockWorkflowOrchestrator.getCollections).toHaveBeenCalledWith('job');
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('JOB COLLECTIONS'));
   });
 
   it('should handle missing workflow', async () => {
-    mockWorkflowEngine.getAvailableWorkflows.mockReturnValue(['blog']);
+    mockWorkflowOrchestrator.getAvailableWorkflows.mockReturnValue(['blog']);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -135,8 +135,8 @@ describe('listCommand', () => {
       'Unknown workflow: nonexistent. Available: blog',
     );
 
-    expect(mockWorkflowEngine.getAvailableWorkflows).toHaveBeenCalled();
-    expect(mockWorkflowEngine.getCollections).not.toHaveBeenCalled();
+    expect(mockWorkflowOrchestrator.getAvailableWorkflows).toHaveBeenCalled();
+    expect(mockWorkflowOrchestrator.getCollections).not.toHaveBeenCalled();
   });
 
   it('should filter by status when provided', async () => {
@@ -171,7 +171,7 @@ describe('listCommand', () => {
       },
     ];
 
-    mockWorkflowEngine.getCollections.mockResolvedValue(mockCollections);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue(mockCollections);
 
     const options = {
       cwd: '/mock/project',
@@ -180,7 +180,7 @@ describe('listCommand', () => {
     };
     await listCommand('job', options);
 
-    expect(mockWorkflowEngine.getCollections).toHaveBeenCalledWith('job');
+    expect(mockWorkflowOrchestrator.getCollections).toHaveBeenCalledWith('job');
     // Should only show the active collection in the output
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining('active_collection'));
     expect(console.log).not.toHaveBeenCalledWith(expect.stringContaining('submitted_collection'));
@@ -204,7 +204,7 @@ describe('listCommand', () => {
       },
     ];
 
-    mockWorkflowEngine.getCollections.mockResolvedValue(mockCollections);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue(mockCollections);
 
     const options = {
       cwd: '/mock/project',
@@ -217,7 +217,7 @@ describe('listCommand', () => {
   });
 
   it('should handle empty collections list', async () => {
-    mockWorkflowEngine.getCollections.mockResolvedValue([]);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue([]);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
     await listCommand('job', options);
@@ -226,7 +226,7 @@ describe('listCommand', () => {
   });
 
   it('should handle empty collections list with status filter', async () => {
-    mockWorkflowEngine.getCollections.mockResolvedValue([]);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue([]);
 
     const options = {
       cwd: '/mock/project',
@@ -258,7 +258,7 @@ describe('listCommand', () => {
       },
     ];
 
-    mockWorkflowEngine.getCollections.mockResolvedValue(mockCollections);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue(mockCollections);
 
     const options = {
       cwd: '/mock/project',
@@ -304,7 +304,7 @@ describe('listCommand', () => {
       },
     ];
 
-    mockWorkflowEngine.getCollections.mockResolvedValue(mockCollections);
+    mockWorkflowOrchestrator.getCollections.mockResolvedValue(mockCollections);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
     await listCommand('job', options);
