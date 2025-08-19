@@ -122,6 +122,8 @@ export interface ResolvedConfig {
   paths: ConfigPaths;
   projectConfig?: ProjectConfig;
   availableWorkflows: string[];
+  availableProcessors: string[];
+  availableConverters: string[];
 }
 
 // Collection types

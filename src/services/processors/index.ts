@@ -17,6 +17,10 @@ export { EmojiProcessor } from './emoji-processor';
 export { PlantUMLProcessor } from './plantuml-processor';
 export { GraphvizProcessor } from './graphviz-processor';
 
+// External CLI integration
+export { ExternalCLIProcessor } from './external-cli-processor';
+export { MarkdownFormatterProcessor } from './markdown-formatter-processor';
+
 import { defaultProcessorRegistry } from './base-processor';
 import { MermaidProcessor } from './mermaid-processor';
 import { EmojiProcessor } from './emoji-processor';

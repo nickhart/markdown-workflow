@@ -9,6 +9,10 @@ export type { ConverterConfig, ConversionContext, ConversionResult } from './bas
 export { PandocConverter } from './pandoc-converter';
 export { PresentationConverter } from './presentation-converter';
 
+// External CLI integration
+export { ExternalCLIConverter } from './external-cli-converter';
+export { PlaintextConverter } from './plaintext-converter';
+
 import { defaultConverterRegistry } from './base-converter';
 import { PandocConverter } from './pandoc-converter';
 import { PresentationConverter } from './presentation-converter';

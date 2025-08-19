@@ -16,7 +16,8 @@ import { getCurrentISODate, formatDate, getCurrentDate } from '../utils/date-uti
 import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils';
 // Removed legacy convertDocument - use converter registry instead
 import { defaultConverterRegistry, registerDefaultConverters } from '../services/converters/index';
-import { registerDefaultProcessors } from '../services/processors/index';
+import { defaultProcessorRegistry, registerDefaultProcessors } from '../services/processors/index';
+import { ExternalCLIDiscoveryService } from '../services/external-cli-discovery';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -35,6 +36,8 @@ export class WorkflowEngine {
   private availableWorkflows: string[] = [];
   private configDiscovery: ConfigDiscovery;
   private systemInterface: SystemInterface;
+  private externalCLIDiscovery: ExternalCLIDiscoveryService;
+  private externalCLILoaded = false;
 
   constructor(
     projectRoot?: string,
@@ -43,6 +46,7 @@ export class WorkflowEngine {
   ) {
     this.configDiscovery = configDiscovery || new ConfigDiscovery();
     this.systemInterface = systemInterface || new NodeSystemInterface();
+    this.externalCLIDiscovery = new ExternalCLIDiscoveryService(this.systemInterface);
     const foundSystemRoot = this.configDiscovery.findSystemRoot(
       this.systemInterface.getCurrentFilePath(),
     );
@@ -63,7 +67,7 @@ export class WorkflowEngine {
 
   /**
    * Initialize the workflow engine (async parts)
-   * Loads user configuration - should be called when project config is needed
+   * Loads user configuration and external CLI definitions - should be called when project config is needed
    */
   private async ensureProjectConfigLoaded(): Promise<void> {
     if (this.projectConfig === null) {
@@ -74,6 +78,20 @@ export class WorkflowEngine {
       } catch (error) {
         console.error(`🔧 Config resolution failed:`, error);
         this.projectConfig = null;
+      }
+    }
+
+    // Load external CLI definitions if not already loaded
+    if (!this.externalCLILoaded) {
+      try {
+        await this.externalCLIDiscovery.loadExternalCLIDefinitions(
+          this.projectRoot,
+          defaultProcessorRegistry,
+          defaultConverterRegistry,
+        );
+        this.externalCLILoaded = true;
+      } catch (error) {
+        console.error(`🔧 External CLI loading failed:`, error);
       }
     }
   }

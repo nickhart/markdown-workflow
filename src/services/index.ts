@@ -20,6 +20,9 @@ export { MermaidProcessor } from './processors/mermaid-processor';
 export { scrapeUrl } from './web-scraper';
 export * from './presentation-api';
 
+// External CLI integration
+export { ExternalCLIDiscoveryService } from './external-cli-discovery';
+
 // Converters and processors
 export * from './converters/index';
 export * from './processors/index';
