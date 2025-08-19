@@ -5,14 +5,14 @@
  * processors and converters from YAML configuration files.
  */
 
-import * as fs from 'fs';
+import * as _fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
 import {
   ExternalProcessorFileSchema,
   ExternalConverterFileSchema,
-  type ExternalProcessorFile,
-  type ExternalConverterFile,
+  type ExternalProcessorFile as _ExternalProcessorFile,
+  type ExternalConverterFile as _ExternalConverterFile,
   type ExternalProcessorDefinition,
   type ExternalConverterDefinition,
 } from '../engine/schemas.js';

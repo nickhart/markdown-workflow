@@ -194,7 +194,7 @@ src/
 
 - Unified Environment abstraction for all resources (configs, workflows, processors, converters, templates)
 - Multiple environment population methods (programmatic, filesystem, archives)
-- Smart resource merging and fallback resolution (local → global)  
+- Smart resource merging and fallback resolution (local → global)
 - Lazy loading of resources for specific workflows
 - Robust security and validation for web/REST integration
 
@@ -235,7 +235,7 @@ src/
 │   ├── environment/
 │   │   ├── environment.ts              # Abstract Environment class
 │   │   ├── filesystem-environment.ts   # Loads from disk
-│   │   ├── memory-environment.ts       # In-memory implementation  
+│   │   ├── memory-environment.ts       # In-memory implementation
 │   │   ├── archive-environment.ts      # ZIP file extraction
 │   │   ├── merged-environment.ts       # Local + global merging
 │   │   ├── request-environment.ts      # HTTP upload handling
@@ -248,25 +248,29 @@ src/
 #### Security Considerations
 
 **File Size Limits** (per extension, configurable):
+
 - Text files (`.yml`, `.yaml`, `.json`, `.md`): 100KB default
-- Images (`.png`, `.jpg`, `.jpeg`, `.svg`): 500KB default  
+- Images (`.png`, `.jpg`, `.jpeg`, `.svg`): 500KB default
 - Documents (`.docx`, `.pdf`): 1MB default
 - Archives (`.zip`): 5MB total default
 - Nested archive depth: 3 levels maximum
 
 **Input Validation**:
+
 - Filename sanitization (no path traversal: `../`, absolute paths)
 - Extension allowlist: `.yml`, `.yaml`, `.md`, `.json`, `.docx`, `.png`, `.jpg`, `.jpeg`, `.svg`, `.pdf`
 - MIME type validation for uploads
 - Virus scanning integration point (future)
 
 **Content Validation**:
+
 - YAML/JSON files validated against Zod schemas
 - Markdown files: basic structure validation
 - Binary files: size and type checking only
 - Unknown extensions: warning + empty placeholder creation
 
 **Resource Limits**:
+
 - Archive extraction timeout: 30 seconds
 - Memory usage cap during processing: 100MB
 - Maximum files per environment: 500
@@ -293,7 +297,7 @@ await memoryEnv.setWorkflow('custom', workflowDef);
 #### Benefits
 
 - **Unified Interface**: Single abstraction for all resource access
-- **REST Integration**: Easy environment population from HTTP uploads  
+- **REST Integration**: Easy environment population from HTTP uploads
 - **Performance**: Lazy loading only resources needed for current workflow
 - **Security**: Comprehensive validation and sanitization for web uploads
 - **Testability**: Easy mocking with MemoryEnvironment
@@ -302,7 +306,7 @@ await memoryEnv.setWorkflow('custom', workflowDef);
 #### Migration Strategy
 
 1. **Phase 6a**: Create Environment abstractions alongside existing ConfigDiscovery
-2. **Phase 6b**: Migrate WorkflowEngine to use Environment system  
+2. **Phase 6b**: Migrate WorkflowEngine to use Environment system
 3. **Phase 6c**: Update CLI commands to use WorkflowContext
 4. **Phase 6d**: Implement REST endpoints with RequestEnvironment
 5. **Phase 6e**: Remove legacy ConfigDiscovery and direct filesystem access
