@@ -1,6 +1,5 @@
-import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
 import { ConfigDiscovery } from '../../engine/config-discovery.js';
-import { loadWorkflowDefinition } from '../shared/workflow-operations.js';
 
 interface FormatOptions {
   format?: 'docx' | 'html' | 'pdf' | 'pptx';
@@ -23,11 +22,11 @@ export async function formatCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -35,15 +34,13 @@ export async function formatCommand(
   }
 
   // Check if collection exists
-  const collection = await engine.getCollection(workflowName, collectionId);
+  const collection = await orchestrator.getCollection(workflowName, collectionId);
   if (!collection) {
     throw new Error(`Collection not found: ${collectionId}`);
   }
 
   // Get workflow-aware default format
-  const configDiscoveryInstance = options.configDiscovery || new ConfigDiscovery();
-  const systemConfig = configDiscoveryInstance.discoverSystemConfiguration();
-  const workflowDef = await loadWorkflowDefinition(systemConfig.systemRoot, workflowName);
+  const workflowDef = await orchestrator.loadWorkflow(workflowName);
   const formatAction = workflowDef.workflow.actions.find((a) => a.name === 'format');
   const defaultFormat = formatAction?.formats?.[0] || 'docx';
   const format = options.format || defaultFormat;
@@ -59,7 +56,7 @@ export async function formatCommand(
 
   try {
     // Execute format action with optional artifact filtering
-    await engine.executeAction(workflowName, collectionId, 'format', {
+    await orchestrator.executeAction(workflowName, collectionId, 'format', {
       format,
       artifacts: options.artifacts,
     });
@@ -86,11 +83,11 @@ export async function formatAllCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -98,7 +95,7 @@ export async function formatAllCommand(
   }
 
   // Get all collections
-  const collections = await engine.getCollections(workflowName);
+  const collections = await orchestrator.getCollections(workflowName);
 
   if (collections.length === 0) {
     console.log(`No collections found for workflow '${workflowName}'`);
@@ -116,7 +113,7 @@ export async function formatAllCommand(
   for (const collection of collections) {
     try {
       console.log(`\nFormatting: ${collection.metadata.collection_id}`);
-      await engine.executeAction(workflowName, collection.metadata.collection_id, 'format', {
+      await orchestrator.executeAction(workflowName, collection.metadata.collection_id, 'format', {
         format,
       });
       successCount++;

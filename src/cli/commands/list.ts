@@ -1,5 +1,5 @@
 import * as YAML from 'yaml';
-import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
 import { ConfigDiscovery } from '../../engine/config-discovery.js';
 import { Collection } from '../../engine/types.js';
 
@@ -26,11 +26,11 @@ export async function listCommand(workflowName: string, options: ListOptions = {
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -38,7 +38,7 @@ export async function listCommand(workflowName: string, options: ListOptions = {
   }
 
   // Get collections
-  const collections = await engine.getCollections(workflowName);
+  const collections = await orchestrator.getCollections(workflowName);
 
   // Apply filters
   let filteredCollections = [...collections];

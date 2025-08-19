@@ -1,7 +1,7 @@
 import { execSync } from 'child_process';
 import * as path from 'path';
 import Mustache from 'mustache';
-import { WorkflowEngine } from '../../engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
 import { ConfigDiscovery } from '../../engine/config-discovery.js';
 import { logInfo, logSuccess, logError } from '../shared/formatting-utils.js';
 import type { ProjectConfig } from '../../engine/schemas.js';
@@ -217,11 +217,11 @@ export async function commitCommand(
     throw new Error('Not in a git repository. Initialize git with: git init');
   }
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -229,7 +229,7 @@ export async function commitCommand(
   }
 
   // Get collection
-  const collection = await engine.getCollection(workflowName, collectionId);
+  const collection = await orchestrator.getCollection(workflowName, collectionId);
   if (!collection) {
     throw new Error(`Collection not found: ${collectionId}`);
   }
@@ -258,7 +258,7 @@ export async function commitCommand(
   }
 
   // Load project config for template resolution
-  const projectConfig = await engine.getProjectConfig();
+  const projectConfig = await orchestrator.getProjectConfig();
 
   // Build template variables
   const templateVars = buildTemplateVariables(collection, gitChanges, workflowName);
