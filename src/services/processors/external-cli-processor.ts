@@ -16,8 +16,8 @@ import {
 } from './base-processor.js';
 import {
   type ExternalProcessorDefinition,
-  type ExternalCLIDetection,
-  type ExternalCLIExecution,
+  type ExternalCLIDetection as _ExternalCLIDetection,
+  type ExternalCLIExecution as _ExternalCLIExecution,
 } from '../../engine/schemas.js';
 
 export abstract class ExternalCLIProcessor extends BaseProcessor {
@@ -55,7 +55,7 @@ export abstract class ExternalCLIProcessor extends BaseProcessor {
     try {
       const regex = new RegExp(definition.detection.pattern, 'gm');
       return regex.test(content);
-    } catch (error) {
+    } catch (_error) {
       console.warn(`Invalid regex pattern for ${this.name}: ${definition.detection.pattern}`);
       return false;
     }
@@ -273,7 +273,7 @@ export abstract class ExternalCLIProcessor extends BaseProcessor {
   /**
    * Default cleanup implementation
    */
-  async cleanup(context: ProcessingContext): Promise<void> {
+  async cleanup(_context: ProcessingContext): Promise<void> {
     console.info(`🧹 Cleaned up external CLI processor: ${this.name}`);
   }
 
