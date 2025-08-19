@@ -12,13 +12,13 @@ export type {
 } from './base-processor';
 
 // Import specific processors
-export { MermaidProcessor } from '../mermaid-processor';
+export { MermaidProcessor } from './mermaid-processor';
 export { EmojiProcessor } from './emoji-processor';
 export { PlantUMLProcessor } from './plantuml-processor';
 export { GraphvizProcessor } from './graphviz-processor';
 
 import { defaultProcessorRegistry } from './base-processor';
-import { MermaidProcessor } from '../mermaid-processor';
+import { MermaidProcessor } from './mermaid-processor';
 import { EmojiProcessor } from './emoji-processor';
 import { PlantUMLProcessor } from './plantuml-processor';
 import { GraphvizProcessor } from './graphviz-processor';

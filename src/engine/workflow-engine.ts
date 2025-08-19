@@ -14,7 +14,7 @@ import {
 import { Collection, type CollectionMetadata } from './types';
 import { getCurrentISODate, formatDate, getCurrentDate } from '../utils/date-utils';
 import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils';
-import { convertDocument } from '../services/document-converter';
+// Removed legacy convertDocument - use converter registry instead
 import { defaultConverterRegistry, registerDefaultConverters } from '../services/converters/index';
 import { registerDefaultProcessors } from '../services/processors/index';
 
@@ -477,19 +477,9 @@ export class WorkflowEngine {
 
           result = await converter.convert(conversionContext);
         } else {
-          console.log(
-            `⚠️  Converter '${converterName}' not found, falling back to legacy convertDocument`,
+          throw new Error(
+            `Converter '${converterName}' not found. Available converters: ${Array.from(defaultConverterRegistry.getAll().keys()).join(', ')}. Make sure registerDefaultConverters() has been called.`,
           );
-
-          // Fallback to legacy system
-          const mermaidConfig = this.projectConfig?.system?.mermaid;
-          result = await convertDocument({
-            inputFile: inputPath,
-            outputFile: outputPath,
-            format: formatType as 'docx' | 'html' | 'pdf' | 'pptx',
-            referenceDoc,
-            mermaidConfig,
-          });
         }
 
         if (result.success) {

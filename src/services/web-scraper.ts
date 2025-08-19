@@ -2,6 +2,8 @@
  * Simple web scraping utility: wget → curl → basic HTTP
  */
 
+// TODO: rename this to be consistent with other services
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';

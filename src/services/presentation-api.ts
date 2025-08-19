@@ -2,6 +2,7 @@
  * API client functions for the presentation demo
  */
 
+// TODO: does this need to move into Web/REST code?
 export interface Template {
   name: string;
   displayName: string;
