@@ -1,13 +1,13 @@
 /**
  * Collection Service - Domain service for collection operations
- * 
+ *
  * Extracted from WorkflowEngine to provide clean collection management operations.
  * Handles collection CRUD operations, status updates, and artifact management.
  */
 
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { Collection, type CollectionMetadata } from '../engine/types.js';
+import { Collection, type CollectionMetadata, type ProjectConfig } from '../engine/types.js';
 import { type WorkflowFile } from '../engine/schemas.js';
 import { SystemInterface } from '../engine/system-interface.js';
 import { getCurrentISODate } from '../utils/date-utils.js';
@@ -46,8 +46,8 @@ export class CollectionService {
     // Scan through status directories
     const statusDirs = this.systemInterface
       .readdirSync(workflowCollectionsDir)
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
 
     for (const statusDir of statusDirs) {
       const statusPath = path.join(workflowCollectionsDir, statusDir);
@@ -55,8 +55,8 @@ export class CollectionService {
       // Get collections within this status directory
       const collectionDirs = this.systemInterface
         .readdirSync(statusPath)
-        .filter(dirent => dirent.isDirectory())
-        .map(dirent => dirent.name);
+        .filter((dirent) => dirent.isDirectory())
+        .map((dirent) => dirent.name);
 
       for (const collectionId of collectionDirs) {
         const collectionPath = path.join(statusPath, collectionId);
@@ -99,8 +99,8 @@ export class CollectionService {
     // Search through all status directories to find the collection
     const statusDirs = this.systemInterface
       .readdirSync(workflowCollectionsDir)
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
+      .filter((dirent) => dirent.isDirectory())
+      .map((dirent) => dirent.name);
 
     for (const statusDir of statusDirs) {
       const collectionPath = path.join(workflowCollectionsDir, statusDir, collectionId);
@@ -134,7 +134,7 @@ export class CollectionService {
     collection: Collection,
     workflowName: string,
     newStatus: string,
-    projectConfig?: any,
+    projectConfig?: ProjectConfig,
   ): Promise<void> {
     const oldStatus = collection.metadata.status;
 
@@ -183,8 +183,8 @@ export class CollectionService {
     try {
       return this.systemInterface
         .readdirSync(collectionPath)
-        .filter(dirent => dirent.isFile() && !dirent.name.startsWith('.'))
-        .map(dirent => dirent.name);
+        .filter((dirent) => dirent.isFile() && !dirent.name.startsWith('.'))
+        .map((dirent) => dirent.name);
     } catch {
       return [];
     }
@@ -202,7 +202,12 @@ export class CollectionService {
 
     // Check each stage directory for the collection
     for (const stage of workflow.workflow.stages) {
-      const stagePath = path.join(projectPaths.collectionsDir, workflowName, stage.name, collectionId);
+      const stagePath = path.join(
+        projectPaths.collectionsDir,
+        workflowName,
+        stage.name,
+        collectionId,
+      );
       if (this.systemInterface.existsSync(stagePath)) {
         return stagePath;
       }

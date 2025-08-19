@@ -1,18 +1,20 @@
 import * as path from 'path';
 import { statusCommand, showStatusesCommand } from '../../../../src/cli/commands/status.js';
 import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
-import { WorkflowEngine } from '../../../../src/engine/workflow-engine.js';
+import { WorkflowOrchestrator } from '../../../../src/services/workflow-orchestrator.js';
 
 // Mock dependencies
 jest.mock('path');
-jest.mock('../../../../src/engine/workflow-engine.js');
+jest.mock('../../../../src/services/workflow-orchestrator.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
-const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
+const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<
+  typeof WorkflowOrchestrator
+>;
 
 describe('statusCommand', () => {
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
-  let mockEngine: jest.Mocked<WorkflowEngine>;
+  let mockOrchestrator: jest.Mocked<WorkflowOrchestrator>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -28,17 +30,32 @@ describe('statusCommand', () => {
     // Mock ConfigDiscovery
     mockConfigDiscovery = {
       requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+      findSystemRoot: jest.fn().mockReturnValue('/mock/system'),
+      getProjectPaths: jest.fn().mockReturnValue({
+        collectionsDir: '/mock/project/collections',
+        workflowsDir: '/mock/project/.markdown-workflow/workflows',
+      }),
+      discoverSystemConfiguration: jest.fn().mockReturnValue({
+        systemRoot: '/mock/system',
+        availableWorkflows: ['job', 'blog'],
+      }),
     } as jest.Mocked<ConfigDiscovery>;
 
-    // Mock WorkflowEngine
-    mockEngine = {
+    // Mock WorkflowOrchestrator
+    mockOrchestrator = {
       getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
       loadWorkflow: jest.fn(),
       getCollection: jest.fn(),
       updateCollectionStatus: jest.fn(),
-    } as jest.Mocked<WorkflowEngine>;
+      executeAction: jest.fn(),
+      getCollections: jest.fn(),
+      getProjectConfig: jest.fn(),
+      getProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+      getSystemRoot: jest.fn().mockReturnValue('/mock/system'),
+      findCollectionPath: jest.fn(),
+    } as jest.Mocked<WorkflowOrchestrator>;
 
-    MockedWorkflowEngine.mockImplementation(() => mockEngine);
+    MockedWorkflowOrchestrator.mockImplementation(() => mockOrchestrator);
   });
 
   it('should update collection status successfully', async () => {
@@ -67,9 +84,9 @@ describe('statusCommand', () => {
       path: '/mock/project/job/active/test_collection',
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.updateCollectionStatus.mockResolvedValue(undefined);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.updateCollectionStatus.mockResolvedValue(undefined);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -84,7 +101,7 @@ describe('statusCommand', () => {
     );
     expect(console.log).toHaveBeenCalledWith('✅ Status updated: active → submitted');
 
-    expect(mockEngine.updateCollectionStatus).toHaveBeenCalledWith(
+    expect(mockOrchestrator.updateCollectionStatus).toHaveBeenCalledWith(
       'job',
       'test_collection',
       'submitted',
@@ -98,8 +115,8 @@ describe('statusCommand', () => {
       },
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-    mockEngine.getCollection.mockResolvedValue(null);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.getCollection.mockResolvedValue(null);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -109,7 +126,7 @@ describe('statusCommand', () => {
   });
 
   it('should handle missing workflow', async () => {
-    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+    mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -138,8 +155,8 @@ describe('statusCommand', () => {
       path: '/mock/project/job/active/test_collection',
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -171,9 +188,9 @@ describe('statusCommand', () => {
       path: '/mock/project/job/active/test_collection',
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.updateCollectionStatus.mockRejectedValue(
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.updateCollectionStatus.mockRejectedValue(
       new Error('Invalid status transition: active → interview'),
     );
 
@@ -214,9 +231,9 @@ describe('statusCommand', () => {
       path: '/mock/project/job/submitted/test_collection',
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.updateCollectionStatus.mockResolvedValue(undefined);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.updateCollectionStatus.mockResolvedValue(undefined);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -230,7 +247,7 @@ describe('statusCommand', () => {
 
 describe('showStatusesCommand', () => {
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
-  let mockEngine: jest.Mocked<WorkflowEngine>;
+  let mockOrchestrator: jest.Mocked<WorkflowOrchestrator>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -246,12 +263,12 @@ describe('showStatusesCommand', () => {
     } as jest.Mocked<ConfigDiscovery>;
 
     // Mock WorkflowEngine
-    mockEngine = {
+    mockOrchestrator = {
       getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
       loadWorkflow: jest.fn(),
-    } as jest.Mocked<WorkflowEngine>;
+    } as jest.Mocked<WorkflowOrchestrator>;
 
-    MockedWorkflowEngine.mockImplementation(() => mockEngine);
+    MockedWorkflowOrchestrator.mockImplementation(() => mockOrchestrator);
   });
 
   it('should show available statuses for a workflow', async () => {
@@ -271,7 +288,7 @@ describe('showStatusesCommand', () => {
       },
     };
 
-    mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -287,7 +304,7 @@ describe('showStatusesCommand', () => {
   });
 
   it('should handle missing workflow', async () => {
-    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+    mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 

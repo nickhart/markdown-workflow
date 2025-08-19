@@ -1,6 +1,6 @@
 /**
  * Action Service - Domain service for workflow action execution
- * 
+ *
  * Extracted from WorkflowEngine to provide clean action execution operations.
  * Handles format actions, add actions, and action orchestration.
  */
@@ -78,21 +78,24 @@ export class ActionService {
     }
 
     // Get all markdown files in collection
-    const markdownFiles = collection.artifacts.filter(file => file.endsWith('.md'));
+    const markdownFiles = collection.artifacts.filter((file) => file.endsWith('.md'));
 
     // Filter files based on requested artifacts
     let filesToConvert = markdownFiles;
 
     if (requestedArtifacts && requestedArtifacts.length > 0) {
       // Map template names to their expected output files
-      const templateToFileMap = await this.templateService.getTemplateArtifactMap(workflow, collection);
+      const templateToFileMap = await this.templateService.getTemplateArtifactMap(
+        workflow,
+        collection,
+      );
 
       // Filter to only requested artifacts
       const requestedFiles = new Set<string>();
       for (const artifact of requestedArtifacts) {
         const files = templateToFileMap.get(artifact);
         if (files) {
-          files.forEach(file => requestedFiles.add(file));
+          files.forEach((file) => requestedFiles.add(file));
         } else {
           console.warn(
             `Warning: Unknown artifact '${artifact}'. Available artifacts: ${Array.from(templateToFileMap.keys()).join(', ')}`,
@@ -100,28 +103,31 @@ export class ActionService {
         }
       }
 
-      filesToConvert = markdownFiles.filter(file => requestedFiles.has(file));
+      filesToConvert = markdownFiles.filter((file) => requestedFiles.has(file));
 
       if (filesToConvert.length === 0) {
         throw new Error(`No files found for requested artifacts: ${requestedArtifacts.join(', ')}`);
       }
     } else {
       // Default behavior: convert all workflow templates except notes/personal templates
-      const templateToFileMap = await this.templateService.getTemplateArtifactMap(workflow, collection);
+      const templateToFileMap = await this.templateService.getTemplateArtifactMap(
+        workflow,
+        collection,
+      );
       const excludedTemplates = ['notes'];
       const mainDocumentTemplates = workflow.workflow.templates
-        .map(template => template.name)
-        .filter(name => !excludedTemplates.includes(name));
+        .map((template) => template.name)
+        .filter((name) => !excludedTemplates.includes(name));
 
       const defaultFiles = new Set<string>();
       for (const templateName of mainDocumentTemplates) {
         const files = templateToFileMap.get(templateName);
         if (files) {
-          files.forEach(file => defaultFiles.add(file));
+          files.forEach((file) => defaultFiles.add(file));
         }
       }
 
-      filesToConvert = markdownFiles.filter(file => defaultFiles.has(file));
+      filesToConvert = markdownFiles.filter((file) => defaultFiles.has(file));
 
       if (filesToConvert.length === 0) {
         console.log(
@@ -135,7 +141,15 @@ export class ActionService {
 
     // Convert the filtered files
     for (const file of filesToConvert) {
-      await this.convertSingleFile(workflow, collection, file, formatType as string, outputDir, action, projectConfig);
+      await this.convertSingleFile(
+        workflow,
+        collection,
+        file,
+        formatType as string,
+        outputDir,
+        action,
+        projectConfig,
+      );
     }
   }
 
@@ -158,7 +172,7 @@ export class ActionService {
     const templateContent = await this.templateService.loadTemplate(workflow, templateName);
 
     // Find the template definition
-    const template = workflow.workflow.templates.find(t => t.name === templateName)!;
+    const template = workflow.workflow.templates.find((t) => t.name === templateName)!;
 
     // Build template context
     const context = {
@@ -327,7 +341,7 @@ export class ActionService {
   private getEnabledProcessors(action: WorkflowAction, _workflow: WorkflowFile): string[] {
     // Check if action has processors configuration
     if (action.processors) {
-      return action.processors.filter(p => p.enabled !== false).map(p => p.name);
+      return action.processors.filter((p) => p.enabled !== false).map((p) => p.name);
     }
 
     // Default processors based on converter type

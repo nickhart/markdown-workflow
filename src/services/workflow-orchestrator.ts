@@ -1,6 +1,6 @@
 /**
  * Workflow Orchestrator - Main service orchestrator
- * 
+ *
  * Replaces the monolithic WorkflowEngine with a clean service composition.
  * Coordinates between domain services to provide high-level workflow operations.
  */
@@ -41,7 +41,7 @@ export class WorkflowOrchestrator {
   constructor(options: WorkflowOrchestratorOptions = {}) {
     this.configDiscovery = options.configDiscovery || new ConfigDiscovery();
     this.systemInterface = options.systemInterface || new NodeSystemInterface();
-    
+
     const foundSystemRoot = this.configDiscovery.findSystemRoot(
       this.systemInterface.getCurrentFilePath(),
     );
@@ -138,11 +138,7 @@ export class WorkflowOrchestrator {
     }
 
     // Validate status transition
-    this.workflowService.validateStatusTransition(
-      workflow,
-      collection.metadata.status,
-      newStatus,
-    );
+    this.workflowService.validateStatusTransition(workflow, collection.metadata.status, newStatus);
 
     // Update collection status
     await this.collectionService.updateCollectionStatus(
@@ -212,10 +208,7 @@ export class WorkflowOrchestrator {
   /**
    * Find collection path by ID within a workflow
    */
-  async findCollectionPath(
-    workflowName: string,
-    collectionId: string,
-  ): Promise<string> {
+  async findCollectionPath(workflowName: string, collectionId: string): Promise<string> {
     const workflow = await this.workflowService.loadWorkflowDefinition(workflowName);
     return this.collectionService.findCollectionPath(workflowName, collectionId, workflow);
   }

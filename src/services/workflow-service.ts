@@ -1,6 +1,6 @@
 /**
  * Workflow Service - Domain service for workflow operations
- * 
+ *
  * Extracted from WorkflowEngine to provide clean workflow management operations.
  * Handles workflow loading, validation, and metadata operations.
  */
@@ -52,13 +52,9 @@ export class WorkflowService {
   /**
    * Validate status transition for a workflow stage
    */
-  validateStatusTransition(
-    workflow: WorkflowFile,
-    currentStatus: string,
-    newStatus: string,
-  ): void {
-    const currentStage = workflow.workflow.stages.find(s => s.name === currentStatus);
-    const targetStage = workflow.workflow.stages.find(s => s.name === newStatus);
+  validateStatusTransition(workflow: WorkflowFile, currentStatus: string, newStatus: string): void {
+    const currentStage = workflow.workflow.stages.find((s) => s.name === currentStatus);
+    const targetStage = workflow.workflow.stages.find((s) => s.name === newStatus);
 
     if (!targetStage) {
       throw new Error(`Invalid status: ${newStatus}`);
@@ -73,7 +69,7 @@ export class WorkflowService {
    * Get workflow action by name
    */
   getWorkflowAction(workflow: WorkflowFile, actionName: string) {
-    const action = workflow.workflow.actions.find(a => a.name === actionName);
+    const action = workflow.workflow.actions.find((a) => a.name === actionName);
     if (!action) {
       throw new Error(`Action not found: ${actionName}`);
     }
@@ -120,9 +116,7 @@ export class WorkflowService {
     // 3. Legacy fallback: try workflow statics
     if (workflow.workflow.statics) {
       const referenceStaticName = `${templateType}_reference`;
-      const referenceStatic = workflow.workflow.statics.find(
-        s => s.name === referenceStaticName,
-      );
+      const referenceStatic = workflow.workflow.statics.find((s) => s.name === referenceStaticName);
 
       if (referenceStatic) {
         // Try project static path first
@@ -160,7 +154,7 @@ export class WorkflowService {
    */
   detectTemplateType(baseName: string, workflow: WorkflowFile): string | null {
     // Extract template types from workflow definition dynamically
-    const workflowTemplateTypes = workflow.workflow.templates?.map(t => t.name) || [];
+    const workflowTemplateTypes = workflow.workflow.templates?.map((t) => t.name) || [];
 
     // Handle patterns like "resume_nicholas_hart" -> "resume"
     for (const type of workflowTemplateTypes) {

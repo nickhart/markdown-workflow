@@ -1,6 +1,6 @@
 /**
  * Services module exports
- * 
+ *
  * Phase 2: Clean service layer with domain separation
  */
 

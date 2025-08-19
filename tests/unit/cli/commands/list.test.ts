@@ -13,7 +13,9 @@ jest.mock('../../../../src/services/workflow-orchestrator.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
 const mockYAML = YAML as jest.Mocked<typeof YAML>;
-const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<typeof WorkflowOrchestrator>;
+const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<
+  typeof WorkflowOrchestrator
+>;
 
 describe('listCommand', () => {
   let _mockSystemInterface: MockSystemInterface;
