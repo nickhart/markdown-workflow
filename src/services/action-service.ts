@@ -10,7 +10,7 @@ import Mustache from 'mustache';
 import { type WorkflowFile, type WorkflowAction } from '../engine/schemas';
 import { type Collection, type ProjectConfig } from '../engine/types';
 import { SystemInterface } from '../engine/system-interface';
-import { convertDocument } from './document-converter';
+// Removed legacy convertDocument - use converter registry instead
 import { defaultConverterRegistry } from './converters/index';
 import { TemplateService } from './template-service';
 import { WorkflowService } from './workflow-service';
@@ -303,19 +303,9 @@ export class ActionService {
 
         result = await converter.convert(conversionContext);
       } else {
-        console.log(
-          `⚠️  Converter '${converterName}' not found, falling back to legacy convertDocument`,
+        throw new Error(
+          `Converter '${converterName}' not found. Available converters: ${Array.from(defaultConverterRegistry.getAll().keys()).join(', ')}`,
         );
-
-        // Fallback to legacy system
-        const mermaidConfig = projectConfig?.system?.mermaid;
-        result = await convertDocument({
-          inputFile: inputPath,
-          outputFile: outputPath,
-          format: formatType as 'docx' | 'html' | 'pdf' | 'pptx',
-          referenceDoc,
-          mermaidConfig,
-        });
       }
 
       if (result.success) {

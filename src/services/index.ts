@@ -15,9 +15,8 @@ export { ActionService } from './action-service';
 export { ConfigService } from './config-service';
 export { MetadataService } from './metadata-service';
 
-// Legacy services (maintained for backward compatibility)
-export { convertDocument } from './document-converter';
-export { MermaidProcessor } from './mermaid-processor';
+// Legacy services removed - use converter registry instead
+export { MermaidProcessor } from './processors/mermaid-processor';
 export { scrapeUrl } from './web-scraper';
 export * from './presentation-api';
 
