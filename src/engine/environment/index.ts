@@ -24,6 +24,8 @@ export type { SecurityConfig, FileInfo } from './security-validator.js';
 export { FilesystemEnvironment } from './filesystem-environment.js';
 export { MemoryEnvironment } from './memory-environment.js';
 export type { MemoryEnvironmentData } from './memory-environment.js';
+export { ArchiveEnvironment } from './archive-environment.js';
+export type { ArchiveSource } from './archive-environment.js';
 export { MergedEnvironment } from './merged-environment.js';
 
 // Workflow-specific resource management
