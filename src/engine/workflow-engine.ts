@@ -1,4 +1,5 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import * as YAML from 'yaml';
 import Mustache from 'mustache';
 import { ConfigDiscovery } from './config-discovery';
@@ -18,6 +19,7 @@ import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils'
 import { defaultConverterRegistry, registerDefaultConverters } from '../services/converters/index';
 import { defaultProcessorRegistry, registerDefaultProcessors } from '../services/processors/index';
 import { ExternalCLIDiscoveryService } from '../services/external-cli-discovery';
+import { Environment, createFromDiscovery } from './environment/index';
 
 /**
  * Core workflow engine that manages collections and executes workflow actions
@@ -38,6 +40,7 @@ export class WorkflowEngine {
   private systemInterface: SystemInterface;
   private externalCLIDiscovery: ExternalCLIDiscoveryService;
   private externalCLILoaded = false;
+  private environment: Environment | null = null;
 
   constructor(
     projectRoot?: string,
@@ -66,15 +69,46 @@ export class WorkflowEngine {
   }
 
   /**
+   * Initialize the environment system (if not already initialized)
+   */
+  private async ensureEnvironmentLoaded(): Promise<void> {
+    if (this.environment === null) {
+      try {
+        const { environment } = await createFromDiscovery(this.projectRoot);
+        this.environment = environment;
+      } catch (error) {
+        console.error(`🔧 Environment initialization failed:`, error);
+        // Fall back to legacy approach if environment fails
+        this.environment = null;
+      }
+    }
+  }
+
+  /**
    * Initialize the workflow engine (async parts)
    * Loads user configuration and external CLI definitions - should be called when project config is needed
    */
   private async ensureProjectConfigLoaded(): Promise<void> {
+    await this.ensureEnvironmentLoaded();
+
     if (this.projectConfig === null) {
       try {
-        const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
-        this.projectConfig = config.projectConfig || null;
-        console.log(`🔧 Config resolution result:`, config.projectConfig ? 'SUCCESS' : 'NULL');
+        if (this.environment) {
+          // Use Environment system for config
+          this.projectConfig = await this.environment.getConfig();
+          console.log(
+            `🔧 Config resolution result (Environment):`,
+            this.projectConfig ? 'SUCCESS' : 'NULL',
+          );
+        } else {
+          // Fall back to legacy config discovery
+          const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
+          this.projectConfig = config.projectConfig || null;
+          console.log(
+            `🔧 Config resolution result (Legacy):`,
+            config.projectConfig ? 'SUCCESS' : 'NULL',
+          );
+        }
       } catch (error) {
         console.error(`🔧 Config resolution failed:`, error);
         this.projectConfig = null;
@@ -98,25 +132,33 @@ export class WorkflowEngine {
 
   /**
    * Load a workflow definition from YAML file
-   * Reads the workflow.yml file from the system workflows directory and validates it
+   * Uses Environment system for unified resource access
    */
   async loadWorkflow(workflowName: string): Promise<WorkflowFile> {
-    const workflowPath = path.join(this.systemRoot, 'workflows', workflowName, 'workflow.yml');
-
-    if (!this.systemInterface.existsSync(workflowPath)) {
-      throw new Error(`Workflow definition not found: ${workflowName}`);
-    }
+    await this.ensureEnvironmentLoaded();
 
     try {
-      const workflowContent = this.systemInterface.readFileSync(workflowPath);
-      const parsedYaml = YAML.parse(workflowContent);
+      if (this.environment) {
+        // Use Environment system for workflow loading
+        return await this.environment.getWorkflow(workflowName);
+      } else {
+        // Fall back to legacy filesystem approach
+        const workflowPath = path.join(this.systemRoot, 'workflows', workflowName, 'workflow.yml');
 
-      const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
-      if (!validationResult.success) {
-        throw new Error(`Invalid workflow format: ${validationResult.error.message}`);
+        if (!this.systemInterface.existsSync(workflowPath)) {
+          throw new Error(`Workflow definition not found: ${workflowName}`);
+        }
+
+        const workflowContent = this.systemInterface.readFileSync(workflowPath);
+        const parsedYaml = YAML.parse(workflowContent);
+
+        const validationResult = WorkflowFileSchema.safeParse(parsedYaml);
+        if (!validationResult.success) {
+          throw new Error(`Invalid workflow format: ${validationResult.error.message}`);
+        }
+
+        return validationResult.data;
       }
-
-      return validationResult.data;
     } catch (error) {
       throw new Error(`Failed to load workflow ${workflowName}: ${error}`);
     }
@@ -544,18 +586,31 @@ export class WorkflowEngine {
       );
     }
 
-    // Build template path
-    const templatePath = path.join(
-      this.systemRoot,
-      'workflows',
-      workflow.workflow.name,
-      template.file,
-    );
-    if (!this.systemInterface.existsSync(templatePath)) {
-      throw new Error(`Template file not found: ${templatePath}`);
+    // Load template content using Environment system
+    let templateContent: string;
+    try {
+      if (this.environment) {
+        // Use Environment system for template loading
+        templateContent = await this.environment.getTemplate({
+          workflow: workflow.workflow.name,
+          template: templateName,
+        });
+      } else {
+        // Fall back to legacy filesystem approach
+        const templatePath = path.join(
+          this.systemRoot,
+          'workflows',
+          workflow.workflow.name,
+          template.file,
+        );
+        if (!this.systemInterface.existsSync(templatePath)) {
+          throw new Error(`Template file not found: ${templatePath}`);
+        }
+        templateContent = this.systemInterface.readFileSync(templatePath);
+      }
+    } catch (error) {
+      throw new Error(`Failed to load template ${templateName}: ${error}`);
     }
-
-    const templateContent = this.systemInterface.readFileSync(templatePath);
 
     // Build template variables
     const templateVariables = {
@@ -842,9 +897,29 @@ export class WorkflowEngine {
   }
 
   /**
-   * Get available workflows
+   * Get available workflows using Environment system
    */
-  getAvailableWorkflows(): string[] {
+  async getAvailableWorkflows(): Promise<string[]> {
+    await this.ensureEnvironmentLoaded();
+
+    try {
+      if (this.environment) {
+        // Use Environment system to get workflows
+        return await this.environment.listWorkflows();
+      } else {
+        // Fall back to cached system config
+        return this.availableWorkflows;
+      }
+    } catch (error) {
+      console.warn(`Warning: Failed to get workflows from Environment, using cached list:`, error);
+      return this.availableWorkflows;
+    }
+  }
+
+  /**
+   * Get available workflows (synchronous fallback)
+   */
+  getAvailableWorkflowsSync(): string[] {
     return this.availableWorkflows;
   }
 
@@ -916,8 +991,8 @@ export class WorkflowEngine {
   }
 
   /**
-   * Find reference document for template type with co-located approach
-   * Priority: project templates/[type]/reference.docx > system templates/[type]/reference.docx > workflow statics (legacy)
+   * Find reference document for template type using Environment system
+   * Priority: co-located reference.docx > workflow statics (legacy)
    */
   private async findReferenceDoc(
     workflow: WorkflowFile,
@@ -925,91 +1000,163 @@ export class WorkflowEngine {
   ): Promise<string | undefined> {
     console.log(`  🔍 Searching for reference document for template type: ${templateType}`);
 
-    const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
+    try {
+      if (this.environment) {
+        // 1. Try co-located reference.docx using Environment system
+        const referenceFileName = 'reference.docx';
+        const hasReference = await this.environment.hasStatic({
+          workflow: workflow.workflow.name,
+          static: `${templateType}/${referenceFileName}`,
+        });
 
-    // 1. Try co-located reference.docx in project workflows directory first
-    if (projectPaths.workflowsDir) {
-      const projectRefPath = path.join(
-        projectPaths.workflowsDir,
-        workflow.workflow.name,
-        'templates',
-        templateType,
-        'reference.docx',
-      );
-      console.log(`  🔍 Checking project co-located path: ${projectRefPath}`);
+        if (hasReference) {
+          console.log(
+            `  ✅ Reference document found via Environment: ${templateType}/${referenceFileName}`,
+          );
 
-      if (this.systemInterface.existsSync(projectRefPath)) {
-        console.log(`  ✅ Reference document found at project path: ${projectRefPath}`);
-        return projectRefPath;
-      }
-    }
+          // Write the reference file to a temporary location for pandoc
+          const tempDir = path.join(this.projectRoot, '.tmp');
+          if (!this.systemInterface.existsSync(tempDir)) {
+            this.systemInterface.mkdirSync(tempDir, { recursive: true });
+          }
 
-    // 2. Try co-located reference.docx in system workflows directory
-    const systemRefPath = path.join(
-      this.systemRoot,
-      'workflows',
-      workflow.workflow.name,
-      'templates',
-      templateType,
-      'reference.docx',
-    );
-    console.log(`  🔍 Checking system co-located path: ${systemRefPath}`);
+          const tempReferencePath = path.join(tempDir, `${templateType}_reference.docx`);
+          const referenceBuffer = await this.environment.getStatic({
+            workflow: workflow.workflow.name,
+            static: `${templateType}/${referenceFileName}`,
+          });
 
-    if (this.systemInterface.existsSync(systemRefPath)) {
-      console.log(`  ✅ Reference document found at system path: ${systemRefPath}`);
-      return systemRefPath;
-    }
+          fs.writeFileSync(tempReferencePath, referenceBuffer);
+          console.log(`  📄 Reference document cached to: ${tempReferencePath}`);
+          return tempReferencePath;
+        }
 
-    // 3. Legacy fallback: try workflow statics (for backwards compatibility)
-    if (workflow.workflow.statics) {
-      console.log(`  🔍 Falling back to legacy statics approach`);
-      console.log(
-        `  📋 Available statics: ${workflow.workflow.statics.map((s) => s.name).join(', ')}`,
-      );
+        // 2. Try legacy static file name patterns
+        const legacyReferenceNames = [
+          `${templateType}_reference.docx`,
+          `${templateType}/reference.docx`,
+          'reference.docx',
+        ];
 
-      const referenceStaticName = `${templateType}_reference`;
-      console.log(`  🔍 Looking for static named: ${referenceStaticName}`);
+        for (const staticName of legacyReferenceNames) {
+          const hasLegacyReference = await this.environment.hasStatic({
+            workflow: workflow.workflow.name,
+            static: staticName,
+          });
 
-      const referenceStatic = workflow.workflow.statics.find(
-        (s: WorkflowStatic) => s.name === referenceStaticName,
-      );
+          if (hasLegacyReference) {
+            console.log(`  ✅ Legacy reference document found via Environment: ${staticName}`);
 
-      if (referenceStatic) {
-        console.log(`  ✅ Found legacy static: ${referenceStatic.name} -> ${referenceStatic.file}`);
+            // Write to temp location
+            const tempDir = path.join(this.projectRoot, '.tmp');
+            if (!this.systemInterface.existsSync(tempDir)) {
+              this.systemInterface.mkdirSync(tempDir, { recursive: true });
+            }
 
-        // Try project static path first
+            const tempReferencePath = path.join(tempDir, `${templateType}_reference.docx`);
+            const referenceBuffer = await this.environment.getStatic({
+              workflow: workflow.workflow.name,
+              static: staticName,
+            });
+
+            fs.writeFileSync(tempReferencePath, referenceBuffer);
+            console.log(`  📄 Legacy reference document cached to: ${tempReferencePath}`);
+            return tempReferencePath;
+          }
+        }
+      } else {
+        // Fall back to legacy filesystem approach
+        const projectPaths = this.configDiscovery.getProjectPaths(this.projectRoot);
+
+        // 1. Try co-located reference.docx in project workflows directory first
         if (projectPaths.workflowsDir) {
-          const projectStaticPath = path.join(
+          const projectRefPath = path.join(
             projectPaths.workflowsDir,
             workflow.workflow.name,
-            referenceStatic.file,
+            'templates',
+            templateType,
+            'reference.docx',
           );
-          console.log(`  🔍 Checking project static path: ${projectStaticPath}`);
+          console.log(`  🔍 Checking project co-located path: ${projectRefPath}`);
 
-          if (this.systemInterface.existsSync(projectStaticPath)) {
-            console.log(
-              `  ✅ Legacy reference document found at project static path: ${projectStaticPath}`,
-            );
-            return projectStaticPath;
+          if (this.systemInterface.existsSync(projectRefPath)) {
+            console.log(`  ✅ Reference document found at project path: ${projectRefPath}`);
+            return projectRefPath;
           }
         }
 
-        // Try system static path
-        const systemStaticPath = path.join(
+        // 2. Try co-located reference.docx in system workflows directory
+        const systemRefPath = path.join(
           this.systemRoot,
           'workflows',
           workflow.workflow.name,
-          referenceStatic.file,
+          'templates',
+          templateType,
+          'reference.docx',
         );
-        console.log(`  🔍 Checking system static path: ${systemStaticPath}`);
+        console.log(`  🔍 Checking system co-located path: ${systemRefPath}`);
 
-        if (this.systemInterface.existsSync(systemStaticPath)) {
+        if (this.systemInterface.existsSync(systemRefPath)) {
+          console.log(`  ✅ Reference document found at system path: ${systemRefPath}`);
+          return systemRefPath;
+        }
+
+        // 3. Legacy fallback: try workflow statics
+        if (workflow.workflow.statics) {
+          console.log(`  🔍 Falling back to legacy statics approach`);
           console.log(
-            `  ✅ Legacy reference document found at system static path: ${systemStaticPath}`,
+            `  📋 Available statics: ${workflow.workflow.statics.map((s) => s.name).join(', ')}`,
           );
-          return systemStaticPath;
+
+          const referenceStaticName = `${templateType}_reference`;
+          console.log(`  🔍 Looking for static named: ${referenceStaticName}`);
+
+          const referenceStatic = workflow.workflow.statics.find(
+            (s: WorkflowStatic) => s.name === referenceStaticName,
+          );
+
+          if (referenceStatic) {
+            console.log(
+              `  ✅ Found legacy static: ${referenceStatic.name} -> ${referenceStatic.file}`,
+            );
+
+            // Try project static path first
+            if (projectPaths.workflowsDir) {
+              const projectStaticPath = path.join(
+                projectPaths.workflowsDir,
+                workflow.workflow.name,
+                referenceStatic.file,
+              );
+              console.log(`  🔍 Checking project static path: ${projectStaticPath}`);
+
+              if (this.systemInterface.existsSync(projectStaticPath)) {
+                console.log(
+                  `  ✅ Legacy reference document found at project static path: ${projectStaticPath}`,
+                );
+                return projectStaticPath;
+              }
+            }
+
+            // Try system static path
+            const systemStaticPath = path.join(
+              this.systemRoot,
+              'workflows',
+              workflow.workflow.name,
+              referenceStatic.file,
+            );
+            console.log(`  🔍 Checking system static path: ${systemStaticPath}`);
+
+            if (this.systemInterface.existsSync(systemStaticPath)) {
+              console.log(
+                `  ✅ Legacy reference document found at system static path: ${systemStaticPath}`,
+              );
+              return systemStaticPath;
+            }
+          }
         }
       }
+    } catch (error) {
+      console.warn(`  ⚠️  Error searching for reference document: ${error}`);
     }
 
     console.log(`  ❌ No reference document found for template type: ${templateType}`);
