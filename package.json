@@ -16,7 +16,7 @@
     "start": "next start",
     "lint": "eslint . --ext .ts,.tsx,.js",
     "cli": "tsx src/cli/index.ts",
-    "cli:build": "tsc --project tsconfig.cli.json",
+    "cli:build": "tsc --project tsconfig.cli.json && node scripts/fix-imports.js",
     "build": "next build",
     "build:cli": "tsc --project tsconfig.cli.json",
     "test": "jest",

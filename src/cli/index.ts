@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import initCommand from './commands/init';
-import createWithHelpCommand from './commands/create-with-help';
-import availableCommand from './commands/available';
-import formatCommand from './commands/format';
-import { statusCommand, showStatusesCommand } from './commands/status';
-import { addCommand, listTemplatesCommand } from './commands/add';
-import listCommand from './commands/list';
-import { migrateCommand, listMigrationWorkflows } from './commands/migrate';
-import updateCommand from './commands/update';
-import { listAliasesCommand } from './commands/aliases';
-import commitCommand from './commands/commit';
-import cleanCommand from './commands/clean';
-import { withErrorHandling } from './shared/error-handler';
-import { logError } from './shared/console-output';
+import initCommand from './commands/init.js';
+import createWithHelpCommand from './commands/create-with-help.js';
+import availableCommand from './commands/available.js';
+import formatCommand from './commands/format.js';
+import { statusCommand, showStatusesCommand } from './commands/status.js';
+import { addCommand, listTemplatesCommand } from './commands/add.js';
+import listCommand from './commands/list.js';
+import { migrateCommand, listMigrationWorkflows } from './commands/migrate.js';
+import updateCommand from './commands/update.js';
+import { listAliasesCommand } from './commands/aliases.js';
+import commitCommand from './commands/commit.js';
+import cleanCommand from './commands/clean.js';
+import { withErrorHandling } from './shared/error-handler.js';
+import { logError } from './shared/console-output.js';
 
 const program = new Command();
 
