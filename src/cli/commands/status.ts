@@ -1,6 +1,6 @@
-import { WorkflowOrchestrator } from '../../services/workflow-orchestrator';
-import { ConfigDiscovery } from '../../engine/config-discovery';
-import { logInfo, logSuccess, logError } from '../shared/console-output';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator.js';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { logInfo, logSuccess, logError } from '../shared/console-output.js';
 
 interface StatusOptions {
   cwd?: string;

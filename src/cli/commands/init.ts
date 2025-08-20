@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ConfigDiscovery } from '../../engine/config-discovery';
-import { ProjectConfig } from '../../engine/types';
+import { ConfigDiscovery } from '../../engine/config-discovery.js';
+import { ProjectConfig } from '../../engine/types.js';
 
 interface InitOptions {
   workflows?: string[];
