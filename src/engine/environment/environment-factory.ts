@@ -9,6 +9,7 @@ import * as path from 'path';
 import { Environment } from './environment.js';
 import { FilesystemEnvironment } from './filesystem-environment.js';
 import { MemoryEnvironment, MemoryEnvironmentData } from './memory-environment.js';
+import { ArchiveEnvironment, ArchiveSource } from './archive-environment.js';
 import { MergedEnvironment } from './merged-environment.js';
 import { WorkflowContext, createWorkflowContext } from './workflow-context.js';
 import { SecurityConfig, DEFAULT_SECURITY_CONFIG } from './security-validator.js';
@@ -40,6 +41,13 @@ export class EnvironmentFactory {
    */
   createMemoryEnvironment(initialData?: Partial<MemoryEnvironmentData>): MemoryEnvironment {
     return new MemoryEnvironment(initialData);
+  }
+
+  /**
+   * Create an archive environment
+   */
+  createArchiveEnvironment(source: ArchiveSource): ArchiveEnvironment {
+    return new ArchiveEnvironment(source, this.securityConfig);
   }
 
   /**
@@ -188,6 +196,9 @@ export const createFilesystemEnvironment = (rootPath: string) =>
 
 export const createMemoryEnvironment = (initialData?: Partial<MemoryEnvironmentData>) =>
   environmentFactory.createMemoryEnvironment(initialData);
+
+export const createArchiveEnvironment = (source: ArchiveSource) =>
+  environmentFactory.createArchiveEnvironment(source);
 
 export const createMergedEnvironment = (localEnv: Environment, globalEnv: Environment) =>
   environmentFactory.createMergedEnvironment(localEnv, globalEnv);

@@ -36,6 +36,8 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
     '.json': 100 * 1024,
     '.md': 100 * 1024,
     '.markdown': 100 * 1024,
+    '.txt': 100 * 1024,
+    '.css': 100 * 1024,
     // Images - 500KB
     '.png': 500 * 1024,
     '.jpg': 500 * 1024,
@@ -51,6 +53,8 @@ export const DEFAULT_SECURITY_CONFIG: SecurityConfig = {
     '.json',
     '.md',
     '.markdown',
+    '.txt',
+    '.css',
     '.png',
     '.jpg',
     '.jpeg',
