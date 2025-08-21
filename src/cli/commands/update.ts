@@ -8,9 +8,11 @@ import { ConfigDiscovery } from '../../engine/config-discovery';
 import { CollectionMetadata } from '../../engine/types';
 import { getCurrentISODate } from '../../utils/date-utils';
 import { initializeProject } from '../shared/cli-base';
-import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations';
+import { WorkflowService } from '../../services/workflow-service';
+import { CollectionService } from '../../services/collection-service';
+import { NodeSystemInterface } from '../../engine/system-interface';
 import { loadCollectionMetadata, generateMetadataYaml } from '../shared/metadata-utils';
-import { logCollectionUpdate, logSuccess, logNextSteps } from '../shared/console-output';
+import { logCollectionUpdate, logSuccess, logNextSteps, logError } from '../shared/console-output';
 
 interface UpdateOptions {
   url?: string;
@@ -30,7 +32,7 @@ export async function updateCommand(
   options: UpdateOptions = {},
 ): Promise<void> {
   // Initialize project context
-  const { systemConfig, projectPaths } = await initializeProject(options);
+  const { systemConfig } = await initializeProject(options);
 
   // Validate workflow exists
   if (!systemConfig.availableWorkflows.includes(workflowName)) {
@@ -39,23 +41,28 @@ export async function updateCommand(
     );
   }
 
+  // Create services
+  const systemInterface = new NodeSystemInterface();
+  const workflowService = new WorkflowService({
+    systemRoot: systemConfig.paths.systemRoot,
+    systemInterface,
+  });
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
+  const collectionService = new CollectionService({
+    projectRoot: options.cwd || process.cwd(),
+    systemInterface,
+    configDiscovery,
+  });
+
   // Load workflow definition
-  const workflowDefinition = await loadWorkflowDefinition(
-    systemConfig.paths.systemRoot,
-    workflowName,
-  );
+  const workflowDefinition = await workflowService.loadWorkflowDefinition(workflowName);
 
   // Find collection directory
-  const collectionPath = await findCollectionPath(
-    projectPaths.collectionsDir,
+  const collectionPath = await collectionService.findCollectionPath(
     workflowName,
     collectionId,
     workflowDefinition,
   );
-
-  if (!collectionPath) {
-    throw new Error(`Collection not found: ${collectionId}`);
-  }
 
   logCollectionUpdate(collectionId, collectionPath);
 
@@ -83,38 +90,19 @@ export async function updateCommand(
 
   // Scrape URL if provided
   if (options.url) {
-    await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
-  }
-
-  logNextSteps(workflowName, collectionId, collectionPath);
-}
-
-/**
- * Find collection directory by searching through workflow stages
- */
-async function findCollectionPath(
-  collectionsDir: string,
-  workflowName: string,
-  collectionId: string,
-  workflowDefinition: { workflow: { stages: Array<{ name: string }> } },
-): Promise<string | null> {
-  const workflowDir = path.join(collectionsDir, workflowName);
-
-  if (!fs.existsSync(workflowDir)) {
-    return null;
-  }
-
-  // Search through all stages
-  for (const stage of workflowDefinition.workflow.stages) {
-    const stageDir = path.join(workflowDir, stage.name);
-    const collectionPath = path.join(stageDir, collectionId);
-
-    if (fs.existsSync(collectionPath)) {
-      return collectionPath;
+    const result = await collectionService.scrapeUrlForCollection(
+      collectionPath,
+      options.url,
+      workflowDefinition,
+    );
+    if (result.success) {
+      logSuccess(`Successfully scraped using ${result.method}: ${result.outputFile}`);
+    } else {
+      logError(`Failed to scrape URL: ${result.error}`);
     }
   }
 
-  return null;
+  logNextSteps(workflowName, collectionId, collectionPath);
 }
 
 export default updateCommand;
