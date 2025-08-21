@@ -172,7 +172,12 @@ export class ActionService {
     const templateContent = await this.templateService.loadTemplate(workflow, templateName);
 
     // Find the template definition
-    const template = workflow.workflow.templates.find((t) => t.name === templateName)!;
+    const template = workflow.workflow.templates.find((t) => t.name === templateName);
+    if (!template) {
+      throw new Error(
+        `Template '${templateName}' not found in workflow '${workflow.workflow.name}'`,
+      );
+    }
 
     // Build template context
     const context = {

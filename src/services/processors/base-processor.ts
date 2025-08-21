@@ -278,7 +278,13 @@ export class ProcessorRegistry {
     const targetNames = names || this.processorOrder;
     return targetNames
       .filter((name) => this.processors.has(name))
-      .map((name) => this.processors.get(name)!);
+      .map((name) => {
+        const processor = this.processors.get(name);
+        if (!processor) {
+          throw new Error(`Processor '${name}' not found in registry`);
+        }
+        return processor;
+      });
   }
 
   /**

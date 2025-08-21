@@ -55,7 +55,7 @@ export abstract class ExternalCLIProcessor extends BaseProcessor {
     try {
       const regex = new RegExp(definition.detection.pattern, 'gm');
       return regex.test(content);
-    } catch (_error) {
+    } catch {
       console.warn(`Invalid regex pattern for ${this.name}: ${definition.detection.pattern}`);
       return false;
     }
