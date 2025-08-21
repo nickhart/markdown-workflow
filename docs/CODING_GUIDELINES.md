@@ -6,11 +6,31 @@ This document defines the coding standards and best practices for the markdown-w
 
 ### Type Safety
 
-- **NO `any` types** - Always use specific types or `unknown` if type is truly unknown
+- **ZERO `any` types allowed** - This is enforced by ESLint error rule
+- **Always use specific types** or `unknown` if type is truly unknown
+- **Prefer nullish coalescing (`??`)** over logical OR (`||`) for default values
 - Prefer `interface` over `type` for object definitions
 - Use strict TypeScript configuration (strict mode enabled)
 - Always define return types for functions
 - Use type guards when working with `unknown` types
+
+#### Enforced Rules
+
+Our ESLint configuration enforces these rules as **errors** (not warnings):
+
+```json
+{
+  "@typescript-eslint/no-any": "error",
+  "@typescript-eslint/prefer-nullish-coalescing": "error",
+  "@typescript-eslint/no-unused-vars": [
+    "error",
+    {
+      "argsIgnorePattern": "^_",
+      "varsIgnorePattern": "^_"
+    }
+  ]
+}
+```
 
 ```typescript
 // ❌ Bad
@@ -32,9 +52,18 @@ function processData(data: UserData): string {
 
 ### Null Safety
 
-- Use optional chaining (`?.`) and nullish coalescing (`??`) operators
+- **Always use nullish coalescing (`??`)** instead of logical OR (`||`) for default values
+- Use optional chaining (`?.`) for safe property access
 - Prefer explicit null checks over truthy/falsy checks when dealing with nullable values
 - Use `NonNullable<T>` type when appropriate
+
+```typescript
+// ❌ Bad - logical OR can cause issues with falsy values
+const name = user.name || 'Unknown';
+
+// ✅ Good - nullish coalescing only triggers on null/undefined
+const name = user.name ?? 'Unknown';
+```
 
 ### Error Handling
 
@@ -186,10 +215,24 @@ describe('WorkflowEngine', () => {
 
 ### Formatting
 
-- Use Prettier for consistent formatting
-- 2 spaces for indentation
-- Single quotes for strings
-- Trailing commas in multi-line objects/arrays
+We use Prettier for consistent formatting with these settings:
+
+```json
+{
+  "semi": true,
+  "trailingComma": "es5",
+  "singleQuote": true,
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false
+}
+```
+
+- **2 spaces** for indentation (no tabs)
+- **Single quotes** for strings
+- **Trailing commas** in multi-line objects/arrays
+- **100 character line width** for readability
+- **Semicolons always** for clarity
 
 ### Comments
 
