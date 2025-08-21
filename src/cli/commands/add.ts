@@ -1,5 +1,5 @@
-import { WorkflowEngine } from '../../core/workflow-engine.js';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
+import { WorkflowOrchestrator } from '../../services/workflow-orchestrator';
+import { ConfigDiscovery } from '../../engine/config-discovery';
 
 interface AddOptions {
   cwd?: string;
@@ -29,11 +29,11 @@ export async function addCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -41,13 +41,13 @@ export async function addCommand(
   }
 
   // Check if collection exists
-  const collection = await engine.getCollection(workflowName, collectionId);
+  const collection = await orchestrator.getCollection(workflowName, collectionId);
   if (!collection) {
     throw new Error(`Collection not found: ${collectionId}`);
   }
 
   // Load workflow definition
-  const workflow = await engine.loadWorkflow(workflowName);
+  const workflow = await orchestrator.loadWorkflow(workflowName);
 
   // Validate template exists
   const template = workflow.workflow.templates.find((t) => t.name === templateName);
@@ -73,7 +73,7 @@ export async function addCommand(
       parameters.prefix = prefix;
     }
 
-    await engine.executeAction(workflowName, collectionId, 'add', parameters);
+    await orchestrator.executeAction(workflowName, collectionId, 'add', parameters);
     console.log(`✅ ${templateName} added successfully!`);
   } catch (error) {
     console.error(
@@ -96,11 +96,11 @@ export async function listTemplatesCommand(
   const configDiscovery = options.configDiscovery || new ConfigDiscovery();
   const projectRoot = configDiscovery.requireProjectRoot(cwd);
 
-  // Initialize workflow engine
-  const engine = new WorkflowEngine(projectRoot);
+  // Initialize workflow orchestrator
+  const orchestrator = new WorkflowOrchestrator({ projectRoot, configDiscovery });
 
   // Validate workflow exists
-  const availableWorkflows = engine.getAvailableWorkflows();
+  const availableWorkflows = orchestrator.getAvailableWorkflows();
   if (!availableWorkflows.includes(workflowName)) {
     throw new Error(
       `Unknown workflow: ${workflowName}. Available: ${availableWorkflows.join(', ')}`,
@@ -108,7 +108,7 @@ export async function listTemplatesCommand(
   }
 
   // Load workflow definition
-  const workflow = await engine.loadWorkflow(workflowName);
+  const workflow = await orchestrator.loadWorkflow(workflowName);
 
   console.log(`\nAVAILABLE TEMPLATES FOR '${workflowName.toUpperCase()}' WORKFLOW\n`);
 

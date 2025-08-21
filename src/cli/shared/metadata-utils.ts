@@ -1,126 +1,80 @@
 /**
- * Shared metadata handling utilities for CLI commands
+ * CLI-specific metadata utilities
+ *
+ * Provides CLI-specific metadata operations using the shared MetadataService.
+ * Handles CLI-specific concerns like file path resolution and console output.
+ * Business logic has been moved to MetadataService for sharing with the REST API.
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as YAML from 'yaml';
-import type { CollectionMetadata } from '../../core/types.js';
+import { MetadataService } from '../../services/metadata-service';
+import { NodeSystemInterface } from '../../engine/system-interface';
+import type { CollectionMetadata } from '../../engine/types';
+
+// Create system interface for file operations
+const systemInterface = new NodeSystemInterface();
+
+// Create metadata service instance
+const metadataService = new MetadataService({ systemInterface });
 
 /**
- * Generate YAML content for collection metadata
- * Dynamic generation based on actual metadata fields
+ * CLI wrapper: Generate YAML content for collection metadata
+ * CLI prefers YAML format for readability
  */
 export function generateMetadataYaml(metadata: CollectionMetadata): string {
-  // Core required fields that all workflows have
-  const coreFields = [
-    'collection_id',
-    'workflow',
-    'status',
-    'date_created',
-    'date_modified',
-    'status_history',
-  ];
-
-  // Separate custom fields from core fields
-  const customFields: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(metadata)) {
-    if (!coreFields.includes(key) && value !== undefined) {
-      customFields[key] = value;
-    }
-  }
-
-  // Build the YAML sections
-  let yamlContent = `# Collection Metadata
-collection_id: "${metadata.collection_id}"
-workflow: "${metadata.workflow}"
-status: "${metadata.status}"
-date_created: "${metadata.date_created}"
-date_modified: "${metadata.date_modified}"
-`;
-
-  // Add workflow-specific fields if they exist
-  if (Object.keys(customFields).length > 0) {
-    yamlContent += '\n# Workflow Details\n';
-    for (const [key, value] of Object.entries(customFields)) {
-      if (typeof value === 'string') {
-        yamlContent += `${key}: "${value}"\n`;
-      } else if (typeof value === 'number' || typeof value === 'boolean') {
-        yamlContent += `${key}: ${value}\n`;
-      } else if (Array.isArray(value)) {
-        yamlContent += `${key}: [${value.map((v) => `"${v}"`).join(', ')}]\n`;
-      }
-    }
-  }
-
-  // Add status history
-  yamlContent += `\n# Status History
-status_history:
-  - status: "${metadata.status_history[0].status}"
-    date: "${metadata.status_history[0].date}"
-
-# Additional Fields
-# Add custom fields here as needed
-`;
-
-  return yamlContent;
+  return metadataService.generateMetadataContent(metadata, 'yaml');
 }
 
 /**
- * Load collection metadata from collection.yml file
+ * CLI wrapper: Load collection metadata from collection.yml file
+ * CLI uses YAML format by default
  */
 export function loadCollectionMetadata(collectionPath: string): CollectionMetadata {
-  const metadataPath = path.join(collectionPath, 'collection.yml');
-
-  if (!fs.existsSync(metadataPath)) {
-    throw new Error(`Collection metadata not found: ${metadataPath}`);
-  }
-
-  try {
-    const metadataContent = fs.readFileSync(metadataPath, 'utf8');
-    const metadata = YAML.parse(metadataContent) as CollectionMetadata;
-
-    // Basic validation
-    if (!metadata.collection_id || !metadata.workflow || !metadata.status) {
-      throw new Error('Invalid metadata: missing required fields');
-    }
-
-    return metadata;
-  } catch (error) {
-    throw new Error(`Failed to load collection metadata: ${error}`);
-  }
+  return metadataService.loadCollectionMetadata(collectionPath, 'yaml');
 }
 
 /**
- * Save collection metadata to collection.yml file
+ * CLI wrapper: Save collection metadata to collection.yml file
+ * CLI uses YAML format by default
  */
 export function saveCollectionMetadata(collectionPath: string, metadata: CollectionMetadata): void {
-  const metadataPath = path.join(collectionPath, 'collection.yml');
-  const content = generateMetadataYaml(metadata);
-
-  try {
-    fs.writeFileSync(metadataPath, content);
-  } catch (error) {
-    throw new Error(`Failed to save collection metadata: ${error}`);
-  }
+  metadataService.saveCollectionMetadata(collectionPath, metadata, 'yaml');
 }
 
 /**
- * Update collection metadata with new values and save
+ * CLI wrapper: Update collection metadata with new values and save
+ * CLI uses YAML format by default
  */
 export function updateCollectionMetadata(
   collectionPath: string,
   updates: Partial<CollectionMetadata>,
 ): CollectionMetadata {
-  const metadata = loadCollectionMetadata(collectionPath);
+  return metadataService.updateCollectionMetadata(collectionPath, updates, 'yaml');
+}
 
-  // Apply updates
-  const updatedMetadata: CollectionMetadata = {
-    ...metadata,
-    ...updates,
-    date_modified: new Date().toISOString(),
-  };
+/**
+ * CLI-specific: Create new metadata with CLI-friendly defaults
+ */
+export function createCollectionMetadata(
+  collectionId: string,
+  workflow: string,
+  status: string,
+  customFields: Record<string, unknown> = {},
+): CollectionMetadata {
+  return metadataService.createMetadata(collectionId, workflow, status, customFields);
+}
 
-  saveCollectionMetadata(collectionPath, updatedMetadata);
-  return updatedMetadata;
+/**
+ * CLI-specific: Validate metadata and provide CLI-friendly error messages
+ */
+export function validateCollectionMetadata(
+  metadata: Partial<CollectionMetadata>,
+): asserts metadata is CollectionMetadata {
+  try {
+    metadataService.validateMetadata(metadata);
+    // If validation passes, TypeScript assertion is satisfied
+  } catch (error) {
+    throw new Error(
+      `Metadata validation failed: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
 }

@@ -3,7 +3,7 @@ import { migrateCommand, listMigrationWorkflows } from '../../../../src/cli/comm
 
 // Mock JobApplicationMigrator
 const mockMigrateJobApplications = jest.fn();
-jest.mock('../../../../src/core/job-application-migrator.js', () => ({
+jest.mock('../../../../src/engine/job-application-migrator.js', () => ({
   JobApplicationMigrator: jest.fn().mockImplementation(() => ({
     migrateJobApplications: mockMigrateJobApplications,
   })),
@@ -11,7 +11,7 @@ jest.mock('../../../../src/core/job-application-migrator.js', () => ({
 
 // Mock ConfigDiscovery
 const mockRequireProjectRoot = jest.fn().mockReturnValue('/mock/project');
-jest.mock('../../../../src/core/config-discovery.js', () => ({
+jest.mock('../../../../src/engine/config-discovery.js', () => ({
   ConfigDiscovery: jest.fn().mockImplementation(() => ({
     requireProjectRoot: mockRequireProjectRoot,
   })),
@@ -132,8 +132,8 @@ describe('migrate command', () => {
         force: true,
       });
 
-      expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('FORCE MODE: Existing collections will be overwritten'),
+      expect(consoleSpy.error).toHaveBeenCalledWith(
+        expect.stringContaining('⚠️  DESTRUCTIVE MODE ENABLED ⚠️'),
       );
     });
 
@@ -288,12 +288,12 @@ describe('migrate command', () => {
     it('should provide usage examples', async () => {
       await listMigrationWorkflows();
 
-      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Examples:'));
+      expect(consoleSpy.log).toHaveBeenCalledWith(expect.stringContaining('Safety Examples:'));
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('./old-writing-system --dry-run'),
+        expect.stringContaining('./old-system --dry-run'),
       );
       expect(consoleSpy.log).toHaveBeenCalledWith(
-        expect.stringContaining('~/legacy-markdown-workflow --force'),
+        expect.stringContaining('WF_MIGRATE_ALLOW_DESTRUCTIVE=1'),
       );
     });
 

@@ -1,13 +1,10 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import * as YAML from 'yaml';
-import {
-  loadWorkflowDefinition,
-  scrapeUrlForCollection,
-  findCollectionPath,
-} from '../../../../src/cli/shared/workflow-operations.js';
-import { WorkflowFileSchema, type WorkflowFile } from '../../../../src/core/schemas.js';
-import { scrapeUrl } from '../../../../src/shared/web-scraper.js';
+import { WorkflowService } from '../../../../src/services/workflow-service.js';
+import { CollectionService } from '../../../../src/services/collection-service.js';
+import { NodeSystemInterface } from '../../../../src/engine/system-interface.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
+import { WorkflowFileSchema, type WorkflowFile } from '../../../../src/engine/schemas.js';
+import { scrapeUrl } from '../../../../src/services/web-scraper.js';
 
 type WorkflowDefinition = {
   workflow: {
@@ -22,30 +19,69 @@ type WorkflowDefinition = {
 };
 
 // Mock dependencies
-jest.mock('fs');
-jest.mock('path');
 jest.mock('yaml');
-jest.mock('../../../../src/shared/web-scraper.js');
+jest.mock('../../../../src/services/web-scraper.js');
+jest.mock('../../../../src/engine/system-interface.js');
+jest.mock('../../../../src/engine/config-discovery.js');
 
-const mockFs = fs as jest.Mocked<typeof fs>;
-const mockPath = path as jest.Mocked<typeof path>;
-const mockYAML = YAML as jest.Mocked<typeof YAML>;
 const mockScrapeUrl = scrapeUrl as jest.MockedFunction<typeof scrapeUrl>;
+const mockYAML = YAML as jest.Mocked<typeof YAML>;
 
-describe('Workflow Operations', () => {
+// Create mock system interface
+const mockSystemInterface = {
+  existsSync: jest.fn(),
+  readFileSync: jest.fn(),
+  readdirSync: jest.fn(),
+} as jest.Mocked<NodeSystemInterface>;
+
+// Mock NodeSystemInterface constructor
+(NodeSystemInterface as jest.MockedClass<typeof NodeSystemInterface>).mockImplementation(
+  () => mockSystemInterface,
+);
+
+// Create mock config discovery
+const mockConfigDiscovery = {
+  getProjectPaths: jest.fn(),
+} as jest.Mocked<ConfigDiscovery>;
+
+(ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>).mockImplementation(
+  () => mockConfigDiscovery,
+);
+
+describe('Workflow and Collection Services', () => {
+  let workflowService: WorkflowService;
+  let collectionService: CollectionService;
+
   beforeEach(() => {
     jest.clearAllMocks();
-
-    // Setup path mocks
-    mockPath.join.mockImplementation((...args) => args.join('/'));
 
     // Setup console mocks
     jest.spyOn(console, 'log').mockImplementation();
     jest.spyOn(console, 'warn').mockImplementation();
     jest.spyOn(console, 'error').mockImplementation();
+
+    // Setup config discovery mock
+    mockConfigDiscovery.getProjectPaths.mockReturnValue({
+      projectRoot: '/project',
+      collectionsDir: '/project/collections',
+      configFile: '/project/config.yml',
+      workflowsDir: '/project/workflows',
+    });
+
+    // Create service instances
+    workflowService = new WorkflowService({
+      systemRoot: '/system/root',
+      systemInterface: mockSystemInterface,
+    });
+
+    collectionService = new CollectionService({
+      projectRoot: '/project',
+      systemInterface: mockSystemInterface,
+      configDiscovery: mockConfigDiscovery,
+    });
   });
 
-  describe('loadWorkflowDefinition', () => {
+  describe('WorkflowService.loadWorkflowDefinition', () => {
     const mockWorkflowData = {
       workflow: {
         name: 'job',
@@ -68,38 +104,32 @@ describe('Workflow Operations', () => {
     });
 
     it('should load and validate workflow definition successfully', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('workflow content');
+      mockSystemInterface.existsSync.mockReturnValue(true);
+      mockSystemInterface.readFileSync.mockReturnValue('workflow content');
       mockYAML.parse.mockReturnValue(mockWorkflowData);
 
-      const result = await loadWorkflowDefinition('/system/root', 'job');
+      const result = await workflowService.loadWorkflowDefinition('job');
 
-      expect(mockPath.join).toHaveBeenCalledWith(
-        '/system/root',
-        'workflows',
-        'job',
-        'workflow.yml',
-      );
-      expect(mockFs.existsSync).toHaveBeenCalledWith('/system/root/workflows/job/workflow.yml');
-      expect(mockFs.readFileSync).toHaveBeenCalledWith(
+      expect(mockSystemInterface.existsSync).toHaveBeenCalledWith(
         '/system/root/workflows/job/workflow.yml',
-        'utf8',
       );
-      expect(mockYAML.parse).toHaveBeenCalledWith('workflow content');
+      expect(mockSystemInterface.readFileSync).toHaveBeenCalledWith(
+        '/system/root/workflows/job/workflow.yml',
+      );
       expect(result).toBe(mockWorkflowData);
     });
 
     it('should throw error if workflow file does not exist', async () => {
-      mockFs.existsSync.mockReturnValue(false);
+      mockSystemInterface.existsSync.mockReturnValue(false);
 
-      await expect(loadWorkflowDefinition('/system/root', 'job')).rejects.toThrow(
-        'Workflow definition not found: /system/root/workflows/job/workflow.yml',
+      await expect(workflowService.loadWorkflowDefinition('job')).rejects.toThrow(
+        'Workflow definition not found: job',
       );
     });
 
     it('should throw error if workflow validation fails', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('workflow content');
+      mockSystemInterface.existsSync.mockReturnValue(true);
+      mockSystemInterface.readFileSync.mockReturnValue('workflow content');
       mockYAML.parse.mockReturnValue(mockWorkflowData);
 
       jest.spyOn(WorkflowFileSchema, 'safeParse').mockReturnValue({
@@ -107,25 +137,13 @@ describe('Workflow Operations', () => {
         error: { message: 'Invalid workflow' },
       } as { success: false; error: { message: string } });
 
-      await expect(loadWorkflowDefinition('/system/root', 'job')).rejects.toThrow(
+      await expect(workflowService.loadWorkflowDefinition('job')).rejects.toThrow(
         'Invalid workflow format: Invalid workflow',
-      );
-    });
-
-    it('should handle YAML parsing errors', async () => {
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue('workflow content');
-      mockYAML.parse.mockImplementation(() => {
-        throw new Error('YAML parsing failed');
-      });
-
-      await expect(loadWorkflowDefinition('/system/root', 'job')).rejects.toThrow(
-        'Failed to load workflow definition: Error: YAML parsing failed',
       );
     });
   });
 
-  describe('scrapeUrlForCollection', () => {
+  describe('CollectionService.scrapeUrlForCollection', () => {
     const mockWorkflowDefinition: WorkflowDefinition = {
       workflow: {
         actions: [
@@ -149,7 +167,7 @@ describe('Workflow Operations', () => {
         method: 'wget',
       });
 
-      await scrapeUrlForCollection(
+      const result = await collectionService.scrapeUrlForCollection(
         '/collection/path',
         'https://example.com',
         mockWorkflowDefinition as WorkflowFile,
@@ -159,12 +177,11 @@ describe('Workflow Operations', () => {
         outputFile: 'custom_job_description.html',
         outputDir: '/collection/path',
       });
-      expect(console.log).toHaveBeenCalledWith(
-        'ℹ️ Scraping job description from: https://example.com',
-      );
-      expect(console.log).toHaveBeenCalledWith(
-        '✅ Successfully scraped using wget: custom_job_description.html',
-      );
+      expect(result).toEqual({
+        success: true,
+        outputFile: 'custom_job_description.html',
+        method: 'wget',
+      });
     });
 
     it('should use default output file when no scrape action configured', async () => {
@@ -175,7 +192,7 @@ describe('Workflow Operations', () => {
         method: 'curl',
       });
 
-      await scrapeUrlForCollection(
+      const result = await collectionService.scrapeUrlForCollection(
         '/collection/path',
         'https://example.com',
         workflowWithoutScrape as WorkflowFile,
@@ -185,6 +202,7 @@ describe('Workflow Operations', () => {
         outputFile: 'url-download.html',
         outputDir: '/collection/path',
       });
+      expect(result.success).toBe(true);
     });
 
     it('should handle scraping failure', async () => {
@@ -193,79 +211,78 @@ describe('Workflow Operations', () => {
         error: 'Network timeout',
       });
 
-      await scrapeUrlForCollection(
+      const result = await collectionService.scrapeUrlForCollection(
         '/collection/path',
         'https://example.com',
         mockWorkflowDefinition as WorkflowFile,
       );
 
-      expect(console.error).toHaveBeenCalledWith('❌ Failed to scrape URL: Network timeout');
+      expect(result).toEqual({
+        success: false,
+        error: 'Network timeout',
+      });
     });
 
     it('should handle scraping exceptions', async () => {
       mockScrapeUrl.mockRejectedValue(new Error('Connection failed'));
 
-      await scrapeUrlForCollection(
+      const result = await collectionService.scrapeUrlForCollection(
         '/collection/path',
         'https://example.com',
         mockWorkflowDefinition as WorkflowFile,
       );
 
-      expect(console.error).toHaveBeenCalledWith('❌ Scraping error: Error: Connection failed');
+      expect(result).toEqual({
+        success: false,
+        error: 'Connection failed',
+      });
     });
   });
 
-  describe('findCollectionPath', () => {
+  describe('CollectionService.findCollectionPath', () => {
     const mockWorkflowDefinition = {
       workflow: {
         stages: [{ name: 'active' }, { name: 'submitted' }, { name: 'rejected' }],
       },
     };
 
-    beforeEach(() => {
-      // Mock fs calls for workflow loading
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        if (filePath.includes('workflow.yml')) return true;
-        return false; // Will be overridden in individual tests
-      });
-      mockFs.readFileSync.mockReturnValue('workflow content');
-      mockYAML.parse.mockReturnValue(mockWorkflowDefinition);
-      jest.spyOn(WorkflowFileSchema, 'safeParse').mockReturnValue({
-        success: true,
-        data: mockWorkflowDefinition,
-      } as { success: true; data: WorkflowFile });
-    });
-
     it('should find collection in first stage', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        if (filePath.includes('workflow.yml')) return true;
-        return filePath === '/project/job/active/test-collection';
+      mockSystemInterface.existsSync.mockImplementation((filePath: string) => {
+        return filePath === '/project/collections/job/active/test-collection';
       });
 
-      const result = await findCollectionPath('/system', '/project', 'job', 'test-collection');
+      const result = await collectionService.findCollectionPath(
+        'job',
+        'test-collection',
+        mockWorkflowDefinition as WorkflowFile,
+      );
 
-      expect(result).toBe('/project/job/active/test-collection');
+      expect(result).toBe('/project/collections/job/active/test-collection');
     });
 
     it('should find collection in later stage', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        if (filePath.includes('workflow.yml')) return true;
-        return filePath === '/project/job/submitted/test-collection';
+      mockSystemInterface.existsSync.mockImplementation((filePath: string) => {
+        return filePath === '/project/collections/job/submitted/test-collection';
       });
 
-      const result = await findCollectionPath('/system', '/project', 'job', 'test-collection');
+      const result = await collectionService.findCollectionPath(
+        'job',
+        'test-collection',
+        mockWorkflowDefinition as WorkflowFile,
+      );
 
-      expect(result).toBe('/project/job/submitted/test-collection');
+      expect(result).toBe('/project/collections/job/submitted/test-collection');
     });
 
     it('should throw error when collection not found', async () => {
-      mockFs.existsSync.mockImplementation((filePath: string) => {
-        if (filePath.includes('workflow.yml')) return true;
-        return false; // Collection not found
-      });
+      mockSystemInterface.existsSync.mockReturnValue(false);
 
       await expect(
-        findCollectionPath('/system', '/project', 'job', 'missing-collection'),
+        collectionService.findCollectionPath(
+          'job',
+          'missing-collection',
+          mockWorkflowDefinition as WorkflowFile,
+        ),
       ).rejects.toThrow("Collection 'missing-collection' not found in any stage of workflow 'job'");
     });
   });

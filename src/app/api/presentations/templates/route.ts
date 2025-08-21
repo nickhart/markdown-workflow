@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ConfigDiscovery } from '@/core/config-discovery';
+import { ConfigDiscovery } from '@/engine/config-discovery';
 import * as fs from 'fs';
 import * as path from 'path';
 

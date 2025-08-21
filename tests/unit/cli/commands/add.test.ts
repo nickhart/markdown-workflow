@@ -1,13 +1,15 @@
 import { addCommand, listTemplatesCommand } from '../../../../src/cli/commands/add.js';
-import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
+import { WorkflowOrchestrator } from '../../../../src/services/workflow-orchestrator.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
 
-// Mock the WorkflowEngine
-jest.mock('../../../../src/core/workflow-engine.js');
-const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
+// Mock the WorkflowOrchestrator
+jest.mock('../../../../src/services/workflow-orchestrator.js');
+const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<
+  typeof WorkflowOrchestrator
+>;
 
 // Mock the ConfigDiscovery
-jest.mock('../../../../src/core/config-discovery.js');
+jest.mock('../../../../src/engine/config-discovery.js');
 const MockedConfigDiscovery = ConfigDiscovery as jest.MockedClass<typeof ConfigDiscovery>;
 
 // Mock console methods
@@ -15,7 +17,7 @@ const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
 const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
 describe('Add Command', () => {
-  let mockEngine: jest.Mocked<WorkflowEngine>;
+  let mockOrchestrator: jest.Mocked<WorkflowOrchestrator>;
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
 
   beforeEach(() => {
@@ -24,8 +26,8 @@ describe('Add Command', () => {
     mockConfigDiscovery = new MockedConfigDiscovery() as jest.Mocked<ConfigDiscovery>;
     mockConfigDiscovery.requireProjectRoot.mockReturnValue('/test/project/root');
 
-    mockEngine = new MockedWorkflowEngine() as jest.Mocked<WorkflowEngine>;
-    MockedWorkflowEngine.mockImplementation(() => mockEngine);
+    mockOrchestrator = new MockedWorkflowOrchestrator() as jest.Mocked<WorkflowOrchestrator>;
+    MockedWorkflowOrchestrator.mockImplementation(() => mockOrchestrator);
   });
 
   afterEach(() => {
@@ -81,10 +83,10 @@ describe('Add Command', () => {
     };
 
     beforeEach(() => {
-      mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
-      mockEngine.getCollection.mockResolvedValue(mockCollection);
-      mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
-      mockEngine.executeAction.mockResolvedValue();
+      mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+      mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
+      mockOrchestrator.executeAction.mockResolvedValue();
     });
 
     it('should successfully add notes template with prefix', async () => {
@@ -92,7 +94,7 @@ describe('Add Command', () => {
         configDiscovery: mockConfigDiscovery,
       });
 
-      expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'add', {
+      expect(mockOrchestrator.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'add', {
         template: 'notes',
         prefix: 'recruiter',
       });
@@ -105,7 +107,7 @@ describe('Add Command', () => {
         configDiscovery: mockConfigDiscovery,
       });
 
-      expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'add', {
+      expect(mockOrchestrator.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'add', {
         template: 'notes',
       });
       expect(consoleLogSpy).toHaveBeenCalledWith('Adding notes to collection: test_collection');
@@ -113,7 +115,7 @@ describe('Add Command', () => {
     });
 
     it('should throw error for unknown workflow', async () => {
-      mockEngine.getAvailableWorkflows.mockReturnValue(['blog']);
+      mockOrchestrator.getAvailableWorkflows.mockReturnValue(['blog']);
 
       await expect(
         addCommand('invalid', 'test_collection', 'notes', 'recruiter', {
@@ -123,7 +125,7 @@ describe('Add Command', () => {
     });
 
     it('should throw error for non-existent collection', async () => {
-      mockEngine.getCollection.mockResolvedValue(null);
+      mockOrchestrator.getCollection.mockResolvedValue(null);
 
       await expect(
         addCommand('job', 'invalid_collection', 'notes', 'recruiter', {
@@ -144,7 +146,7 @@ describe('Add Command', () => {
 
     it('should handle execution errors gracefully', async () => {
       const error = new Error('Template file not found');
-      mockEngine.executeAction.mockRejectedValue(error);
+      mockOrchestrator.executeAction.mockRejectedValue(error);
 
       await expect(
         addCommand('job', 'test_collection', 'notes', 'recruiter', {
@@ -183,8 +185,8 @@ describe('Add Command', () => {
     };
 
     beforeEach(() => {
-      mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
-      mockEngine.loadWorkflow.mockResolvedValue(mockWorkflow);
+      mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflow);
     });
 
     it('should list available templates for workflow', async () => {
@@ -211,7 +213,7 @@ describe('Add Command', () => {
           templates: [],
         },
       };
-      mockEngine.loadWorkflow.mockResolvedValue(emptyWorkflow);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(emptyWorkflow);
 
       await listTemplatesCommand('job', {
         configDiscovery: mockConfigDiscovery,
@@ -221,7 +223,7 @@ describe('Add Command', () => {
     });
 
     it('should throw error for unknown workflow', async () => {
-      mockEngine.getAvailableWorkflows.mockReturnValue(['blog']);
+      mockOrchestrator.getAvailableWorkflows.mockReturnValue(['blog']);
 
       await expect(
         listTemplatesCommand('invalid', {

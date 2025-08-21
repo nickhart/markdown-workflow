@@ -7,7 +7,7 @@ import {
   saveCollectionMetadata,
   updateCollectionMetadata,
 } from '../../../../src/cli/shared/metadata-utils.js';
-import type { CollectionMetadata } from '../../../../src/core/types.js';
+import type { CollectionMetadata } from '../../../../src/engine/types.js';
 
 // Mock dependencies
 jest.mock('fs');
@@ -156,6 +156,7 @@ describe('Metadata Utils', () => {
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '/collection/path/collection.yml',
         expect.any(String),
+        'utf8',
       );
     });
 

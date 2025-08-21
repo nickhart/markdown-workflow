@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as YAML from 'yaml';
-import { ConfigDiscovery } from '../../core/config-discovery.js';
-import { WorkflowFileSchema } from '../../core/schemas.js';
-import { logError, logInfo, logSuccess } from '../shared/formatting-utils.js';
+import { ConfigDiscovery } from '../../engine/config-discovery';
+import { WorkflowFileSchema } from '../../engine/schemas';
+import { logError, logInfo, logSuccess } from '../shared/console-output';
 
 interface AliasInfo {
   alias: string;

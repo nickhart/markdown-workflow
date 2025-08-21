@@ -1,23 +1,20 @@
 import * as path from 'path';
 import { formatCommand, formatAllCommand } from '../../../../src/cli/commands/format.js';
-import { ConfigDiscovery } from '../../../../src/core/config-discovery.js';
-import { WorkflowEngine } from '../../../../src/core/workflow-engine.js';
-import { loadWorkflowDefinition } from '../../../../src/cli/shared/workflow-operations.js';
+import { ConfigDiscovery } from '../../../../src/engine/config-discovery.js';
+import { WorkflowOrchestrator } from '../../../../src/services/workflow-orchestrator.js';
 
 // Mock dependencies
 jest.mock('path');
-jest.mock('../../../../src/core/workflow-engine.js');
-jest.mock('../../../../src/cli/shared/workflow-operations.js');
+jest.mock('../../../../src/services/workflow-orchestrator.js');
 
 const mockPath = path as jest.Mocked<typeof path>;
-const MockedWorkflowEngine = WorkflowEngine as jest.MockedClass<typeof WorkflowEngine>;
-const mockLoadWorkflowDefinition = loadWorkflowDefinition as jest.MockedFunction<
-  typeof loadWorkflowDefinition
+const MockedWorkflowOrchestrator = WorkflowOrchestrator as jest.MockedClass<
+  typeof WorkflowOrchestrator
 >;
 
 describe('formatCommand', () => {
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
-  let mockEngine: jest.Mocked<WorkflowEngine>;
+  let mockOrchestrator: jest.Mocked<WorkflowOrchestrator>;
 
   const createMockWorkflowDef = (formats = ['docx', 'html', 'pdf']) => ({
     workflow: {
@@ -45,28 +42,34 @@ describe('formatCommand', () => {
     mockConfigDiscovery = {
       requireProjectRoot: jest.fn().mockReturnValue('/mock/project'),
       findSystemRoot: jest.fn().mockReturnValue('/mock/system'),
+      getProjectPaths: jest.fn().mockReturnValue({
+        collectionsDir: '/mock/project/collections',
+        workflowsDir: '/mock/project/.markdown-workflow/workflows',
+      }),
       discoverSystemConfiguration: jest.fn().mockReturnValue({
         systemRoot: '/mock/system',
         availableWorkflows: ['job', 'blog', 'presentation'],
       }),
     } as jest.Mocked<ConfigDiscovery>;
 
-    // Mock WorkflowEngine
-    mockEngine = {
+    // Mock WorkflowOrchestrator
+    mockOrchestrator = {
       getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog', 'presentation']),
       getCollection: jest.fn(),
-      getWorkflowDefinition: jest.fn(),
+      loadWorkflow: jest.fn(),
       executeAction: jest.fn(),
       getCollections: jest.fn(),
-    } as jest.Mocked<WorkflowEngine>;
+      updateCollectionStatus: jest.fn(),
+      getProjectConfig: jest.fn(),
+      getProjectRoot: jest.fn().mockReturnValue('/mock/project'),
+      getSystemRoot: jest.fn().mockReturnValue('/mock/system'),
+      findCollectionPath: jest.fn(),
+    } as jest.Mocked<WorkflowOrchestrator>;
 
-    MockedWorkflowEngine.mockImplementation(() => mockEngine);
+    MockedWorkflowOrchestrator.mockImplementation(() => mockOrchestrator);
 
     // Set default workflow definition mock
-    mockEngine.getWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
-
-    // Mock loadWorkflowDefinition
-    mockLoadWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
+    mockOrchestrator.loadWorkflow.mockResolvedValue(createMockWorkflowDef());
   });
 
   it('should format all documents in a collection when no artifacts specified', async () => {
@@ -76,9 +79,9 @@ describe('formatCommand', () => {
       path: '/mock/project/.markdown-workflow/collections/job/test_collection',
     };
 
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.getWorkflowDefinition.mockResolvedValue(createMockWorkflowDef());
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.loadWorkflow.mockResolvedValue(createMockWorkflowDef());
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -92,10 +95,15 @@ describe('formatCommand', () => {
     );
     expect(console.log).toHaveBeenCalledWith('✅ Formatting completed successfully!');
 
-    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
-      format: 'docx',
-      artifacts: undefined,
-    });
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
+      'job',
+      'test_collection',
+      'format',
+      {
+        format: 'docx',
+        artifacts: undefined,
+      },
+    );
   });
 
   it('should format specific artifacts when specified', async () => {
@@ -105,8 +113,8 @@ describe('formatCommand', () => {
       path: '/mock/project/.markdown-workflow/collections/job/test_collection',
     };
 
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = {
       cwd: '/mock/project',
@@ -117,10 +125,15 @@ describe('formatCommand', () => {
     await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
 
     expect(console.log).toHaveBeenCalledWith('Artifacts: resume');
-    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
-      format: 'docx',
-      artifacts: ['resume'],
-    });
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
+      'job',
+      'test_collection',
+      'format',
+      {
+        format: 'docx',
+        artifacts: ['resume'],
+      },
+    );
   });
 
   it('should format multiple specific artifacts', async () => {
@@ -130,8 +143,8 @@ describe('formatCommand', () => {
       path: '/mock/project/.markdown-workflow/collections/job/test_collection',
     };
 
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = {
       cwd: '/mock/project',
@@ -142,10 +155,15 @@ describe('formatCommand', () => {
     await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
 
     expect(console.log).toHaveBeenCalledWith('Artifacts: resume, cover_letter');
-    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
-      format: 'docx',
-      artifacts: ['resume', 'cover_letter'],
-    });
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
+      'job',
+      'test_collection',
+      'format',
+      {
+        format: 'docx',
+        artifacts: ['resume', 'cover_letter'],
+      },
+    );
   });
 
   it('should handle execution errors from WorkflowEngine', async () => {
@@ -155,8 +173,8 @@ describe('formatCommand', () => {
       path: '/mock/project/.markdown-workflow/collections/job/test_collection',
     };
 
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.executeAction.mockRejectedValue(
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.executeAction.mockRejectedValue(
       new Error('No files found for requested artifacts: unknown_artifact'),
     );
 
@@ -178,8 +196,8 @@ describe('formatCommand', () => {
       path: '/mock/project/.markdown-workflow/collections/job/test_collection',
     };
 
-    mockEngine.getCollection.mockResolvedValue(mockCollection);
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = {
       cwd: '/mock/project',
@@ -190,14 +208,19 @@ describe('formatCommand', () => {
     await expect(formatCommand('job', 'test_collection', options)).resolves.not.toThrow();
 
     expect(console.log).toHaveBeenCalledWith('Format: html');
-    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'test_collection', 'format', {
-      format: 'html',
-      artifacts: undefined,
-    });
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
+      'job',
+      'test_collection',
+      'format',
+      {
+        format: 'html',
+        artifacts: undefined,
+      },
+    );
   });
 
   it('should handle missing collection', async () => {
-    mockEngine.getCollection.mockResolvedValue(null);
+    mockOrchestrator.getCollection.mockResolvedValue(null);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -207,7 +230,7 @@ describe('formatCommand', () => {
   });
 
   it('should handle missing workflow', async () => {
-    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+    mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -235,9 +258,9 @@ describe('formatCommand', () => {
         },
       };
 
-      mockEngine.getCollection.mockResolvedValue(mockPresentationCollection);
-      mockLoadWorkflowDefinition.mockResolvedValue(mockPresentationWorkflowDef);
-      mockEngine.executeAction.mockResolvedValue(undefined);
+      mockOrchestrator.getCollection.mockResolvedValue(mockPresentationCollection);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(mockPresentationWorkflowDef);
+      mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
       const options = {
         cwd: '/mock/project',
@@ -248,7 +271,7 @@ describe('formatCommand', () => {
       await formatCommand('presentation', 'test_presentation', options);
 
       expect(console.log).toHaveBeenCalledWith('Format: pptx');
-      expect(mockEngine.executeAction).toHaveBeenCalledWith(
+      expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
         'presentation',
         'test_presentation',
         'format',
@@ -277,9 +300,9 @@ describe('formatCommand', () => {
         },
       };
 
-      mockEngine.getCollection.mockResolvedValue(mockPresentationCollection);
-      mockLoadWorkflowDefinition.mockResolvedValue(mockWorkflowDef);
-      mockEngine.executeAction.mockResolvedValue(undefined);
+      mockOrchestrator.getCollection.mockResolvedValue(mockPresentationCollection);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflowDef);
+      mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
       const options = {
         cwd: '/mock/project',
@@ -290,7 +313,7 @@ describe('formatCommand', () => {
       await formatCommand('presentation', 'test_presentation', options);
 
       expect(console.log).toHaveBeenCalledWith('Format: html');
-      expect(mockEngine.executeAction).toHaveBeenCalledWith(
+      expect(mockOrchestrator.executeAction).toHaveBeenCalledWith(
         'presentation',
         'test_presentation',
         'format',
@@ -314,9 +337,9 @@ describe('formatCommand', () => {
         },
       };
 
-      mockEngine.getCollection.mockResolvedValue(mockCollection);
-      mockLoadWorkflowDefinition.mockResolvedValue(mockWorkflowDef);
-      mockEngine.executeAction.mockResolvedValue(undefined);
+      mockOrchestrator.getCollection.mockResolvedValue(mockCollection);
+      mockOrchestrator.loadWorkflow.mockResolvedValue(mockWorkflowDef);
+      mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
       const options = {
         cwd: '/mock/project',
@@ -332,7 +355,7 @@ describe('formatCommand', () => {
 
 describe('formatAllCommand', () => {
   let mockConfigDiscovery: jest.Mocked<ConfigDiscovery>;
-  let mockEngine: jest.Mocked<WorkflowEngine>;
+  let mockOrchestrator: jest.Mocked<WorkflowOrchestrator>;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -348,13 +371,13 @@ describe('formatAllCommand', () => {
     } as jest.Mocked<ConfigDiscovery>;
 
     // Mock WorkflowEngine
-    mockEngine = {
+    mockOrchestrator = {
       getAvailableWorkflows: jest.fn().mockReturnValue(['job', 'blog']),
       getCollections: jest.fn(),
       executeAction: jest.fn(),
-    } as jest.Mocked<WorkflowEngine>;
+    } as jest.Mocked<WorkflowOrchestrator>;
 
-    MockedWorkflowEngine.mockImplementation(() => mockEngine);
+    MockedWorkflowOrchestrator.mockImplementation(() => mockOrchestrator);
   });
 
   it('should format all collections in a workflow', async () => {
@@ -371,8 +394,8 @@ describe('formatAllCommand', () => {
       },
     ];
 
-    mockEngine.getCollections.mockResolvedValue(mockCollections);
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollections.mockResolvedValue(mockCollections);
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -385,11 +408,11 @@ describe('formatAllCommand', () => {
     expect(console.log).toHaveBeenCalledWith('\n✅ Formatting completed!');
     expect(console.log).toHaveBeenCalledWith('Success: 2, Errors: 0');
 
-    expect(mockEngine.executeAction).toHaveBeenCalledTimes(2);
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledTimes(2);
   });
 
   it('should handle workflow with no collections', async () => {
-    mockEngine.getCollections.mockResolvedValue([]);
+    mockOrchestrator.getCollections.mockResolvedValue([]);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -399,7 +422,7 @@ describe('formatAllCommand', () => {
   });
 
   it('should handle missing workflow', async () => {
-    mockEngine.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
+    mockOrchestrator.getAvailableWorkflows.mockReturnValue(['job', 'blog']);
 
     const options = { cwd: '/mock/project', configDiscovery: mockConfigDiscovery };
 
@@ -417,8 +440,8 @@ describe('formatAllCommand', () => {
       },
     ];
 
-    mockEngine.getCollections.mockResolvedValue(mockCollections);
-    mockEngine.executeAction.mockResolvedValue(undefined);
+    mockOrchestrator.getCollections.mockResolvedValue(mockCollections);
+    mockOrchestrator.executeAction.mockResolvedValue(undefined);
 
     const options = {
       cwd: '/mock/project',
@@ -429,7 +452,7 @@ describe('formatAllCommand', () => {
     await expect(formatAllCommand('job', options)).resolves.not.toThrow();
 
     expect(console.log).toHaveBeenCalledWith('Format: html');
-    expect(mockEngine.executeAction).toHaveBeenCalledWith('job', 'collection1', 'format', {
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledWith('job', 'collection1', 'format', {
       format: 'html',
     });
   });
@@ -448,8 +471,8 @@ describe('formatAllCommand', () => {
       },
     ];
 
-    mockEngine.getCollections.mockResolvedValue(mockCollections);
-    mockEngine.executeAction
+    mockOrchestrator.getCollections.mockResolvedValue(mockCollections);
+    mockOrchestrator.executeAction
       .mockRejectedValueOnce(new Error('Mock formatting error'))
       .mockResolvedValueOnce(undefined);
 
@@ -462,6 +485,6 @@ describe('formatAllCommand', () => {
       expect.stringContaining('❌ Failed to format collection1: Mock formatting error'),
     );
 
-    expect(mockEngine.executeAction).toHaveBeenCalledTimes(2);
+    expect(mockOrchestrator.executeAction).toHaveBeenCalledTimes(2);
   });
 });

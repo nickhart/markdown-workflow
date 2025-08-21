@@ -1,7 +1,7 @@
 # Markdown Workflow
 
 [![CI](https://github.com/nickhart/markdown-workflow/workflows/CI/badge.svg)](https://github.com/nickhart/markdown-workflow/actions/workflows/ci.yml)
-[![Tests](https://img.shields.io/badge/Tests-145%20passing-brightgreen)](https://github.com/nickhart/markdown-workflow/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/Tests-627%20passing-brightgreen)](https://github.com/nickhart/markdown-workflow/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-brightgreen)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-10+-blue)](https://pnpm.io/)
 [![Turbo](https://img.shields.io/badge/Turbo-2+-red)](https://turbo.build/)
