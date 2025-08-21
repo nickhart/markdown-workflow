@@ -1,6 +1,6 @@
 import { FilesystemEnvironment } from '../../../../src/engine/environment/filesystem-environment.js';
 import {
-  SecurityValidator,
+  SecurityValidator as _SecurityValidator,
   DEFAULT_SECURITY_CONFIG,
 } from '../../../../src/engine/environment/security-validator.js';
 import {

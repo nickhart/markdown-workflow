@@ -25,8 +25,7 @@
 import { spawn } from 'node:child_process';
 import { access, mkdir, mkdtemp, rm, readFile, writeFile, readdir, stat } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, extname } from 'node:path';
+import { join } from 'node:path';
 import https from 'node:https';
 import http from 'node:http';
 import { URL } from 'node:url';
@@ -260,7 +259,6 @@ async function tryWgetPandocPDF() {
 
   const { path: work, createdTemp } = await getWorkDir();
 
-  let didDownload = false;
   if (!REUSE_WORK) {
     const wgetArgs = [
       '--page-requisites',
@@ -279,7 +277,6 @@ async function tryWgetPandocPDF() {
     if (VERBOSE) wgetArgs.unshift('-v'); else wgetArgs.unshift('-nv');
 
     await run('wget', wgetArgs);
-    didDownload = true;
   } else if (VERBOSE) {
     console.error('[wget] reuse-work enabled; skipping download');
   }
@@ -366,7 +363,6 @@ async function tryWgetPandocHTML() {
 
   const { path: work, createdTemp } = await getWorkDir();
 
-  let didDownload = false;
   if (!REUSE_WORK) {
     const wgetArgs = [
       '--page-requisites',
@@ -385,7 +381,6 @@ async function tryWgetPandocHTML() {
     if (VERBOSE) wgetArgs.unshift('-v'); else wgetArgs.unshift('-nv');
 
     await run('wget', wgetArgs);
-    didDownload = true;
   } else if (VERBOSE) {
     console.error('[wget] reuse-work enabled; skipping download');
   }

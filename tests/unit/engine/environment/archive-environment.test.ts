@@ -5,12 +5,15 @@ import {
 import { DEFAULT_SECURITY_CONFIG } from '../../../../src/engine/environment/security-validator.js';
 import {
   ResourceNotFoundError,
-  ValidationError,
+  ValidationError as _ValidationError,
 } from '../../../../src/engine/environment/environment.js';
-import { ProjectConfig, WorkflowFile } from '../../../../src/engine/schemas.js';
+import {
+  ProjectConfig as _ProjectConfig,
+  WorkflowFile as _WorkflowFile,
+} from '../../../../src/engine/schemas.js';
 import * as fs from 'fs';
-import * as path from 'path';
-import * as yauzl from 'yauzl';
+import * as _path from 'path';
+import * as _yauzl from 'yauzl';
 import * as yazl from 'yazl';
 
 describe('ArchiveEnvironment', () => {

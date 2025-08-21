@@ -28,7 +28,11 @@ import {
   ExternalProcessorFileSchema,
   ExternalConverterFileSchema,
 } from '../schemas.js';
-import { ResourceNotFoundError, ValidationError, SecurityError } from './environment.js';
+import {
+  ResourceNotFoundError,
+  ValidationError,
+  SecurityError as _SecurityError,
+} from './environment.js';
 import * as YAML from 'yaml';
 
 export interface ArchiveSource {
