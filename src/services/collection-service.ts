@@ -12,6 +12,7 @@ import { type WorkflowFile } from '../engine/schemas';
 import { SystemInterface } from '../engine/system-interface';
 import { getCurrentISODate } from '../utils/date-utils';
 import { ConfigDiscovery } from '../engine/config-discovery';
+import { scrapeUrl } from './web-scraper';
 
 export interface CollectionServiceOptions {
   projectRoot: string;
@@ -216,5 +217,45 @@ export class CollectionService {
     throw new Error(
       `Collection '${collectionId}' not found in any stage of workflow '${workflowName}'`,
     );
+  }
+
+  /**
+   * Scrape URL for collection using workflow configuration
+   * Moved from CLI workflow-operations.ts for service layer architecture
+   */
+  async scrapeUrlForCollection(
+    collectionPath: string,
+    url: string,
+    workflowDefinition: WorkflowFile,
+  ): Promise<{ success: boolean; method?: string; outputFile?: string; error?: string }> {
+    // Find scrape action in workflow definition
+    const scrapeAction = workflowDefinition.workflow.actions.find(
+      (action) => action.name === 'scrape',
+    );
+
+    // Determine output filename from workflow config with generic fallback
+    let outputFile = 'url-download.html'; // generic fallback for workflows without scrape config
+
+    if (scrapeAction?.parameters) {
+      const outputParam = scrapeAction.parameters.find((p) => p.name === 'output_file');
+      if (outputParam?.default && typeof outputParam.default === 'string') {
+        outputFile = outputParam.default;
+      }
+    }
+
+    try {
+      // Perform the scraping
+      const result = await scrapeUrl(url, {
+        outputFile,
+        outputDir: collectionPath,
+      });
+
+      return result;
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
   }
 }

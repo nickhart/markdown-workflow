@@ -4,13 +4,16 @@ import { ConfigDiscovery } from '../../engine/config-discovery';
 import { CollectionMetadata } from '../../engine/types';
 import { generateCollectionId, getCurrentISODate } from '../../utils/date-utils';
 import { initializeProject } from '../shared/cli-base';
-import { loadWorkflowDefinition, scrapeUrlForCollection } from '../shared/workflow-operations';
+import { WorkflowService } from '../../services/workflow-service';
+import { CollectionService } from '../../services/collection-service';
+import { NodeSystemInterface } from '../../engine/system-interface';
 import { generateMetadataYaml } from '../shared/metadata-utils';
 import {
   logCollectionCreation,
   logSuccess,
   logNextSteps,
   logForceRecreation,
+  logError,
 } from '../shared/console-output';
 import { TemplateProcessor } from '../shared/template-processor';
 
@@ -45,11 +48,21 @@ export async function createCommand(workflowName: string, ...args: unknown[]): P
     );
   }
 
+  // Create services
+  const systemInterface = new NodeSystemInterface();
+  const workflowService = new WorkflowService({
+    systemRoot: systemConfig.paths.systemRoot,
+    systemInterface,
+  });
+  const configDiscovery = options.configDiscovery || new ConfigDiscovery();
+  const collectionService = new CollectionService({
+    projectRoot: options.cwd || process.cwd(),
+    systemInterface,
+    configDiscovery,
+  });
+
   // Load workflow definition
-  const workflowDefinition = await loadWorkflowDefinition(
-    systemConfig.paths.systemRoot,
-    workflowName,
-  );
+  const workflowDefinition = await workflowService.loadWorkflowDefinition(workflowName);
 
   // Extract argument values based on workflow CLI configuration
   const argumentValues: Record<string, unknown> = {};
@@ -187,7 +200,16 @@ export async function createCommand(workflowName: string, ...args: unknown[]): P
 
   // Scrape URL if provided
   if (options.url) {
-    await scrapeUrlForCollection(collectionPath, options.url, workflowDefinition);
+    const result = await collectionService.scrapeUrlForCollection(
+      collectionPath,
+      options.url,
+      workflowDefinition,
+    );
+    if (result.success) {
+      logSuccess(`Successfully scraped using ${result.method}: ${result.outputFile}`);
+    } else {
+      logError(`Failed to scrape URL: ${result.error}`);
+    }
   }
 
   // Get workflow default format for next steps message
