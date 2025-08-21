@@ -52,11 +52,11 @@ if pnpm link --global; then
     echo ""
 else
     echo "⚠️  Global linking failed. Setting up PATH alternative..."
-    
+
     # Option 2: Add to PATH
     PROJECT_DIR="$(pwd)"
     BIN_DIR="$PROJECT_DIR/dist/cli"
-    
+
     # Create a wrapper script in a common location
     mkdir -p "$HOME/.local/bin"
     cat > "$HOME/.local/bin/wf" << EOF
@@ -64,7 +64,7 @@ else
 node "$BIN_DIR/index.js" "\$@"
 EOF
     chmod +x "$HOME/.local/bin/wf"
-    
+
     # Check if ~/.local/bin is in PATH
     if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
         echo ""
@@ -75,7 +75,7 @@ EOF
         echo "source ~/.zshrc"
         echo ""
     fi
-    
+
     echo "✅ Created 'wf' command in ~/.local/bin/wf"
 fi
 
@@ -85,4 +85,4 @@ echo "Next steps:"
 echo "1. Navigate to your writing project directory"
 echo "2. Run: wf init"
 echo "3. Edit .markdown-workflow/config.yml with your information"
-echo "4. Start creating collections with wf-create (coming soon!)"
+echo "4. Start creating collections with wf-create"
