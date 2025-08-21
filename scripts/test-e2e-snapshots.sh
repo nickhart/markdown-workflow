@@ -505,6 +505,103 @@ test_advanced_snapshots() {
     cd "$ORIGINAL_DIR"
 }
 
+# Test example directory functionality
+test_example_directory() {
+    log_info "=== Testing Example Directory ==="
+    
+    # Use global workflow root
+    local WORKFLOW_ROOT="$GLOBAL_WORKFLOW_ROOT"
+    local EXAMPLE_DIR="$WORKFLOW_ROOT/example"
+    local ORIGINAL_DIR="$(pwd)"
+    
+    # Verify example directory exists
+    if [ ! -d "$EXAMPLE_DIR" ]; then
+        log_error "Example directory not found at $EXAMPLE_DIR"
+        return 1
+    fi
+    
+    # Change to example directory for testing
+    cd "$EXAMPLE_DIR"
+    log_info "Testing CLI functionality in example directory: $(pwd)"
+    
+    # Test 1: List job collections
+    run_test "Example: List job collections works" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list job" \
+        0 "JOB COLLECTIONS"
+    
+    # Test 2: List presentation collections  
+    run_test "Example: List presentation collections works" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list presentation" \
+        0 "PRESENTATION COLLECTIONS"
+    
+    # Test 3: List blog collections
+    run_test "Example: List blog collections works" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list blog" \
+        0 "BLOG COLLECTIONS"
+    
+    # Test 4: Check that we have expected collections
+    run_test "Example: Verify job collections exist" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list job" \
+        0 "test_company_test_role_20250731"
+    
+    run_test "Example: Verify presentation collections exist" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list presentation" \
+        0 "test_mermaid_presentation_20250731"
+    
+    run_test "Example: Verify blog collections exist" \
+        "node '$WORKFLOW_ROOT/dist/cli/index.js' list blog" \
+        0 "test_emoji_post_20250815"
+    
+    # Test 5: Test format commands work (with mocked pandoc for deterministic results)
+    log_info "Testing format commands with mocked pandoc for deterministic results"
+    
+    run_test "Example: Format job collection works" \
+        "MOCK_PANDOC=true node '$WORKFLOW_ROOT/dist/cli/index.js' format job test_company_test_role_20250731 --format docx" \
+        0 "Formatting completed successfully"
+    
+    run_test "Example: Format presentation collection works" \
+        "MOCK_PANDOC=true node '$WORKFLOW_ROOT/dist/cli/index.js' format presentation test_mermaid_presentation_20250731 --format pptx" \
+        0 "Formatting completed successfully"
+    
+    run_test "Example: Format blog collection works" \
+        "MOCK_PANDOC=true node '$WORKFLOW_ROOT/dist/cli/index.js' format blog test_emoji_post_20250815 --format html" \
+        0 "Formatting completed successfully"
+    
+    # Test 6: Verify configuration file exists and is readable
+    run_test "Example: Config file exists and contains expected user data" \
+        "grep -q 'John Smith' '.markdown-workflow/config.yml'" \
+        0 ""
+    
+    # Test 7: Verify file structures are intact for different workflows
+    run_test "Example: Job collections have expected structure" \
+        "[ -f 'job/active/test_company_test_role_20250731/collection.yml' ] && [ -f 'job/active/test_company_test_role_20250731/resume_your_name.md' ]" \
+        0 ""
+    
+    run_test "Example: Presentation collections have expected structure" \
+        "[ -f 'presentation/draft/test_mermaid_presentation_20250731/collection.yml' ] && [ -f 'presentation/draft/test_mermaid_presentation_20250731/content.md' ]" \
+        0 ""
+    
+    run_test "Example: Blog collections have expected structure" \
+        "[ -f 'blog/draft/test_emoji_post_20250815/collection.yml' ] && [ -f 'blog/draft/test_emoji_post_20250815/content.md' ]" \
+        0 ""
+    
+    # Test 8: Verify formatted output was created (mocked pandoc creates placeholder files)
+    run_test "Example: Formatted job outputs exist after format command" \
+        "[ -d 'job/active/test_company_test_role_20250731/formatted' ]" \
+        0 ""
+    
+    run_test "Example: Formatted presentation outputs exist after format command" \
+        "[ -d 'presentation/draft/test_mermaid_presentation_20250731/formatted' ]" \
+        0 ""
+    
+    run_test "Example: Formatted blog outputs exist after format command" \
+        "[ -d 'blog/draft/test_emoji_post_20250815/formatted' ]" \
+        0 ""
+    
+    cd "$ORIGINAL_DIR"
+    log_info "Example directory validation completed"
+}
+
 # Main test execution
 main() {
     echo "============================================================="
@@ -531,31 +628,35 @@ main() {
         log_info "Run './test-e2e-snapshots.sh' (without --update) to run the full test suite."
     else
         # Run test suites
-        log_info "=== Starting Test Execution (6 test suites) ==="
+        log_info "=== Starting Test Execution (7 test suites) ==="
         echo
         
-        log_info "1/6: Testing snapshot tool functionality..."
+        log_info "1/7: Testing snapshot tool functionality..."
         test_snapshot_tool
         echo
         
-        log_info "2/6: Testing basic CLI functionality..."
+        log_info "2/7: Testing basic CLI functionality..."
         test_cli_functionality
         echo
         
-        log_info "3/6: Testing init command with snapshots..."
+        log_info "3/7: Testing init command with snapshots..."
         test_init_command_snapshots
         echo
         
-        log_info "4/6: Testing workflow operations with snapshots..."
+        log_info "4/7: Testing workflow operations with snapshots..."
         test_workflow_operations_snapshots
         echo
         
-        log_info "5/6: Testing failure detection..."
+        log_info "5/7: Testing failure detection..."
         test_failure_detection
         echo
         
-        log_info "6/6: Testing advanced snapshot functionality..."
+        log_info "6/7: Testing advanced snapshot functionality..."
         test_advanced_snapshots
+        echo
+        
+        log_info "7/7: Testing example directory functionality..."
+        test_example_directory
         echo
         
         log_info "=== All test suites completed ==="
