@@ -228,8 +228,13 @@ export class TemplateService {
       title: title,
       title_sanitized: sanitizeForFilename(title),
       collection_id: collection?.metadata.collection_id || '',
-      company: typeof collection?.metadata.company === 'string' ? collection.metadata.company : '',
-      role: typeof collection?.metadata.role === 'string' ? collection.metadata.role : '',
+      // Company and role: prioritize collection metadata, then fall back to custom variables
+      company:
+        (typeof collection?.metadata.company === 'string' ? collection.metadata.company : '') ||
+        (typeof customVariables.company === 'string' ? customVariables.company : ''),
+      role:
+        (typeof collection?.metadata.role === 'string' ? collection.metadata.role : '') ||
+        (typeof customVariables.role === 'string' ? customVariables.role : ''),
     };
   }
 
