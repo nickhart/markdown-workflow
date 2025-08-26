@@ -259,7 +259,7 @@ export class ConverterRegistry {
    */
   register(converter: BaseConverter): void {
     this.converters.set(converter.name, converter);
-    console.debug(`🔧 Registered converter: ${converter.name} (${converter.description})`);
+    console.error(`🔧 Registered converter: ${converter.name} (${converter.description})`);
   }
 
   /**

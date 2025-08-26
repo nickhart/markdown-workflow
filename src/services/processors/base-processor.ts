@@ -216,7 +216,7 @@ export class ProcessorRegistry {
     if (!this.processorOrder.includes(processor.name)) {
       this.processorOrder.push(processor.name);
     }
-    console.debug(`📝 Registered processor: ${processor.name} (${processor.description})`);
+    console.error(`📝 Registered processor: ${processor.name} (${processor.description})`);
   }
 
   /**
@@ -266,7 +266,7 @@ export class ProcessorRegistry {
     }
 
     this.processorOrder = [...order];
-    console.debug(`🔄 Updated processor order: ${order.join(' → ')}`);
+    console.error(`🔄 Updated processor order: ${order.join(' → ')}`);
   }
 
   /**
