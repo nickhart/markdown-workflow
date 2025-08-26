@@ -1,0 +1,27 @@
+graph TB
+    subgraph "Frontend Layer"
+        UI[User Interface]
+        Router[Router]
+        UI --> Router
+    end
+
+    subgraph "API Layer"
+        API[API Gateway]
+        Auth[Authentication]
+        BL[Business Logic]
+        API --> Auth
+        API --> BL
+    end
+
+    subgraph "Data Layer"
+        DB[(Database)]
+        Cache[(Cache)]
+        BL --> DB
+        BL --> Cache
+    end
+
+    Router --> API
+
+    style UI fill:#e3f2fd
+    style API fill:#fff3e0
+    style DB fill:#f3e5f5

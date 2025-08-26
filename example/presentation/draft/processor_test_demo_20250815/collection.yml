@@ -1,0 +1,17 @@
+# Collection Metadata
+collection_id: "processor_test_demo_20250815"
+workflow: "presentation"
+status: "draft"
+date_created: "2025-08-15T15:44:48.549Z"
+date_modified: "2025-08-15T15:44:48.549Z"
+
+# Workflow Details
+title: "Processor Test Demo"
+
+# Status History
+status_history:
+  - status: "draft"
+    date: "2025-08-15T15:44:48.549Z"
+
+# Additional Fields
+# Add custom fields here as needed

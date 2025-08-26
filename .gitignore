@@ -47,6 +47,10 @@ CLAUDE.md
 
 # exclude example so we can treat it like a playground
 example/
+!example/blog/
+!example/job/
+!example/presentation/
+!example/.markdown-workflow/
 
 # Test artifacts
 test-*

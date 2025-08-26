@@ -1,0 +1,6 @@
+PKMock DOCX File
+Content Hash: 5aa3f0e1
+This is a mock DOCX file created for testing purposes.
+The content is deterministic based on the input markdown file.
+This ensures consistent snapshot testing without pandoc dependency.
+PKMock DOCX End
