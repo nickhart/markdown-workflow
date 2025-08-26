@@ -1,0 +1,6 @@
+PK\x03\x04Mock PPTX File
+Content Hash: 0de81840
+This is a mock PPTX file created for testing purposes.
+The content is deterministic based on the input markdown file.
+This ensures consistent snapshot testing without pandoc dependency.
+PK\x05\x06Mock PPTX End
