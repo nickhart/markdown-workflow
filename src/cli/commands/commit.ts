@@ -171,7 +171,12 @@ function buildTemplateVariables(
 /**
  * Execute git commit with the generated message, adding specific collection-related changes
  */
-function executeGitCommit(message: string, gitChanges: GitFileChanges, projectRoot: string): void {
+function executeGitCommit(
+  message: string,
+  gitChanges: GitFileChanges,
+  projectRoot: string,
+  collectionId: string,
+): void {
   try {
     // Add all collection-related changes (including deletions from moves)
     const allChanges = [...gitChanges.added, ...gitChanges.modified, ...gitChanges.deleted];
@@ -181,9 +186,27 @@ function executeGitCommit(message: string, gitChanges: GitFileChanges, projectRo
       return;
     }
 
-    // Add each changed file/directory
-    for (const change of allChanges) {
-      execSync(`git add "${change}"`, { cwd: projectRoot });
+    // Use a more robust approach: git add --all with grep filter for collection-specific changes
+    // This handles added, modified, and deleted files in a single command
+    const gitStatusOutput = execSync('git status --porcelain', {
+      cwd: projectRoot,
+      encoding: 'utf8',
+    }).trim();
+
+    if (gitStatusOutput) {
+      // Extract collection-related file paths and add them all at once
+      const collectionFiles = gitStatusOutput
+        .split('\n')
+        .filter((line) => line.includes(collectionId))
+        .map((line) => line.substring(3)) // Remove the 2-char status + space prefix
+        .filter((file) => file.trim().length > 0);
+
+      if (collectionFiles.length > 0) {
+        // Use git add --all to handle additions, modifications, and deletions
+        for (const file of collectionFiles) {
+          execSync(`git add --all "${file}"`, { cwd: projectRoot });
+        }
+      }
     }
 
     // Commit with the generated message from project root
@@ -245,7 +268,7 @@ export async function commitCommand(
 
   // Use custom message if provided
   if (options.message) {
-    executeGitCommit(options.message, gitChanges, projectRoot);
+    executeGitCommit(options.message, gitChanges, projectRoot, collectionId);
     return;
   }
 
@@ -270,7 +293,7 @@ export async function commitCommand(
   logInfo(`Generated commit message: ${commitMessage}`);
 
   // Execute git commit
-  executeGitCommit(commitMessage, gitChanges, projectRoot);
+  executeGitCommit(commitMessage, gitChanges, projectRoot, collectionId);
 }
 
 export default commitCommand;
