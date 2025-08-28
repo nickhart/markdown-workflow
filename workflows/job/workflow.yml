@@ -102,14 +102,7 @@ workflow:
       description: "Cover letter for this application"
 
   # Define static files (no variable substitution)
-  statics:
-    - name: "resume_reference"
-      file: "templates/static/resume_reference.docx"
-      description: "DOCX formatting reference for resume"
-
-    - name: "cover_letter_reference"
-      file: "templates/static/cover_letter_reference.docx"
-      description: "DOCX formatting reference for cover letter"
+  statics: []
 
   # Define actions that can be performed on collections
   actions:
