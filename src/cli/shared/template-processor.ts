@@ -10,7 +10,7 @@ import * as path from 'path';
 import { TemplateService, type TemplateResolutionOptions } from '../../services/template-service';
 import { NodeSystemInterface } from '../../engine/system-interface';
 import { WorkflowTemplate } from '../../engine/types';
-import { type ProjectConfig } from '../../engine/schemas';
+import { type ProjectConfig, type WorkflowAction } from '../../engine/schemas';
 import { logTemplateUsage, logFileCreation, logWarning, logError } from './console-output';
 
 export interface TemplateProcessingOptions {
@@ -19,6 +19,7 @@ export interface TemplateProcessingOptions {
   variables: Record<string, string>;
   projectConfig?: ProjectConfig | null;
   projectPaths?: { workflowsDir: string; configFile: string } | null;
+  workflowAction?: WorkflowAction | null;
 }
 
 // Re-export types for CLI usage
@@ -98,6 +99,15 @@ export class TemplateProcessor {
       // CLI-specific logging
       logFileCreation(outputFile);
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes('Template variant') &&
+        error.message.includes('not found')
+      ) {
+        // Re-throw template variant errors with full context
+        throw error;
+      }
+
       logError(
         `Error processing template ${template.name}: ${error instanceof Error ? error.message : String(error)}`,
       );

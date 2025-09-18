@@ -82,9 +82,9 @@ workflow:
           required: true
           description: "Blog post title"
         - name: "template_variant"
-          type: "enum"
-          options: ["default", "technical", "tutorial"]
+          type: "string"
           default: "default"
+          required: false
           description: "Blog post template variant"
         - name: "category"
           type: "string"

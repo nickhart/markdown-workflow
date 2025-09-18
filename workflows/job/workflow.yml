@@ -130,9 +130,9 @@ workflow:
           required: false
           description: "Job posting URL"
         - name: "template_variant"
-          type: "enum"
-          options: ["default", "mobile", "frontend"]
+          type: "string"
           default: "default"
+          required: false
           description: "Resume template variant to use"
 
     - name: "format"

@@ -193,6 +193,7 @@ export async function createCommand(workflowName: string, ...args: unknown[]): P
           variables: templateVariables,
           projectConfig: systemConfig.projectConfig,
           projectPaths,
+          workflowAction: createAction,
         });
       }
     }
