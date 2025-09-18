@@ -276,4 +276,91 @@ describe('initCommand', () => {
       ).rejects.toThrow('Permission denied');
     });
   });
+
+  describe('.gitignore creation', () => {
+    it('should create .gitignore when it does not exist', async () => {
+      const testDir = '/test/gitignore-new';
+
+      mockFs.existsSync.mockImplementation((path) => {
+        const pathStr = String(path);
+        return !pathStr.endsWith('.gitignore'); // .gitignore doesn't exist
+      });
+
+      await initCommand({ cwd: testDir, workflows: ['job'], configDiscovery });
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        `${testDir}/.gitignore`,
+        expect.stringContaining('# Generated output directories'),
+      );
+    });
+
+    it('should not overwrite existing .gitignore without force flag', async () => {
+      const testDir = '/test/gitignore-exists';
+
+      mockFs.existsSync.mockImplementation((path) => {
+        const pathStr = String(path);
+        return pathStr.endsWith('.gitignore'); // .gitignore exists
+      });
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      await initCommand({ cwd: testDir, workflows: ['job'], force: false, configDiscovery });
+
+      expect(mockFs.writeFileSync).not.toHaveBeenCalledWith(
+        `${testDir}/.gitignore`,
+        expect.any(String),
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '✓ .gitignore already exists (use --force to overwrite)',
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should overwrite existing .gitignore with force flag', async () => {
+      const testDir = '/test/gitignore-force';
+
+      mockFs.existsSync.mockImplementation((path) => {
+        const pathStr = String(path);
+        return pathStr.endsWith('.gitignore'); // .gitignore exists
+      });
+
+      await initCommand({ cwd: testDir, workflows: ['job'], force: true, configDiscovery });
+
+      expect(mockFs.writeFileSync).toHaveBeenCalledWith(
+        `${testDir}/.gitignore`,
+        expect.stringContaining('# Generated output directories'),
+      );
+    });
+
+    it('should include correct ignore patterns in .gitignore', async () => {
+      const testDir = '/test/gitignore-patterns';
+
+      mockFs.existsSync.mockImplementation((path) => {
+        const pathStr = String(path);
+        return !pathStr.endsWith('.gitignore'); // .gitignore doesn't exist
+      });
+
+      await initCommand({ cwd: testDir, workflows: ['job'], configDiscovery });
+
+      const gitignoreCall = mockFs.writeFileSync.mock.calls.find(([path]) =>
+        String(path).endsWith('.gitignore'),
+      );
+
+      expect(gitignoreCall).toBeDefined();
+      const gitignoreContent = gitignoreCall![1] as string;
+
+      // Check for expected patterns
+      expect(gitignoreContent).toContain('formatted/');
+      expect(gitignoreContent).toContain('intermediate/');
+      expect(gitignoreContent).toContain('.DS_Store');
+      expect(gitignoreContent).toContain('*.log');
+      expect(gitignoreContent).toContain('.tmp/');
+      expect(gitignoreContent).toContain('tmp/');
+
+      // Should NOT contain patterns that would ignore .docx/.pdf files globally
+      expect(gitignoreContent).not.toContain('*.docx');
+      expect(gitignoreContent).not.toContain('*.pdf');
+    });
+  });
 });

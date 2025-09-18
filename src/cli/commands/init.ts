@@ -46,7 +46,7 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
   console.log(`Workflows: ${workflowsToInit.join(', ')}`);
 
   // Create project structure
-  await createProjectStructure(cwd, workflowsToInit);
+  await createProjectStructure(cwd, workflowsToInit, force);
 
   console.log('✅ Project initialized successfully!');
   console.log('');
@@ -59,7 +59,11 @@ export async function initCommand(options: InitOptions = {}): Promise<void> {
 /**
  * Create the project directory structure
  */
-async function createProjectStructure(projectRoot: string, workflows: string[]): Promise<void> {
+async function createProjectStructure(
+  projectRoot: string,
+  workflows: string[],
+  force: boolean,
+): Promise<void> {
   const configDiscovery = new ConfigDiscovery();
   const projectPaths = configDiscovery.getProjectPaths(projectRoot);
 
@@ -72,6 +76,9 @@ async function createProjectStructure(projectRoot: string, workflows: string[]):
 
   // Create default config file
   await createDefaultConfig(projectPaths.configFile);
+
+  // Create .gitignore file if it doesn't exist (or if --force is specified)
+  await createProjectGitignore(projectRoot, force);
 
   // Create workflow directories (for potential customization)
   for (const workflow of workflows) {
@@ -269,6 +276,53 @@ workflows:
 
   fs.writeFileSync(configPath, configContent);
   console.log(`Created configuration file: ${configPath}`);
+}
+
+/**
+ * Create a .gitignore file for the project
+ */
+async function createProjectGitignore(projectRoot: string, force: boolean): Promise<void> {
+  const gitignorePath = path.join(projectRoot, '.gitignore');
+
+  // Check if .gitignore already exists
+  if (fs.existsSync(gitignorePath) && !force) {
+    console.log('✓ .gitignore already exists (use --force to overwrite)');
+    return;
+  }
+
+  const gitignoreContent = `# Generated output directories
+formatted/
+intermediate/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Temporary files
+.tmp/
+tmp/
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.Trashes
+ehthumbs.db
+`;
+
+  fs.writeFileSync(gitignorePath, gitignoreContent);
+  console.log(`Created .gitignore file: ${gitignorePath}`);
 }
 
 export default initCommand;

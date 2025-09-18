@@ -35,8 +35,13 @@ interface CommitTemplateVariables {
 
 /**
  * Analyze git status to detect file changes, checking both collection directory and project-wide
+ * Enhanced to detect deleted files from status changes (e.g., moved from active/ to submitted/)
  */
-function analyzeGitChanges(collectionPath: string, projectRoot: string): GitFileChanges {
+function analyzeGitChanges(
+  collectionPath: string,
+  projectRoot: string,
+  workflowName: string,
+): GitFileChanges {
   try {
     // Get git status from project root to catch moved files
     const gitStatus = execSync('git status --porcelain', {
@@ -59,6 +64,10 @@ function analyzeGitChanges(collectionPath: string, projectRoot: string): GitFile
     const lines = gitStatus.split('\n');
     const collectionId = path.basename(collectionPath);
 
+    // Create regex pattern to match collection files in any status directory
+    // Pattern: <workflow_id>/<any_status>/<collection_id>/
+    const collectionPattern = new RegExp(`${workflowName}/[^/]+/${collectionId}(/|$)`);
+
     for (const line of lines) {
       if (line.length < 4) continue;
 
@@ -69,8 +78,10 @@ function analyzeGitChanges(collectionPath: string, projectRoot: string): GitFile
       const status = match[1];
       const fileName = match[2];
 
-      // Only include changes related to this collection ID anywhere in the repository
-      if (fileName.includes(collectionId)) {
+      // Match files related to this collection in any status directory OR by collection ID
+      const isCollectionFile = collectionPattern.test(fileName) || fileName.includes(collectionId);
+
+      if (isCollectionFile) {
         // Track file changes by status
         if (status.includes('A') || status.includes('?')) {
           changes.added.push(fileName);
@@ -118,7 +129,7 @@ function isGitRepository(cwd: string): boolean {
  * Get the default commit message template
  */
 function getDefaultCommitTemplate(): string {
-  return '{{#status_changed}}updated status for {{company}} {{role}} ({{collection_id}}) to {{status}}{{/status_changed}}{{^status_changed}}updated {{company}} {{role}} ({{collection_id}}){{#has_markdown_changes}} - modified {{#files.markdownFiles}}{{.}}{{^last}}, {{/last}}{{/files.markdownFiles}}{{/has_markdown_changes}}{{/status_changed}}';
+  return '{{#status_changed}}{{#previous_status}}moved {{company}} {{role}} ({{collection_id}}) from {{previous_status}} to {{status}}{{/previous_status}}{{^previous_status}}updated status for {{company}} {{role}} ({{collection_id}}) to {{status}}{{/previous_status}}{{/status_changed}}{{^status_changed}}updated {{company}} {{role}} ({{collection_id}}){{#has_markdown_changes}} - modified {{#files.markdownFiles}}{{.}}{{^last}}, {{/last}}{{/files.markdownFiles}}{{/has_markdown_changes}}{{/status_changed}}';
 }
 
 /**
@@ -145,14 +156,63 @@ function resolveCommitTemplate(workflowName: string, projectConfig: ProjectConfi
 }
 
 /**
+ * Detect if status has changed by analyzing current path vs expected path
+ */
+function detectStatusChange(
+  collection: Collection,
+  workflowName: string,
+  projectRoot: string,
+): {
+  status_changed: boolean;
+  previous_status?: string;
+} {
+  const currentStatus = collection.metadata.status;
+  const collectionId = collection.metadata.collection_id;
+
+  // Get expected path for current status
+  const expectedPath = path.join(projectRoot, workflowName, currentStatus, collectionId);
+
+  // If current path matches expected path, no status change
+  if (collection.path === expectedPath) {
+    return { status_changed: false };
+  }
+
+  // Try to infer previous status from current path
+  const pathParts = collection.path.split(path.sep);
+  const workflowIndex = pathParts.lastIndexOf(workflowName);
+
+  if (workflowIndex >= 0 && workflowIndex < pathParts.length - 2) {
+    const previousStatus = pathParts[workflowIndex + 1];
+    return {
+      status_changed: true,
+      previous_status: previousStatus,
+    };
+  }
+
+  // Check status history for previous status
+  const statusHistory = collection.metadata.status_history;
+  if (statusHistory && statusHistory.length >= 2) {
+    const previousStatus = statusHistory[statusHistory.length - 2].status;
+    return {
+      status_changed: true,
+      previous_status: previousStatus,
+    };
+  }
+
+  return { status_changed: true };
+}
+
+/**
  * Build template variables from collection and git analysis
  */
 function buildTemplateVariables(
   collection: Collection,
   gitChanges: GitFileChanges,
   workflowName: string,
+  projectRoot: string,
 ): CommitTemplateVariables {
   const metadata = collection.metadata;
+  const statusChange = detectStatusChange(collection, workflowName, projectRoot);
 
   return {
     workflow: workflowName,
@@ -160,9 +220,9 @@ function buildTemplateVariables(
     company: String(metadata.company || 'Unknown'),
     role: String(metadata.role || 'Unknown'),
     status: metadata.status,
-    previous_status: undefined, // TODO: detect from status history
+    previous_status: statusChange.previous_status,
     files: gitChanges,
-    status_changed: false, // TODO: detect status changes
+    status_changed: statusChange.status_changed,
     metadata_changed: gitChanges.modified.includes('collection.yml'),
     has_markdown_changes: gitChanges.markdownFiles.length > 0,
   };
@@ -261,7 +321,7 @@ export async function commitCommand(
   logInfo(`Collection path: ${collection.path}`);
 
   // Analyze git changes from project root to catch moved collections
-  const gitChanges = analyzeGitChanges(collection.path, projectRoot);
+  const gitChanges = analyzeGitChanges(collection.path, projectRoot, workflowName);
   logInfo(
     `Git changes detected: ${gitChanges.added.length} added, ${gitChanges.modified.length} modified, ${gitChanges.deleted.length} deleted`,
   );
@@ -284,7 +344,7 @@ export async function commitCommand(
   const projectConfig = await orchestrator.getProjectConfig();
 
   // Build template variables
-  const templateVars = buildTemplateVariables(collection, gitChanges, workflowName);
+  const templateVars = buildTemplateVariables(collection, gitChanges, workflowName, projectRoot);
 
   // Resolve and render commit message template
   const template = resolveCommitTemplate(workflowName, projectConfig);
