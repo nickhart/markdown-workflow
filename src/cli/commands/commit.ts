@@ -20,6 +20,7 @@ interface GitFileChanges {
   markdownFiles: string[];
 }
 
+
 interface CommitTemplateVariables {
   workflow: string;
   collection_id: string;
@@ -229,6 +230,14 @@ function buildTemplateVariables(
 }
 
 /**
+ * Properly escape a file path for shell commands
+ */
+function shellEscape(filePath: string): string {
+  // Use JSON.stringify to properly escape the string for shell
+  return JSON.stringify(filePath);
+}
+
+/**
  * Execute git commit with the generated message, adding specific collection-related changes
  */
 function executeGitCommit(
@@ -246,31 +255,57 @@ function executeGitCommit(
       return;
     }
 
-    // Use a more robust approach: git add --all with grep filter for collection-specific changes
-    // This handles added, modified, and deleted files in a single command
+    // Get current git status and filter for collection-related files
     const gitStatusOutput = execSync('git status --porcelain', {
       cwd: projectRoot,
       encoding: 'utf8',
     }).trim();
 
     if (gitStatusOutput) {
-      // Extract collection-related file paths and add them all at once
+      // Extract collection-related file paths
       const collectionFiles = gitStatusOutput
         .split('\n')
         .filter((line) => line.includes(collectionId))
-        .map((line) => line.substring(3)) // Remove the 2-char status + space prefix
+        .map((line) => {
+          let filePath = line.substring(3); // Remove the 2-char status + space prefix
+          // Git wraps file paths with spaces in quotes - remove them
+          if (filePath.startsWith('"') && filePath.endsWith('"')) {
+            filePath = filePath.slice(1, -1);
+          }
+          return filePath;
+        })
         .filter((file) => file.trim().length > 0);
 
       if (collectionFiles.length > 0) {
-        // Use git add --all to handle additions, modifications, and deletions
-        for (const file of collectionFiles) {
-          execSync(`git add --all "${file}"`, { cwd: projectRoot });
+        // Use git add -A to handle all changes (additions, modifications, deletions) for the collection
+        // This is more reliable than trying to handle each file type individually
+        try {
+          execSync(`git add -A`, {
+            cwd: projectRoot,
+            stdio: 'pipe'
+          });
+
+          // Verify the changes were staged by checking what git would commit
+          const stagedChanges = execSync('git diff --cached --name-only', {
+            cwd: projectRoot,
+            encoding: 'utf8'
+          }).trim();
+
+          if (!stagedChanges.includes(collectionId)) {
+            throw new Error('Collection changes were not properly staged');
+          }
+
+          logInfo(`Staged ${collectionFiles.length} collection-related changes`);
+        } catch (addError) {
+          logError(`Failed to stage collection changes: ${addError instanceof Error ? addError.message : String(addError)}`);
+          throw new Error(`Git add failed for collection: ${collectionId}`);
         }
       }
     }
 
-    // Commit with the generated message from project root
-    execSync(`git commit -m "${message.replace(/"/g, '\\"')}"`, {
+    // Commit with the generated message (properly escape the message)
+    const escapedMessage = shellEscape(message);
+    execSync(`git commit -m ${escapedMessage}`, {
       cwd: projectRoot,
       stdio: 'inherit',
     });

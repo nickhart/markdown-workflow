@@ -204,6 +204,14 @@ export class MockSystemInterface implements SystemInterface {
   }
 
   /**
+   * Remove a mock file from the system
+   */
+  removeMockFile(path: string): void {
+    this.mockFiles.delete(path);
+    this.mockStats.delete(path);
+  }
+
+  /**
    * Add a mock directory to the system
    */
   addMockDirectory(path: string): void {

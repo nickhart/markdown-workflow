@@ -9,6 +9,7 @@ import * as path from 'path';
 import * as YAML from 'yaml';
 import { WorkflowFileSchema, type WorkflowFile } from '../engine/schemas';
 import { SystemInterface } from '../engine/system-interface';
+import { FileResolutionService } from './file-resolution-service';
 
 export interface WorkflowServiceOptions {
   systemRoot: string;
@@ -18,10 +19,12 @@ export interface WorkflowServiceOptions {
 export class WorkflowService {
   private systemRoot: string;
   private systemInterface: SystemInterface;
+  private fileResolutionService: FileResolutionService;
 
   constructor(options: WorkflowServiceOptions) {
     this.systemRoot = options.systemRoot;
     this.systemInterface = options.systemInterface;
+    this.fileResolutionService = new FileResolutionService(this.systemInterface);
   }
 
   /**
@@ -84,36 +87,22 @@ export class WorkflowService {
     templateType: string,
     projectWorkflowsDir?: string,
   ): Promise<string | undefined> {
-    // 1. Try co-located reference.docx in project workflows directory first
-    if (projectWorkflowsDir) {
-      const projectRefPath = path.join(
-        projectWorkflowsDir,
-        workflow.workflow.name,
-        'templates',
-        templateType,
-        'reference.docx',
-      );
+    const fileResolutionOptions = {
+      systemRoot: this.systemRoot,
+      workflowName: workflow.workflow.name,
+      projectPaths: projectWorkflowsDir ? { workflowsDir: projectWorkflowsDir } : null,
+    };
 
-      if (this.systemInterface.existsSync(projectRefPath)) {
-        return projectRefPath;
-      }
+    const result = this.fileResolutionService.resolveReferenceDocument(templateType, fileResolutionOptions);
+
+    if (result.path) {
+      // Add visibility into which reference document was selected
+      const source = result.fromProject ? 'project' : 'system';
+      console.log(`📄 Using reference document: ${result.path} (${source})`);
+      return result.path;
     }
 
-    // 2. Try co-located reference.docx in system workflows directory
-    const systemRefPath = path.join(
-      this.systemRoot,
-      'workflows',
-      workflow.workflow.name,
-      'templates',
-      templateType,
-      'reference.docx',
-    );
-
-    if (this.systemInterface.existsSync(systemRefPath)) {
-      return systemRefPath;
-    }
-
-    // 3. Legacy fallback: try workflow statics
+    // Legacy fallback: try workflow statics for backward compatibility
     if (workflow.workflow.statics) {
       const referenceStaticName = `${templateType}_reference`;
       const referenceStatic = workflow.workflow.statics.find((s) => s.name === referenceStaticName);
@@ -128,6 +117,7 @@ export class WorkflowService {
           );
 
           if (this.systemInterface.existsSync(projectStaticPath)) {
+            console.log(`📄 Using reference document: ${projectStaticPath} (project legacy)`);
             return projectStaticPath;
           }
         }
@@ -141,6 +131,7 @@ export class WorkflowService {
         );
 
         if (this.systemInterface.existsSync(systemStaticPath)) {
+          console.log(`📄 Using reference document: ${systemStaticPath} (system legacy)`);
           return systemStaticPath;
         }
       }

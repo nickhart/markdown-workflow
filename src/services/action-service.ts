@@ -20,6 +20,7 @@ export interface ActionServiceOptions {
   systemInterface: SystemInterface;
   templateService: TemplateService;
   workflowService: WorkflowService;
+  getProjectWorkflowsDir?: () => string | null;
 }
 
 export class ActionService {
@@ -27,12 +28,14 @@ export class ActionService {
   private systemInterface: SystemInterface;
   private templateService: TemplateService;
   private workflowService: WorkflowService;
+  private getProjectWorkflowsDir: () => string | null;
 
   constructor(options: ActionServiceOptions) {
     this.systemRoot = options.systemRoot;
     this.systemInterface = options.systemInterface;
     this.templateService = options.templateService;
     this.workflowService = options.workflowService;
+    this.getProjectWorkflowsDir = options.getProjectWorkflowsDir || (() => null);
   }
 
   /**
@@ -270,17 +273,20 @@ export class ActionService {
 
     try {
       console.log(`🔄 Converting ${file} to ${formatType.toUpperCase()}...`);
+      console.log(`📁 Input:  ${inputPath}`);
+      console.log(`📁 Output: ${outputPath}`);
 
       // Detect template type from filename
       const templateType = this.workflowService.detectTemplateType(baseName, workflow);
       let referenceDoc: string | undefined;
 
       if (formatType === 'docx' && templateType) {
-        // Look for reference document
-        referenceDoc = await this.workflowService.findReferenceDocument(workflow, templateType);
-        if (referenceDoc) {
-          console.log(`📄 Using reference document: ${referenceDoc}`);
-        }
+        // Look for reference document with project inheritance
+        referenceDoc = await this.workflowService.findReferenceDocument(
+          workflow,
+          templateType,
+          this.getProjectWorkflowsDir() || undefined,
+        );
       }
 
       // Use new converter system if available

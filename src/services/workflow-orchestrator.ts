@@ -5,6 +5,7 @@
  * Coordinates between domain services to provide high-level workflow operations.
  */
 
+import * as path from 'path';
 import { ConfigDiscovery } from '../engine/config-discovery';
 import { SystemInterface, NodeSystemInterface } from '../engine/system-interface';
 import { type ProjectConfig } from '../engine/types';
@@ -28,6 +29,7 @@ export class WorkflowOrchestrator {
   private systemRoot: string;
   private projectRoot: string;
   private projectConfig: ProjectConfig | null = null;
+  private projectWorkflowsDir: string | null = null;
   private availableWorkflows: string[] = [];
   private configDiscovery: ConfigDiscovery;
   private systemInterface: SystemInterface;
@@ -81,6 +83,7 @@ export class WorkflowOrchestrator {
       systemInterface: this.systemInterface,
       templateService: this.templateService,
       workflowService: this.workflowService,
+      getProjectWorkflowsDir: () => this.projectWorkflowsDir,
     });
   }
 
@@ -92,9 +95,14 @@ export class WorkflowOrchestrator {
       try {
         const config = await this.configDiscovery.resolveConfiguration(this.projectRoot);
         this.projectConfig = config.projectConfig || null;
+        // Store project workflows directory for file resolution
+        this.projectWorkflowsDir = config.paths.projectRoot
+          ? path.join(config.paths.projectRoot, '.markdown-workflow', 'workflows')
+          : null;
       } catch (error) {
         console.error(`🔧 Config resolution failed:`, error);
         this.projectConfig = null;
+        this.projectWorkflowsDir = null;
       }
     }
   }

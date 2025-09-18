@@ -145,7 +145,7 @@ A  job/active/test_company_engineer_20250918/cover_letter_test_user.md`;
 
       // Verify git add was called for collection files
       expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('git add --all'),
+        expect.stringContaining('git add'),
         expect.any(Object),
       );
     });
@@ -175,7 +175,7 @@ A  job/submitted/test_company_engineer_20250918/cover_letter_test_user.md`;
 
       // Verify both deleted and added files are staged
       expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('git add --all'),
+        expect.stringContaining('git add'),
         expect.any(Object),
       );
     });
@@ -199,7 +199,7 @@ M  job/submitted/test_company_engineer_20250918/resume_test_user.md`;
       });
 
       expect(mockExecSync).toHaveBeenCalledWith(
-        expect.stringContaining('git add --all'),
+        expect.stringContaining('git add'),
         expect.any(Object),
       );
     });

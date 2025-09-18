@@ -12,6 +12,7 @@ import { type Collection, type ProjectConfig } from '../engine/types';
 import { SystemInterface } from '../engine/system-interface';
 import { formatDate, getCurrentDate } from '../utils/date-utils';
 import { sanitizeForFilename, normalizeTemplateName } from '../utils/file-utils';
+import { FileResolutionService } from './file-resolution-service';
 
 export interface TemplateServiceOptions {
   systemRoot: string;
@@ -36,14 +37,17 @@ export interface TemplateResolutionOptions {
 export class TemplateService {
   private systemRoot: string;
   private systemInterface: SystemInterface;
+  private fileResolutionService: FileResolutionService;
 
   constructor(options: TemplateServiceOptions) {
     this.systemRoot = options.systemRoot;
     this.systemInterface = options.systemInterface;
+    this.fileResolutionService = new FileResolutionService(this.systemInterface);
   }
 
   /**
    * Load template content from file system
+   * @deprecated Use loadTemplateWithInheritance for project → system inheritance support
    */
   async loadTemplate(workflow: WorkflowFile, templateName: string): Promise<string> {
     const template = workflow.workflow.templates.find((t) => t.name === templateName);
@@ -65,6 +69,7 @@ export class TemplateService {
       throw new Error(`Template file not found: ${templatePath}`);
     }
 
+    console.log(`📄 Loading template: ${templatePath} (system only - deprecated)`);
     return this.systemInterface.readFileSync(templatePath);
   }
 
@@ -247,86 +252,25 @@ export class TemplateService {
     template: WorkflowTemplate,
     options: TemplateResolutionOptions,
   ): string | null {
-    // If a specific variant is requested, try variant first, then fallback to default
-    if (options.templateVariant && options.templateVariant !== 'default') {
-      // Try to find variant template first
-      const variantPath = this.tryResolveVariantTemplate(template, options);
-      if (variantPath) {
-        return variantPath;
-      }
-      // Variant not found, continue to default template resolution below
-    }
+    const fileResolutionOptions = {
+      systemRoot: options.systemRoot,
+      workflowName: options.workflowName,
+      projectPaths: options.projectPaths,
+    };
 
-    // Resolve default template (no variant specified or variant not found)
-    const templatePaths: string[] = [];
-
-    // If project has workflows directory, check project templates first
-    if (options.projectPaths?.workflowsDir) {
-      const projectWorkflowDir = path.join(options.projectPaths.workflowsDir, options.workflowName);
-      const projectTemplatePath = path.join(projectWorkflowDir, template.file);
-      templatePaths.push(projectTemplatePath);
-    }
-
-    // Always add system template as fallback
-    const systemTemplatePath = path.join(
-      options.systemRoot,
-      'workflows',
-      options.workflowName,
+    return this.fileResolutionService.resolveWorkflowFilePath(
       template.file,
-    );
-    templatePaths.push(systemTemplatePath);
-
-    // Return first existing template
-    for (const templatePath of templatePaths) {
-      if (this.systemInterface.existsSync(templatePath)) {
-        return templatePath;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Try to resolve a variant template (separate method for clarity)
-   */
-  private tryResolveVariantTemplate(
-    template: WorkflowTemplate,
-    options: TemplateResolutionOptions,
-  ): string | null {
-    if (!options.templateVariant) {
-      return null;
-    }
-
-    // Check project template with variant first
-    if (options.projectPaths?.workflowsDir) {
-      const projectWorkflowDir = path.join(options.projectPaths.workflowsDir, options.workflowName);
-      const variantPath = this.getVariantTemplatePath(
-        projectWorkflowDir,
-        template,
-        options.templateVariant,
-      );
-      if (variantPath && this.systemInterface.existsSync(variantPath)) {
-        return variantPath;
-      }
-    }
-
-    // Check system template with variant
-    const systemWorkflowDir = path.join(options.systemRoot, 'workflows', options.workflowName);
-    const systemVariantPath = this.getVariantTemplatePath(
-      systemWorkflowDir,
-      template,
+      fileResolutionOptions,
       options.templateVariant,
     );
-    if (systemVariantPath && this.systemInterface.existsSync(systemVariantPath)) {
-      return systemVariantPath;
-    }
-
-    return null;
   }
 
   /**
    * Build variant template path by replacing filename with variant
    * e.g., templates/resume/default.md + variant "ai-frontend" -> templates/resume/ai-frontend.md
+   *
+   * @deprecated This method is kept for backward compatibility with CLI template processor
+   * Use FileResolutionService directly for new code
    */
   getVariantTemplatePath(
     workflowDir: string,
@@ -346,65 +290,13 @@ export class TemplateService {
    * Scans both project and system directories for variant files
    */
   getAvailableVariants(template: WorkflowTemplate, options: TemplateResolutionOptions): string[] {
-    const variants: Set<string> = new Set();
-    const templateFile = template.file;
-    const parsedPath = path.parse(templateFile);
+    const fileResolutionOptions = {
+      systemRoot: options.systemRoot,
+      workflowName: options.workflowName,
+      projectPaths: options.projectPaths,
+    };
 
-    // Get template directory path (e.g., "templates/resume")
-    const templateDir = parsedPath.dir;
-
-    // Check project workflows directory
-    if (options.projectPaths?.workflowsDir) {
-      const projectTemplateDir = path.join(
-        options.projectPaths.workflowsDir,
-        options.workflowName,
-        templateDir,
-      );
-      if (this.systemInterface.existsSync(projectTemplateDir)) {
-        try {
-          const files = this.systemInterface.readdirSync(projectTemplateDir);
-          for (const file of files) {
-            if (
-              file.isFile() &&
-              file.name.endsWith(parsedPath.ext) &&
-              file.name !== parsedPath.base
-            ) {
-              const variant = path.parse(file.name).name;
-              variants.add(variant);
-            }
-          }
-        } catch {
-          // Ignore read errors
-        }
-      }
-    }
-
-    // Check system workflows directory
-    const systemTemplateDir = path.join(
-      options.systemRoot,
-      'workflows',
-      options.workflowName,
-      templateDir,
-    );
-    if (this.systemInterface.existsSync(systemTemplateDir)) {
-      try {
-        const files = this.systemInterface.readdirSync(systemTemplateDir);
-        for (const file of files) {
-          if (
-            file.isFile() &&
-            file.name.endsWith(parsedPath.ext) &&
-            file.name !== parsedPath.base
-          ) {
-            const variant = path.parse(file.name).name;
-            variants.add(variant);
-          }
-        }
-      } catch {
-        // Ignore read errors
-      }
-    }
-
-    return Array.from(variants).sort();
+    return this.fileResolutionService.getAvailableVariants(template.file, fileResolutionOptions);
   }
 
   /**
@@ -490,6 +382,12 @@ export class TemplateService {
     if (!this.systemInterface.existsSync(resolvedTemplatePath)) {
       throw new Error(`Template file not found: ${resolvedTemplatePath}`);
     }
+
+    // Determine source for logging
+    const isProjectFile = options.projectPaths?.workflowsDir &&
+      resolvedTemplatePath.includes(options.projectPaths.workflowsDir);
+    const source = isProjectFile ? 'project' : 'system';
+    console.log(`📄 Loading template: ${resolvedTemplatePath} (${source})`);
 
     return this.systemInterface.readFileSync(resolvedTemplatePath);
   }
