@@ -384,7 +384,8 @@ export class TemplateService {
     }
 
     // Determine source for logging
-    const isProjectFile = options.projectPaths?.workflowsDir &&
+    const isProjectFile =
+      options.projectPaths?.workflowsDir &&
       resolvedTemplatePath.includes(options.projectPaths.workflowsDir);
     const source = isProjectFile ? 'project' : 'system';
     console.log(`📄 Loading template: ${resolvedTemplatePath} (${source})`);

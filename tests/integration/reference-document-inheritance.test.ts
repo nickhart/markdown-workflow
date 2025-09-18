@@ -6,12 +6,11 @@
  * in real scenarios.
  */
 
-import * as fs from 'fs';
 import * as path from 'path';
 import { WorkflowService } from '../../src/services/workflow-service';
 import { TemplateService } from '../../src/services/template-service';
 import { MockSystemInterface } from '../unit/mocks/mock-system-interface';
-import { WorkflowFileSchema } from '../../src/engine/schemas';
+import { WorkflowFileSchema, type WorkflowFile } from '../../src/engine/schemas';
 import * as YAML from 'yaml';
 
 describe('Reference Document Inheritance Integration', () => {
@@ -20,7 +19,7 @@ describe('Reference Document Inheritance Integration', () => {
   let mockSystemInterface: MockSystemInterface;
   let workflowService: WorkflowService;
   let templateService: TemplateService;
-  let workflow: any;
+  let workflow: WorkflowFile;
 
   beforeEach(() => {
     // Setup paths
@@ -34,7 +33,9 @@ describe('Reference Document Inheritance Integration', () => {
     const systemWorkflowsDir = path.join(systemRoot, 'workflows', 'job');
     mockSystemInterface.addMockDirectory(systemWorkflowsDir);
     mockSystemInterface.addMockDirectory(path.join(systemWorkflowsDir, 'templates', 'resume'));
-    mockSystemInterface.addMockDirectory(path.join(systemWorkflowsDir, 'templates', 'cover_letter'));
+    mockSystemInterface.addMockDirectory(
+      path.join(systemWorkflowsDir, 'templates', 'cover_letter'),
+    );
 
     // Add system workflow definition
     const workflowContent = `workflow:
@@ -83,10 +84,7 @@ describe('Reference Document Inheritance Integration', () => {
       converter: pandoc
       formats: [docx, html, pdf]`;
 
-    mockSystemInterface.addMockFile(
-      path.join(systemWorkflowsDir, 'workflow.yml'),
-      workflowContent
-    );
+    mockSystemInterface.addMockFile(path.join(systemWorkflowsDir, 'workflow.yml'), workflowContent);
 
     // Parse and validate workflow for tests
     const parsedYaml = YAML.parse(workflowContent);
@@ -99,17 +97,21 @@ describe('Reference Document Inheritance Integration', () => {
     // Add system reference documents
     mockSystemInterface.addMockFile(
       path.join(systemWorkflowsDir, 'templates', 'resume', 'reference.docx'),
-      'System resume reference document content'
+      'System resume reference document content',
     );
     mockSystemInterface.addMockFile(
       path.join(systemWorkflowsDir, 'templates', 'cover_letter', 'reference.docx'),
-      'System cover letter reference document content'
+      'System cover letter reference document content',
     );
 
     // Setup project structure
     mockSystemInterface.addMockDirectory(path.join(projectWorkflowsDir, 'job'));
-    mockSystemInterface.addMockDirectory(path.join(projectWorkflowsDir, 'job', 'templates', 'resume'));
-    mockSystemInterface.addMockDirectory(path.join(projectWorkflowsDir, 'job', 'templates', 'cover_letter'));
+    mockSystemInterface.addMockDirectory(
+      path.join(projectWorkflowsDir, 'job', 'templates', 'resume'),
+    );
+    mockSystemInterface.addMockDirectory(
+      path.join(projectWorkflowsDir, 'job', 'templates', 'cover_letter'),
+    );
 
     // Create services
     workflowService = new WorkflowService({
@@ -128,7 +130,7 @@ describe('Reference Document Inheritance Integration', () => {
       // Capture console output to verify logging
       const consoleLogs: string[] = [];
       const originalLog = console.log;
-      console.log = (...args: any[]) => {
+      console.log = (...args: unknown[]) => {
         consoleLogs.push(args.join(' '));
       };
 
@@ -137,15 +139,15 @@ describe('Reference Document Inheritance Integration', () => {
         const referenceDoc = await workflowService.findReferenceDocument(
           workflow,
           'resume',
-          projectWorkflowsDir
+          projectWorkflowsDir,
         );
 
         // Verify that system reference document was found
         expect(referenceDoc).toBe('/mock/system/workflows/job/templates/resume/reference.docx');
 
         // Verify that system reference document log was created
-        const referenceLogEntry = consoleLogs.find(log =>
-          log.includes('Using reference document') && log.includes('(system)')
+        const referenceLogEntry = consoleLogs.find(
+          (log) => log.includes('Using reference document') && log.includes('(system)'),
         );
         expect(referenceLogEntry).toBeDefined();
         expect(referenceLogEntry).toContain('templates/resume/reference.docx');
@@ -156,16 +158,22 @@ describe('Reference Document Inheritance Integration', () => {
 
     it('should use project reference document when project override exists', async () => {
       // Setup: Add project reference document that overrides system
-      const projectReferencePath = path.join(projectWorkflowsDir, 'job', 'templates', 'resume', 'reference.docx');
+      const projectReferencePath = path.join(
+        projectWorkflowsDir,
+        'job',
+        'templates',
+        'resume',
+        'reference.docx',
+      );
       mockSystemInterface.addMockFile(
         projectReferencePath,
-        'Project-specific resume reference document content'
+        'Project-specific resume reference document content',
       );
 
       // Capture console output to verify logging
       const consoleLogs: string[] = [];
       const originalLog = console.log;
-      console.log = (...args: any[]) => {
+      console.log = (...args: unknown[]) => {
         consoleLogs.push(args.join(' '));
       };
 
@@ -174,15 +182,15 @@ describe('Reference Document Inheritance Integration', () => {
         const referenceDoc = await workflowService.findReferenceDocument(
           workflow,
           'resume',
-          projectWorkflowsDir
+          projectWorkflowsDir,
         );
 
         // Verify that project reference document was found
         expect(referenceDoc).toBe(projectReferencePath);
 
         // Verify that project reference document log was created
-        const referenceLogEntry = consoleLogs.find(log =>
-          log.includes('Using reference document') && log.includes('(project)')
+        const referenceLogEntry = consoleLogs.find(
+          (log) => log.includes('Using reference document') && log.includes('(project)'),
         );
         expect(referenceLogEntry).toBeDefined();
         expect(referenceLogEntry).toContain('templates/resume/reference.docx');
@@ -198,18 +206,18 @@ describe('Reference Document Inheritance Integration', () => {
         'job',
         'templates',
         'cover_letter',
-        'reference.docx'
+        'reference.docx',
       );
       mockSystemInterface.addMockFile(
         projectCoverLetterReferencePath,
-        'Project-specific cover letter reference document content'
+        'Project-specific cover letter reference document content',
       );
 
       // Test resume (should use system)
       const resumeReferenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'resume',
-        projectWorkflowsDir
+        projectWorkflowsDir,
       );
       expect(resumeReferenceDoc).toBe('/mock/system/workflows/job/templates/resume/reference.docx');
 
@@ -217,21 +225,25 @@ describe('Reference Document Inheritance Integration', () => {
       const coverLetterReferenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'cover_letter',
-        projectWorkflowsDir
+        projectWorkflowsDir,
       );
       expect(coverLetterReferenceDoc).toBe(projectCoverLetterReferencePath);
     });
 
     it('should work when no reference document exists', async () => {
       // Setup: Remove all reference documents
-      mockSystemInterface.removeMockFile('/mock/system/workflows/job/templates/resume/reference.docx');
-      mockSystemInterface.removeMockFile('/mock/system/workflows/job/templates/cover_letter/reference.docx');
+      mockSystemInterface.removeMockFile(
+        '/mock/system/workflows/job/templates/resume/reference.docx',
+      );
+      mockSystemInterface.removeMockFile(
+        '/mock/system/workflows/job/templates/cover_letter/reference.docx',
+      );
 
       // Test resume (should return undefined)
       const resumeReferenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'resume',
-        projectWorkflowsDir
+        projectWorkflowsDir,
       );
       expect(resumeReferenceDoc).toBeUndefined();
 
@@ -239,7 +251,7 @@ describe('Reference Document Inheritance Integration', () => {
       const coverLetterReferenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'cover_letter',
-        projectWorkflowsDir
+        projectWorkflowsDir,
       );
       expect(coverLetterReferenceDoc).toBeUndefined();
     });
@@ -249,7 +261,7 @@ describe('Reference Document Inheritance Integration', () => {
       const resumeReferenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'resume',
-        null // No project workflows directory
+        null, // No project workflows directory
       );
 
       // Should fall back to system reference document
@@ -260,43 +272,52 @@ describe('Reference Document Inheritance Integration', () => {
   describe('Template Inheritance', () => {
     it('should use project template when available', async () => {
       // Setup: Add project template override
-      const projectTemplatePath = path.join(projectWorkflowsDir, 'job', 'templates', 'resume', 'default.md');
+      const projectTemplatePath = path.join(
+        projectWorkflowsDir,
+        'job',
+        'templates',
+        'resume',
+        'default.md',
+      );
       mockSystemInterface.addMockFile(
         projectTemplatePath,
-        '# Project Resume Template\n\nName: {{user.name}}\nProject-specific content'
+        '# Project Resume Template\n\nName: {{user.name}}\nProject-specific content',
       );
 
       // Add system template for fallback
-      const systemTemplatePath = path.join(systemRoot, 'workflows', 'job', 'templates', 'resume', 'default.md');
+      const systemTemplatePath = path.join(
+        systemRoot,
+        'workflows',
+        'job',
+        'templates',
+        'resume',
+        'default.md',
+      );
       mockSystemInterface.addMockFile(
         systemTemplatePath,
-        '# System Resume Template\n\nName: {{user.name}}\nSystem content'
+        '# System Resume Template\n\nName: {{user.name}}\nSystem content',
       );
 
       // Capture console output to verify template loading
       const consoleLogs: string[] = [];
       const originalLog = console.log;
-      console.log = (...args: any[]) => {
+      console.log = (...args: unknown[]) => {
         consoleLogs.push(args.join(' '));
       };
 
       try {
         // Load template with inheritance - should use project template
-        const content = await templateService.loadTemplateWithInheritance(
-          workflow,
-          'resume',
-          {
-            systemRoot,
-            workflowName: 'job',
-            projectPaths: { workflowsDir: projectWorkflowsDir }
-          }
-        );
+        const content = await templateService.loadTemplateWithInheritance(workflow, 'resume', {
+          systemRoot,
+          workflowName: 'job',
+          projectPaths: { workflowsDir: projectWorkflowsDir },
+        });
 
         expect(content).toContain('Project-specific content');
 
         // Verify that project template was loaded
-        const templateLogEntry = consoleLogs.find(log =>
-          log.includes('Loading template') && log.includes('(project)')
+        const templateLogEntry = consoleLogs.find(
+          (log) => log.includes('Loading template') && log.includes('(project)'),
         );
         expect(templateLogEntry).toBeDefined();
       } finally {
@@ -306,36 +327,39 @@ describe('Reference Document Inheritance Integration', () => {
 
     it('should fall back to system template when project template missing', async () => {
       // Setup: Only system template exists
-      const systemTemplatePath = path.join(systemRoot, 'workflows', 'job', 'templates', 'resume', 'default.md');
+      const systemTemplatePath = path.join(
+        systemRoot,
+        'workflows',
+        'job',
+        'templates',
+        'resume',
+        'default.md',
+      );
       mockSystemInterface.addMockFile(
         systemTemplatePath,
-        '# System Resume Template\n\nName: {{user.name}}\nSystem content'
+        '# System Resume Template\n\nName: {{user.name}}\nSystem content',
       );
 
       // Capture console output to verify template loading
       const consoleLogs: string[] = [];
       const originalLog = console.log;
-      console.log = (...args: any[]) => {
+      console.log = (...args: unknown[]) => {
         consoleLogs.push(args.join(' '));
       };
 
       try {
         // Load template with inheritance - should use system template
-        const content = await templateService.loadTemplateWithInheritance(
-          workflow,
-          'resume',
-          {
-            systemRoot,
-            workflowName: 'job',
-            projectPaths: { workflowsDir: projectWorkflowsDir }
-          }
-        );
+        const content = await templateService.loadTemplateWithInheritance(workflow, 'resume', {
+          systemRoot,
+          workflowName: 'job',
+          projectPaths: { workflowsDir: projectWorkflowsDir },
+        });
 
         expect(content).toContain('System content');
 
         // Verify that system template was loaded
-        const templateLogEntry = consoleLogs.find(log =>
-          log.includes('Loading template') && log.includes('(system)')
+        const templateLogEntry = consoleLogs.find(
+          (log) => log.includes('Loading template') && log.includes('(system)'),
         );
         expect(templateLogEntry).toBeDefined();
       } finally {
@@ -348,15 +372,11 @@ describe('Reference Document Inheritance Integration', () => {
     it('should handle missing workflow template gracefully', async () => {
       // Should throw appropriate error for non-existent template
       await expect(
-        templateService.loadTemplateWithInheritance(
-          workflow,
-          'nonexistent_template',
-          {
-            systemRoot,
-            workflowName: 'job',
-            projectPaths: { workflowsDir: projectWorkflowsDir }
-          }
-        )
+        templateService.loadTemplateWithInheritance(workflow, 'nonexistent_template', {
+          systemRoot,
+          workflowName: 'job',
+          projectPaths: { workflowsDir: projectWorkflowsDir },
+        }),
       ).rejects.toThrow("Template 'nonexistent_template' not found");
     });
 
@@ -365,7 +385,7 @@ describe('Reference Document Inheritance Integration', () => {
       const referenceDoc = await workflowService.findReferenceDocument(
         workflow,
         'invalid_template_type',
-        projectWorkflowsDir
+        projectWorkflowsDir,
       );
 
       // Should return undefined for non-existent template type

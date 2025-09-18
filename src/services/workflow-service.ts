@@ -93,7 +93,10 @@ export class WorkflowService {
       projectPaths: projectWorkflowsDir ? { workflowsDir: projectWorkflowsDir } : null,
     };
 
-    const result = this.fileResolutionService.resolveReferenceDocument(templateType, fileResolutionOptions);
+    const result = this.fileResolutionService.resolveReferenceDocument(
+      templateType,
+      fileResolutionOptions,
+    );
 
     if (result.path) {
       // Add visibility into which reference document was selected

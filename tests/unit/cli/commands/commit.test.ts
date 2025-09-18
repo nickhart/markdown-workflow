@@ -43,6 +43,31 @@ describe('commitCommand', () => {
     path: '/mock/project/job/submitted/test_company_engineer_20250918',
   };
 
+  // Helper function to create a mock execSync that handles all git commands
+  const createGitMock = (
+    gitStatusOutput: string = '',
+    gitDiffOutput: string = 'test_company_engineer_20250918',
+  ) => {
+    return (command: string) => {
+      if (command === 'git rev-parse --git-dir') {
+        return '.git';
+      }
+      if (command === 'git status --porcelain') {
+        return gitStatusOutput;
+      }
+      if (command === 'git add -A') {
+        return '';
+      }
+      if (command === 'git diff --cached --name-only') {
+        return gitDiffOutput;
+      }
+      if (command.startsWith('git commit -m')) {
+        return '';
+      }
+      return '';
+    };
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -65,16 +90,8 @@ describe('commitCommand', () => {
       () => mockOrchestrator,
     );
 
-    // Mock git repository check
-    mockExecSync.mockImplementation((command: string) => {
-      if (command === 'git rev-parse --git-dir') {
-        return '.git';
-      }
-      if (command === 'git status --porcelain') {
-        return '';
-      }
-      return '';
-    });
+    // Default mock git repository check
+    mockExecSync.mockImplementation(createGitMock());
   });
 
   afterEach(() => {
@@ -125,17 +142,11 @@ describe('commitCommand', () => {
 
   describe('git changes analysis', () => {
     it('should detect added files for new collection', async () => {
-      mockExecSync.mockImplementation((command: string) => {
-        if (command === 'git rev-parse --git-dir') {
-          return '.git';
-        }
-        if (command === 'git status --porcelain') {
-          return `A  job/active/test_company_engineer_20250918/collection.yml
+      const gitStatusOutput = `A  job/active/test_company_engineer_20250918/collection.yml
 A  job/active/test_company_engineer_20250918/resume_test_user.md
 A  job/active/test_company_engineer_20250918/cover_letter_test_user.md`;
-        }
-        return '';
-      });
+
+      mockExecSync.mockImplementation(createGitMock(gitStatusOutput));
 
       await commitCommand('job', 'test_company_engineer_20250918', {
         cwd: mockProjectRoot,
@@ -151,21 +162,14 @@ A  job/active/test_company_engineer_20250918/cover_letter_test_user.md`;
     });
 
     it('should detect deleted files from status change', async () => {
-      mockExecSync.mockImplementation((command: string) => {
-        if (command === 'git rev-parse --git-dir') {
-          return '.git';
-        }
-        if (command === 'git status --porcelain') {
-          // Simulate files moved from active to submitted
-          return `D  job/active/test_company_engineer_20250918/collection.yml
+      const gitStatusOutput = `D  job/active/test_company_engineer_20250918/collection.yml
 D  job/active/test_company_engineer_20250918/resume_test_user.md
 D  job/active/test_company_engineer_20250918/cover_letter_test_user.md
 A  job/submitted/test_company_engineer_20250918/collection.yml
 A  job/submitted/test_company_engineer_20250918/resume_test_user.md
 A  job/submitted/test_company_engineer_20250918/cover_letter_test_user.md`;
-        }
-        return '';
-      });
+
+      mockExecSync.mockImplementation(createGitMock(gitStatusOutput));
 
       await commitCommand('job', 'test_company_engineer_20250918', {
         cwd: mockProjectRoot,
@@ -181,16 +185,10 @@ A  job/submitted/test_company_engineer_20250918/cover_letter_test_user.md`;
     });
 
     it('should detect modified files', async () => {
-      mockExecSync.mockImplementation((command: string) => {
-        if (command === 'git rev-parse --git-dir') {
-          return '.git';
-        }
-        if (command === 'git status --porcelain') {
-          return `M  job/submitted/test_company_engineer_20250918/collection.yml
+      const gitStatusOutput = `M  job/submitted/test_company_engineer_20250918/collection.yml
 M  job/submitted/test_company_engineer_20250918/resume_test_user.md`;
-        }
-        return '';
-      });
+
+      mockExecSync.mockImplementation(createGitMock(gitStatusOutput));
 
       await commitCommand('job', 'test_company_engineer_20250918', {
         cwd: mockProjectRoot,
@@ -222,6 +220,12 @@ M  job/submitted/test_company_engineer_20250918/resume_test_user.md`;
         if (command === 'git status --porcelain') {
           return `D  job/active/test_company_engineer_20250918/collection.yml
 A  job/submitted/test_company_engineer_20250918/collection.yml`;
+        }
+        if (command === 'git add -A') {
+          return '';
+        }
+        if (command === 'git diff --cached --name-only') {
+          return 'test_company_engineer_20250918';
         }
         if (command.includes('git commit')) {
           // Verify the commit message includes status change info
@@ -268,6 +272,12 @@ A  job/submitted/test_company_engineer_20250918/collection.yml`;
         if (command === 'git status --porcelain') {
           return `M  job/interview/test_company_engineer_20250918/collection.yml`;
         }
+        if (command === 'git add -A') {
+          return '';
+        }
+        if (command === 'git diff --cached --name-only') {
+          return 'test_company_engineer_20250918';
+        }
         if (command.includes('git commit')) {
           // Should not show status change since path matches expected path
           expect(command).toContain('updated Test Company Engineer');
@@ -295,6 +305,12 @@ A  job/submitted/test_company_engineer_20250918/collection.yml`;
         if (command === 'git status --porcelain') {
           return `M  job/submitted/test_company_engineer_20250918/collection.yml`;
         }
+        if (command === 'git add -A') {
+          return '';
+        }
+        if (command === 'git diff --cached --name-only') {
+          return 'test_company_engineer_20250918';
+        }
         if (command.includes('git commit')) {
           expect(command).toContain(customMessage);
           return '';
@@ -316,6 +332,12 @@ A  job/submitted/test_company_engineer_20250918/collection.yml`;
         }
         if (command === 'git status --porcelain') {
           return `M  job/submitted/test_company_engineer_20250918/resume_test_user.md`;
+        }
+        if (command === 'git add -A') {
+          return '';
+        }
+        if (command === 'git diff --cached --name-only') {
+          return 'test_company_engineer_20250918';
         }
         if (command.includes('git commit')) {
           expect(command).toContain('updated Test Company Engineer');
@@ -380,12 +402,20 @@ A  job/submitted/test_company_engineer_20250918/collection.yml`;
     });
 
     it('should throw on git commit failure', async () => {
+      const gitStatusOutput = `M  job/submitted/test_company_engineer_20250918/collection.yml`;
+
       mockExecSync.mockImplementation((command: string) => {
         if (command === 'git rev-parse --git-dir') {
           return '.git';
         }
         if (command === 'git status --porcelain') {
-          return `M  job/submitted/test_company_engineer_20250918/collection.yml`;
+          return gitStatusOutput;
+        }
+        if (command === 'git add -A') {
+          return '';
+        }
+        if (command === 'git diff --cached --name-only') {
+          return 'test_company_engineer_20250918';
         }
         if (command.includes('git commit')) {
           throw new Error('Commit failed');

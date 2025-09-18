@@ -20,7 +20,6 @@ interface GitFileChanges {
   markdownFiles: string[];
 }
 
-
 interface CommitTemplateVariables {
   workflow: string;
   collection_id: string;
@@ -282,13 +281,13 @@ function executeGitCommit(
         try {
           execSync(`git add -A`, {
             cwd: projectRoot,
-            stdio: 'pipe'
+            stdio: 'pipe',
           });
 
           // Verify the changes were staged by checking what git would commit
           const stagedChanges = execSync('git diff --cached --name-only', {
             cwd: projectRoot,
-            encoding: 'utf8'
+            encoding: 'utf8',
           }).trim();
 
           if (!stagedChanges.includes(collectionId)) {
@@ -297,7 +296,9 @@ function executeGitCommit(
 
           logInfo(`Staged ${collectionFiles.length} collection-related changes`);
         } catch (addError) {
-          logError(`Failed to stage collection changes: ${addError instanceof Error ? addError.message : String(addError)}`);
+          logError(
+            `Failed to stage collection changes: ${addError instanceof Error ? addError.message : String(addError)}`,
+          );
           throw new Error(`Git add failed for collection: ${collectionId}`);
         }
       }

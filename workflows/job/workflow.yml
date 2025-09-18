@@ -52,7 +52,7 @@ workflow:
     - name: "submitted"
       description: "Applications submitted to company"
       color: "yellow"
-      next: ["interview", "rejected", "ghosted"]
+      next: ["interview", "rejected", "ghosted", "withdrawn"]
 
     - name: "interview"
       description: "Interview process started"

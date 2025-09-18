@@ -63,7 +63,12 @@ export class FileResolutionService {
     }
 
     // Fall back to system directory
-    const systemPath = path.join(options.systemRoot, 'workflows', options.workflowName, resolvedPath);
+    const systemPath = path.join(
+      options.systemRoot,
+      'workflows',
+      options.workflowName,
+      resolvedPath,
+    );
 
     if (this.systemInterface.existsSync(systemPath)) {
       return { path: systemPath, fromProject: false };
