@@ -16,6 +16,7 @@ import {
   logError,
 } from '../shared/console-output';
 import { TemplateProcessor } from '../shared/template-processor';
+import { CollectionCacheService } from '../../services/collection-cache-service';
 
 interface CreateOptions {
   url?: string;
@@ -211,6 +212,18 @@ export async function createCommand(workflowName: string, ...args: unknown[]): P
     } else {
       logError(`Failed to scrape URL: ${result.error}`);
     }
+  }
+
+  // Update collection cache
+  try {
+    const cacheService = new CollectionCacheService({
+      projectRoot: options.cwd || process.cwd(),
+      configDiscovery,
+    });
+    cacheService.addCollection(collectionId, workflowName);
+  } catch (error) {
+    // Log warning but don't fail the entire operation
+    console.warn(`Warning: Could not update collection cache:`, error);
   }
 
   // Get workflow default format for next steps message
