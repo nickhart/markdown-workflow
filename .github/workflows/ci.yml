@@ -62,11 +62,7 @@ jobs:
       - name: Cache build artifacts
         uses: actions/cache@v4
         with:
-          path: |
-            .next/cache
-            .next/static
-            .next/standalone
-            dist
+          path: dist
           key: ${{ runner.os }}-build-${{ github.sha }}
 
   test:

@@ -128,16 +128,28 @@ Available processors:
 
 ### Prerequisites
 
-- Node.js 20+
-- pnpm (for package management)
-- pandoc (for document formatting)
-- turbo (for monorepo build orchestration)
+#### macOS (Homebrew)
+
+```bash
+# Install all dependencies at once
+brew bundle
+
+# Or install individually
+brew install node pnpm pandoc graphviz plantuml wget
+```
+
+#### Manual Installation
+
+**Required:**
+- Node.js 20+ - [nodejs.org](https://nodejs.org/)
+- pnpm 10+ - `npm install -g pnpm`
+- pandoc - [pandoc.org](https://pandoc.org/installing.html)
 
 **Optional (for diagram processing):**
-
-- graphviz (for Graphviz processor)
-- plantuml (for PlantUML processor)
-- @mermaid-js/mermaid-cli (for Mermaid processor - installed automatically)
+- graphviz - For Graphviz processor ([graphviz.org](https://graphviz.org/download/))
+- plantuml - For PlantUML processor ([plantuml.com](https://plantuml.com/download))
+- wget - For web scraping (fallback to curl if not available)
+- @mermaid-js/mermaid-cli - Installed automatically via npm
 
 ### Installation
 
@@ -363,19 +375,20 @@ wf create --help           # Command-specific help
 
 ```text
 src/
-├── core/          # Workflow engine, template processing, schemas
+├── engine/        # Core workflow engine and environment abstraction
+├── services/      # Business logic services (orchestration, collection mgmt, processors)
 ├── cli/           # Command-line interface implementation
-├── shared/        # Utilities (web scraping, file operations)
-└── api/           # REST API (experimental)
+└── utils/         # Shared utilities and helper functions
 
 workflows/         # Default workflow definitions
 ├── job/           # Job application workflow + templates
-└── blog/          # Blog workflow (templates only)
+├── presentation/  # Presentation workflow + templates
+└── blog/          # Blog workflow + templates
 
 tests/             # Comprehensive test suite
 ├── unit/          # Unit tests with mocked filesystems
-├── e2e/           # End-to-end tests with snapshots
-└── fixtures/      # Test data and mock workflows
+├── integration/   # Integration tests
+└── e2e/           # End-to-end snapshot tests
 ```
 
 ## 🎨 Customization
@@ -451,20 +464,23 @@ turbo format                    # Auto-fix formatting issues
 
 ## 🔮 Roadmap
 
-### v1.1.0 - Blog Workflow
+### v1.1.0 - Enhanced Blog Workflow
 
-- Complete blog workflow CLI integration
-- Publishing and content management features
+- Enhanced blog workflow features
+- Publishing and content management
+- Rich media processing and optimization
 
-### v1.2.0 - Web Interface
+### v1.2.0 - Workflow Extensions
 
-- Simple web demo for showcasing the system
-- Template playground and workflow visualization
+- Plugin system for custom processors
+- Template marketplace
+- Advanced customization options
 
-### v2.0.0 - Workflow Distribution
+### v2.0.0 - Collaboration Features
 
-- Create and share custom workflows
+- Workflow distribution and sharing
 - Community workflow repository
+- Team collaboration tools
 
 ## 📖 Documentation
 

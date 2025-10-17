@@ -21,6 +21,15 @@
       "modified": "2025-01-21T10:00:00.000Z",
       "children": [
         {
+          "name": "collections.yml",
+          "path": ".markdown-workflow/collections.yml",
+          "type": "file",
+          "size": 60,
+          "modified": "2025-01-21T10:00:00.000Z",
+          "contentHash": "65962eeb4487b4577f36afcf4b91d61d",
+          "content": "collections:\n  example_corp_software_engineer_20250121: job\n"
+        },
+        {
           "name": "config.yml",
           "path": ".markdown-workflow/config.yml",
           "type": "file",
