@@ -57,7 +57,7 @@ workflow:
     - name: "interview"
       description: "Interview process started"
       color: "orange"
-      next: ["offered", "rejected", "ghosted"]
+      next: ["offered", "rejected", "ghosted", "withdrawn"]
 
     - name: "offered"
       description: "Job offer received"

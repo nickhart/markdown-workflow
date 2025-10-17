@@ -199,9 +199,12 @@ export class TemplateService {
     // Get user config
     const userConfig = projectConfig?.user || this.getDefaultUserConfig();
 
-    // Extract title from collection metadata or collection ID
+    // Extract title from custom variables, collection metadata, or collection ID
     let title = '';
-    if (collection) {
+    if (customVariables.title && typeof customVariables.title === 'string') {
+      // First priority: custom variables (e.g., from CLI arguments during creation)
+      title = customVariables.title;
+    } else if (collection) {
       if (collection.metadata.title && typeof collection.metadata.title === 'string') {
         title = collection.metadata.title;
       } else {
